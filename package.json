@@ -1,0 +1,23 @@
+{
+  "name": "sportlike-client",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "axios": "^1.4.0",
+    "bootstrap": "^5.3.2",
+    "bootstrap-icons": "^1.11.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.14.1"
+  },
+  "scripts": {
+    "dev": "parcel index.html --open",
+    "build": "parcel build index.html --dist-dir dist",
+    "start": "serve -s dist"
+  },
+  "devDependencies": {
+    "buffer": "^6.0.3",
+    "parcel": "^2.16.1",
+    "serve": "^14.2.0"
+  }
+}
