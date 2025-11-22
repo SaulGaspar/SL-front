@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 
 export default function ResetPassword() {
   const [params] = useSearchParams();
@@ -15,6 +15,7 @@ export default function ResetPassword() {
   const restablecerPass = async (e) => {
     e.preventDefault();
     setMsg('');
+
     if (pass !== confirmPass) {
       setMsg('Las contraseñas no coinciden');
       return;
@@ -24,7 +25,10 @@ export default function ResetPassword() {
     try {
       await axios.post('https://sl-back.vercel.app/api/reset-password', { token, password: pass });
       setMsg('Contraseña restablecida correctamente. Redirigiendo...');
+
+      // Si viene del correo, ir a login — si es desde perfil, volver al perfil
       setTimeout(() => navigate(token ? '/login' : '/profile'), 1500);
+
     } catch (error) {
       setMsg(error.response?.data?.error || 'Error restableciendo contraseña');
     } finally {
@@ -33,73 +37,97 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '90vh', background: '#f5f7fa' }}>
+    <div
+      className="d-flex justify-content-center align-items-center"
+      style={{
+        minHeight: '90vh',
+        background: 'linear-gradient(135deg, #eef3ff, #ffffff)'
+      }}
+    >
       <style>{`
-        .card-pass {
+        .pass-card {
           width: 100%;
-          max-width: 480px;
+          max-width: 500px;
           background: #ffffff;
-          border-radius: 14px;
+          border-radius: 16px;
           padding: 40px 35px;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+          box-shadow: 0 15px 35px rgba(0,0,0,0.12);
         }
-        .card-title {
-          font-size: 1.8rem;
+
+        .pass-title {
+          font-size: 1.9rem;
           font-weight: 700;
-          color: #0a1a2f;
+          color: #0a2540;
           text-align: center;
         }
-        .form-label {
-          font-weight: 600;
-          color: #0a1a2f;
+
+        .breadcrumb-custom {
+          font-size: 0.95rem;
+          font-weight: 500;
+          margin-bottom: 25px;
+          color: #506580;
         }
-        .form-input {
-          border-radius: 10px !important;
-          padding: 10px 12px !important;
-          border: 1px solid #d2d2d2;
-          font-size: 1rem;
-        }
-        .btn-pass {
-          background-color: #1e90ff;
-          color: white;
-          border: none;
-          padding: 12px;
-          width: 100%;
-          border-radius: 10px;
-          font-size: 1.1rem;
-          margin-top: 15px;
-          font-weight: 600;
-          transition: all 0.3s ease;
-        }
-        .btn-pass:hover {
-          background-color: #0c75d6;
-        }
-        .breadcrumb {
-          font-size: 0.9rem;
-          margin-bottom: 20px;
-        }
-        .breadcrumb a {
-          color: #1e90ff;
+
+        .breadcrumb-custom a {
+          color: #1a73e8;
           text-decoration: none;
+          font-weight: 600;
         }
-        .breadcrumb a:hover {
+
+        .breadcrumb-custom a:hover {
           text-decoration: underline;
         }
+
+        .form-label {
+          font-weight: 600;
+          color: #0a2540;
+        }
+
+        .form-input {
+          border-radius: 12px !important;
+          padding: 11px 14px !important;
+          border: 1px solid #cfd8e3;
+          font-size: 1rem;
+        }
+
+        .btn-reset {
+          background: linear-gradient(135deg, #1e90ff, #0c75d6);
+          color: #ffffff;
+          border: none;
+          padding: 13px;
+          width: 100%;
+          border-radius: 12px;
+          font-size: 1.15rem;
+          font-weight: 600;
+          margin-top: 18px;
+          transition: all 0.25s ease;
+        }
+
+        .btn-reset:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(30, 144, 255, 0.35);
+        }
+
         .alert-msg {
-          margin-top: 10px;
+          margin-top: 12px;
         }
       `}</style>
 
-      <div className="card-pass">
-        <nav className="breadcrumb">
-          <a href="/">Inicio</a> &gt; <a href="/profile">Perfil</a> &gt; Restablecer contraseña
-        </nav>
+      <div className="pass-card">
 
-        <h2 className="card-title mb-4">Restablecer contraseña</h2>
+        {/* MIGAS DE PAN */}
+        <div className="breadcrumb-custom">
+          <Link to="/">Inicio</Link> &nbsp;/&nbsp;
+          {!token && <><Link to="/profile">Perfil</Link> &nbsp;/&nbsp;</>}
+          <span style={{ fontWeight: 700, color: "#000" }}>Restablecer contraseña</span>
+        </div>
+
+        <h2 className="pass-title mb-4">Restablecer contraseña</h2>
 
         {msg && <div className="alert alert-info alert-msg">{msg}</div>}
 
         <form onSubmit={restablecerPass}>
+          
           <div className="mb-3">
             <label className="form-label">Nueva contraseña</label>
             <input
@@ -124,9 +152,10 @@ export default function ResetPassword() {
             />
           </div>
 
-          <button className="btn-pass" disabled={loading}>
-            {loading ? 'Restableciendo...' : 'Restablecer contraseña'}
+          <button className="btn-reset" disabled={loading}>
+            {loading ? 'Restableciendo...' : 'Guardar contraseña'}
           </button>
+
         </form>
       </div>
     </div>
