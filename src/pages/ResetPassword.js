@@ -4,8 +4,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 
 export default function ResetPassword() {
   const [params] = useSearchParams();
-  const token = params.get('token'); // si viene del correo
-  const from = params.get('from') || ''; // puede ser 'profile' o 'forgot'
+  const token = params.get('token');
   const navigate = useNavigate();
 
   const [pass, setPass] = useState('');
@@ -13,10 +12,7 @@ export default function ResetPassword() {
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const API_URL = process.env.REACT_APP_API_URL || 'https://sl-back.vercel.app';
-  const tokenAuth = localStorage.getItem('token');
-
-  const handleReset = async (e) => {
+  const restablecerPass = async (e) => {
     e.preventDefault();
     setMsg('');
 
@@ -27,26 +23,11 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      if (token) {
-        // desde link de correo
-        await axios.post(`${API_URL}/api/reset-password`, { token, password: pass });
-      } else {
-        // desde perfil logueado
-        await axios.post(`${API_URL}/api/update-password`, { actual: '', nueva: pass }, {
-          headers: { Authorization: 'Bearer ' + tokenAuth }
-        });
-      }
-
-      setMsg('Contraseña actualizada correctamente...');
-      setTimeout(() => {
-        if (token) {
-          navigate('/login'); // link desde correo → login
-        } else {
-          navigate('/profile'); // desde perfil → profile
-        }
-      }, 1500);
+      await axios.post('https://sl-back.vercel.app/api/reset-password', { token, password: pass });
+      setMsg('Contraseña restablecida correctamente. Redirigiendo...');
+      setTimeout(() => navigate(token ? '/login' : '/profile'), 1500);
     } catch (error) {
-      setMsg(error.response?.data?.error || 'Error actualizando contraseña');
+      setMsg(error.response?.data?.error || 'Error restableciendo contraseña');
     } finally {
       setLoading(false);
     }
@@ -54,10 +35,72 @@ export default function ResetPassword() {
 
   return (
     <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '90vh' }}>
-      <div className="card-pass" style={{ width: '100%', maxWidth: '480px', padding: '35px', borderRadius: '14px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', background: '#fff' }}>
-        <h2 className="card-title mb-4">{token ? 'Restablecer contraseña' : 'Actualizar contraseña'}</h2>
-        {msg && <div className="alert alert-info">{msg}</div>}
-        <form onSubmit={handleReset}>
+      <style>{`
+        .card-pass {
+          width: 100%;
+          max-width: 480px;
+          background: #ffffff;
+          border-radius: 14px;
+          padding: 40px 35px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        .card-title {
+          font-size: 1.8rem;
+          font-weight: 700;
+          color: #0a1a2f;
+          text-align: center;
+        }
+        .form-label {
+          font-weight: 600;
+          color: #0a1a2f;
+        }
+        .form-input {
+          border-radius: 10px !important;
+          padding: 10px 12px !important;
+          border: 1px solid #d2d2d2;
+          font-size: 1rem;
+        }
+        .btn-pass {
+          background-color: #1e90ff;
+          color: white;
+          border: none;
+          padding: 12px;
+          width: 100%;
+          border-radius: 10px;
+          font-size: 1.1rem;
+          margin-top: 15px;
+          font-weight: 600;
+          transition: all 0.3s ease;
+        }
+        .btn-pass:hover {
+          background-color: #0c75d6;
+        }
+        .breadcrumb {
+          font-size: 0.9rem;
+          margin-bottom: 20px;
+        }
+        .breadcrumb a {
+          color: #1e90ff;
+          text-decoration: none;
+        }
+        .breadcrumb a:hover {
+          text-decoration: underline;
+        }
+        .alert-msg {
+          margin-top: 10px;
+        }
+      `}</style>
+
+      <div className="card-pass">
+        <nav className="breadcrumb">
+          <a href="/">Inicio</a> &gt; <a href="/profile">Perfil</a> &gt; Restablecer contraseña
+        </nav>
+
+        <h2 className="card-title mb-4">Restablecer contraseña</h2>
+
+        {msg && <div className="alert alert-info alert-msg">{msg}</div>}
+
+        <form onSubmit={restablecerPass}>
           <div className="mb-3">
             <label className="form-label">Nueva contraseña</label>
             <input
@@ -69,6 +112,7 @@ export default function ResetPassword() {
               required
             />
           </div>
+
           <div className="mb-3">
             <label className="form-label">Confirmar contraseña</label>
             <input
@@ -80,8 +124,9 @@ export default function ResetPassword() {
               required
             />
           </div>
+
           <button className="btn-pass" disabled={loading}>
-            {loading ? 'Procesando...' : 'Cambiar contraseña'}
+            {loading ? 'Restableciendo...' : 'Restablecer contraseña'}
           </button>
         </form>
       </div>
