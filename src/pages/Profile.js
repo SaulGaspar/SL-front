@@ -18,7 +18,6 @@ export default function Profile({ user, setUser }) {
     usuario: user.usuario || ''
   });
 
-  // Actualizar perfil
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
 
@@ -81,20 +80,24 @@ export default function Profile({ user, setUser }) {
           color: #000;
         }
 
+        /* === TARJETAS DE INFO CENTRADAS === */
         .info-box {
           background: #f8f9fc;
           padding: 18px 22px;
           border-radius: 14px;
           margin-bottom: 15px;
           border: 1px solid #e3e8f0;
+          text-align: center;
         }
         .info-label {
           font-weight: 700;
           color: #0a2540;
+          text-align: center;
         }
         .info-value {
           font-size: 1.05rem;
           color: #2f3b52;
+          text-align: center;
         }
 
         .form-input {
@@ -104,7 +107,6 @@ export default function Profile({ user, setUser }) {
           font-size: 1rem;
         }
 
-        /* === BOTÓN AZUL OBSCURO (Actualizar información) === */
         .btn-main {
           background: linear-gradient(135deg, #0a2540, #06182a);
           color: #fff;
@@ -152,7 +154,6 @@ export default function Profile({ user, setUser }) {
 
       <div className="profile-card">
 
-        {/* MIGAS DE PAN */}
         <div className="breadcrumb-custom">
           <Link to="/">Inicio</Link> &nbsp;/&nbsp;
           <span>Mi perfil</span>
@@ -162,7 +163,6 @@ export default function Profile({ user, setUser }) {
 
         {msg && <div className="alert alert-info">{msg}</div>}
 
-        {/* ---------------- VISTA NORMAL ---------------- */}
         {!editing ? (
           <>
             <div className="info-box">
@@ -203,7 +203,6 @@ export default function Profile({ user, setUser }) {
             </div>
           </>
         ) : (
-          /* ---------------- MODO EDITAR ---------------- */
           <form onSubmit={handleUpdateProfile}>
 
             <div className="mb-3">
