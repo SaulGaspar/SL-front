@@ -10,15 +10,20 @@ export default function ResetPassword() {
 
   async function submit(e) {
     e.preventDefault();
+    if (pass.length < 6) {
+      setMsg('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
     try {
-      await axios.post('https://sl-back.vercel.app/api/reset-password', { 
-        token: params.get('token'), 
-        password: pass 
+      await axios.post('https://sl-back.vercel.app/api/reset-password', {
+        token: params.get('token'),
+        password: pass
       });
       setMsg('Contraseña restablecida correctamente');
       setTimeout(() => navigate('/login'), 1500);
-    } catch (e) {
-      setMsg(e.response?.data?.error || 'Error al restablecer contraseña');
+    } catch (error) {
+      setMsg(error.response?.data?.error || 'Error al restablecer contraseña');
     }
   }
 
@@ -29,14 +34,14 @@ export default function ResetPassword() {
       <form onSubmit={submit}>
         <div className="mb-2">
           <label>Nueva contraseña</label>
-          <input 
+          <input
             type="password"
-            className="form-control" 
-            value={pass} 
-            onChange={e => setPass(e.target.value)} 
+            className="form-control"
+            value={pass}
+            onChange={e => setPass(e.target.value)}
           />
         </div>
-        <button className="btn btn-primary-custom w-100">Restablecer</button>
+        <button className="btn btn-primary w-100">Restablecer</button>
       </form>
     </div>
   );
