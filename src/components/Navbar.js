@@ -19,6 +19,31 @@ export default function Navbar({ user, onLogout }) {
           text-shadow: 0 0 8px rgba(255, 247, 0, 0.7);
         }
 
+        @media (max-width: 768px) {
+          .mobile-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+          }
+          .mobile-menu {
+            display: flex;
+            justify-content: center;
+            gap: 35px;
+            width: 100%;
+            padding-bottom: 8px;
+          }
+          .desktop-menu {
+            display: none !important;
+          }
+        }
+
+        @media (min-width: 769px) {
+          .mobile-top, .mobile-menu {
+            display: none !important;
+          }
+        }
+
         .nav-link {
           position: relative;
           padding-bottom: 5px;
@@ -37,23 +62,47 @@ export default function Navbar({ user, onLogout }) {
         .nav-link:hover::after {
           width: 100%;
         }
-
-        @media (max-width: 768px) {
-          .main-menu {
-            gap: 15px !important;
-          }
-          .nav-link {
-            font-size: 1.15rem !important;
-          }
-        }
       `}</style>
 
-      <div className="container-fluid d-flex align-items-center justify-content-between">
+      <div className="container-fluid">
 
-        <Link className="navbar-brand logo-brand ms-2" to="/">SportLike</Link>
+        <div className="mobile-top px-3">
+          <Link className="logo-brand mx-auto" to="/">SportLike</Link>
 
-        {/* MENÚ CENTRAL SIEMPRE VISIBLE */}
-        <ul className="navbar-nav d-flex flex-row gap-4 main-menu mx-auto">
+          <div className="d-flex align-items-center gap-3">
+            <Link className="text-white" to="/search">
+              <i className="bi bi-search" style={{ fontSize: "1.5rem" }}></i>
+            </Link>
+
+            <Link className="text-white" to="/carrito">
+              <i className="bi bi-cart" style={{ fontSize: "1.5rem" }}></i>
+            </Link>
+
+            {user ? (
+              <Link className="text-white" to="/profile">
+                <i className="bi bi-person-circle" style={{ fontSize: "1.5rem" }}></i>
+              </Link>
+            ) : (
+              <Link className="text-white" to="/login">
+                <i className="bi bi-box-arrow-in-right" style={{ fontSize: "1.5rem" }}></i>
+              </Link>
+            )}
+
+            {user && (
+              <button className="btn btn-link text-white p-0" onClick={onLogout}>
+                <i className="bi bi-box-arrow-right" style={{ fontSize: "1.5rem" }}></i>
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="mobile-menu">
+          <Link className="nav-link text-white fs-5" to="/">Inicio</Link>
+          <Link className="nav-link text-white fs-5" to="/catalogo">Catálogo</Link>
+          <Link className="nav-link text-white fs-5" to="/promociones">Promociones</Link>
+        </div>
+
+        <ul className="navbar-nav d-flex flex-row gap-4 mx-auto desktop-menu">
           <li className="nav-item">
             <Link className="nav-link text-white fs-5" to="/">Inicio</Link>
           </li>
@@ -65,7 +114,7 @@ export default function Navbar({ user, onLogout }) {
           </li>
         </ul>
 
-        <ul className="navbar-nav d-flex flex-row align-items-center me-3">
+        <ul className="navbar-nav d-flex flex-row align-items-center me-3 desktop-menu">
           {user && (
             <li className="nav-item me-3">
               <Link className="nav-link text-white" to="/profile">
@@ -89,16 +138,6 @@ export default function Navbar({ user, onLogout }) {
               </button>
             </li>
           )}
-
-          <li className="nav-item dropdown">
-            <button className="btn btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
-              <i className="bi bi-list" style={{ fontSize: '1.5rem' }}></i>
-            </button>
-            <ul className="dropdown-menu dropdown-menu-end">
-              <li><Link className="dropdown-item fs-6" to="/configuracion">Configuración</Link></li>
-              <li><Link className="dropdown-item fs-6" to="/ayuda">Ayuda</Link></li>
-            </ul>
-          </li>
         </ul>
 
       </div>
