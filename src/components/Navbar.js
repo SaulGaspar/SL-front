@@ -7,20 +7,20 @@ export default function Navbar({ user, onLogout }) {
 
       <style>{`
         .logo-brand {
-          font-size: 2.2rem;
+          font-size: 1.8rem;
           font-weight: 800;
-          letter-spacing: 1.5px;
+          letter-spacing: 0.5px;
           color: white !important;
-          padding: 4px 10px;
-          border: none;
+          padding: 6px 14px;
+          border: 3px solid transparent;
+          border-radius: 8px;
           transition: all 0.25s ease-in-out;
-          font-family: 'Arial Black', sans-serif;
         }
         .logo-brand:hover {
           color: #fff700 !important;
-          transform: translateY(-2px);
-          text-shadow: 0 0 6px rgba(255, 247, 0, 0.65);
+          text-shadow: 0 0 8px rgba(255, 247, 0, 0.7);
         }
+
         .nav-link {
           position: relative;
           padding-bottom: 5px;
@@ -39,12 +39,10 @@ export default function Navbar({ user, onLogout }) {
         .nav-link:hover::after {
           width: 100%;
         }
-        .nav-link:hover {
-          color: #e6e6e6 !important;
-        }
       `}</style>
 
       <div className="container-fluid d-flex align-items-center">
+        
         <Link className="navbar-brand logo-brand ms-3" to="/">
           SportLike
         </Link>
@@ -59,7 +57,9 @@ export default function Navbar({ user, onLogout }) {
         </button>
 
         <div className="collapse navbar-collapse" id="navMenu">
-          <ul className="navbar-nav position-absolute start-50 translate-middle-x d-flex flex-row gap-4">
+          
+          {/* MENÚ CENTRO RESPONSIVE — YA NO ES ABSOLUTE */}
+          <ul className="navbar-nav mx-auto d-flex flex-row gap-4">
             <li className="nav-item">
               <Link className="nav-link text-white fs-5" to="/">Inicio</Link>
             </li>
@@ -106,6 +106,7 @@ export default function Navbar({ user, onLogout }) {
               </ul>
             </li>
           </ul>
+
         </div>
       </div>
     </nav>
