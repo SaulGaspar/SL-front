@@ -11,8 +11,8 @@ export default function Navbar({ user, onLogout }) {
           font-weight: 800;
           letter-spacing: 0.5px;
           color: white !important;
-          padding: 6px 14px;
-          transition: all 0.25s ease-in-out;
+          padding: 4px 6px;
+          text-decoration: none !important;
         }
         .logo-brand:hover {
           color: #fff700 !important;
@@ -20,26 +20,28 @@ export default function Navbar({ user, onLogout }) {
         }
 
         @media (max-width: 768px) {
-          .mobile-top {
+          .mobile-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             width: 100%;
+            padding: 6px 10px;
           }
           .mobile-menu {
             display: flex;
             justify-content: center;
-            gap: 35px;
+            gap: 32px;
             width: 100%;
             padding-bottom: 8px;
           }
-          .desktop-menu {
+          .desktop-only {
             display: none !important;
           }
         }
 
         @media (min-width: 769px) {
-          .mobile-top, .mobile-menu {
+          .mobile-row,
+          .mobile-menu {
             display: none !important;
           }
         }
@@ -47,6 +49,7 @@ export default function Navbar({ user, onLogout }) {
         .nav-link {
           position: relative;
           padding-bottom: 5px;
+          text-decoration: none !important;
         }
         .nav-link::after {
           content: "";
@@ -66,8 +69,8 @@ export default function Navbar({ user, onLogout }) {
 
       <div className="container-fluid">
 
-        <div className="mobile-top px-3">
-          <Link className="logo-brand mx-auto" to="/">SportLike</Link>
+        <div className="mobile-row">
+          <Link className="logo-brand" to="/">SportLike</Link>
 
           <div className="d-flex align-items-center gap-3">
             <Link className="text-white" to="/search">
@@ -102,7 +105,9 @@ export default function Navbar({ user, onLogout }) {
           <Link className="nav-link text-white fs-5" to="/promociones">Promociones</Link>
         </div>
 
-        <ul className="navbar-nav d-flex flex-row gap-4 mx-auto desktop-menu">
+        <Link className="navbar-brand logo-brand ms-2 desktop-only" to="/">SportLike</Link>
+
+        <ul className="navbar-nav d-flex flex-row gap-4 mx-auto desktop-only">
           <li className="nav-item">
             <Link className="nav-link text-white fs-5" to="/">Inicio</Link>
           </li>
@@ -114,7 +119,7 @@ export default function Navbar({ user, onLogout }) {
           </li>
         </ul>
 
-        <ul className="navbar-nav d-flex flex-row align-items-center me-3 desktop-menu">
+        <ul className="navbar-nav d-flex flex-row align-items-center me-3 desktop-only">
           {user && (
             <li className="nav-item me-3">
               <Link className="nav-link text-white" to="/profile">
