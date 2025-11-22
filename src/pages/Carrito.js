@@ -44,20 +44,8 @@ export default function Carrito() {
     console.log("=== FIN handlePago ===");
   };
 
-  const testClick = () => {
-    console.log("🎯 TEST: Botón de prueba clickeado!");
-    alert("El onClick funciona correctamente");
-  };
-
   return (
     <div className="container my-5">
-      <button 
-        onClick={testClick}
-        className="btn btn-warning mb-3"
-        style={{ position: 'fixed', top: 100, right: 20, zIndex: 9999 }}
-      >
-        🧪 TEST CLICK
-      </button>
 
       <h2 className="fw-bold mb-4">Tu Carrito de Compras</h2>
       
@@ -66,12 +54,6 @@ export default function Carrito() {
           {cart.length === 0 ? (
             <div>
               <p className="text-muted">Tu carrito está vacío.</p>
-              <button 
-                onClick={testClick}
-                className="btn btn-primary mt-3"
-              >
-                🧪 TEST: ¿Funciona onClick aquí?
-              </button>
             </div>
           ) : (
             cart.map((item, i) => (
@@ -89,12 +71,14 @@ export default function Carrito() {
                     borderRadius: 8,
                   }}
                 />
+
                 <div className="flex-grow-1 ms-3">
                   <h5 className="mb-1">{item.title}</h5>
                   <p className="text-muted mb-1">
                     Color: {item.color} | Talla: {item.size}
                   </p>
                   <p className="fw-bold mb-2">${item.price}</p>
+
                   <div className="d-flex align-items-center gap-2">
                     <button
                       className="btn btn-outline-secondary btn-sm"
@@ -104,6 +88,7 @@ export default function Carrito() {
                     >
                       -
                     </button>
+
                     <input
                       type="number"
                       value={item.qty || 1}
@@ -111,6 +96,7 @@ export default function Carrito() {
                       className="form-control text-center"
                       style={{ width: 60 }}
                     />
+
                     <button
                       className="btn btn-outline-secondary btn-sm"
                       onClick={() =>
@@ -119,6 +105,7 @@ export default function Carrito() {
                     >
                       +
                     </button>
+
                     <button
                       className="btn btn-link text-danger btn-sm ms-3"
                       onClick={() => removeItem(item)}
@@ -127,6 +114,7 @@ export default function Carrito() {
                     </button>
                   </div>
                 </div>
+
                 <div className="ms-3 fw-bold">
                   ${(item.qty || 1) * item.price}
                 </div>
@@ -141,17 +129,23 @@ export default function Carrito() {
               Código promocional{" "}
               <span className="float-end text-primary">AÑADIR DESCUENTO</span>
             </h6>
+
             <hr />
+
             <h5 className="fw-bold">Resumen de compra</h5>
+
             <div className="d-flex justify-content-between">
               <span>Total parcial</span>
               <span>${subtotal.toFixed(2)}</span>
             </div>
+
             <div className="d-flex justify-content-between">
               <span>Estimado de envío</span>
               <span>${shipping.toFixed(2)}</span>
             </div>
+
             <hr />
+
             <div className="d-flex justify-content-between fw-bold fs-5">
               <span>TOTAL</span>
               <span>${total.toFixed(2)}</span>
@@ -165,13 +159,6 @@ export default function Carrito() {
               Proceder al pago
             </button>
 
-            <button
-              type="button"
-              className="btn btn-outline-info w-100 mt-2"
-              onClick={testClick}
-            >
-              🧪 TEST: ¿Funciona onClick en resumen?
-            </button>
           </div>
         </div>
       </div>
