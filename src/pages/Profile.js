@@ -104,8 +104,9 @@ export default function Profile({ user, setUser }) {
           font-size: 1rem;
         }
 
+        /* === BOTÓN AZUL OBSCURO (Actualizar información) === */
         .btn-main {
-          background: linear-gradient(135deg, #ff6b6b, #ff4757);
+          background: linear-gradient(135deg, #0a2540, #06182a);
           color: #fff;
           border: none;
           padding: 13px;
@@ -117,7 +118,7 @@ export default function Profile({ user, setUser }) {
         }
         .btn-main:hover {
           transform: translateY(-2px);
-          box-shadow: 0 10px 25px rgba(255, 71, 87, 0.35);
+          box-shadow: 0 10px 25px rgba(10, 37, 64, 0.35);
         }
 
         .btn-secondary {

@@ -92,8 +92,9 @@ export default function UpdateProfileForm({ user }) {
           font-size: 1rem;
         }
 
+        /* === BOTÓN ACTUALIZADO === */
         .btn-update {
-          background: linear-gradient(135deg, #ff6b6b, #ff4757);
+          background: linear-gradient(135deg, #1e90ff, #0c75d6) !important;
           color: white;
           border: none;
           padding: 13px;
@@ -107,7 +108,7 @@ export default function UpdateProfileForm({ user }) {
 
         .btn-update:hover {
           transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(255, 71, 87, 0.35);
+          box-shadow: 0 8px 20px rgba(30, 144, 255, 0.35);
         }
 
         .alert-msg {
