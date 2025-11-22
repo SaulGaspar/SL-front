@@ -22,11 +22,17 @@ export default function ResetPassword() {
     }
 
     setLoading(true);
+
     try {
-      await axios.post('https://sl-back.vercel.app/api/reset-password', { token, password: pass });
+      await axios.post('https://sl-back.vercel.app/api/reset-password', {
+        token,
+        password: pass
+      });
+
       setMsg('Contraseña restablecida correctamente. Redirigiendo...');
 
-      // Si viene del correo, ir a login — si es desde perfil, volver al perfil
+      // Si viene del correo => login
+      // Si viene del perfil => perfil
       setTimeout(() => navigate(token ? '/login' : '/profile'), 1500);
 
     } catch (error) {
@@ -74,10 +80,6 @@ export default function ResetPassword() {
           font-weight: 600;
         }
 
-        .breadcrumb-custom a:hover {
-          text-decoration: underline;
-        }
-
         .form-label {
           font-weight: 600;
           color: #0a2540;
@@ -108,7 +110,7 @@ export default function ResetPassword() {
         }
 
         .btn-secondary {
-          background-color: #6c757d;
+          background: #0a2540;
           color: white;
           border: none;
           padding: 13px;
@@ -116,10 +118,11 @@ export default function ResetPassword() {
           border-radius: 12px;
           font-size: 1.1rem;
           font-weight: 600;
+          transition: all .2s ease;
         }
 
         .btn-secondary:hover {
-          background-color: #565e64;
+          background: #06182a;
         }
 
         .alert-msg {
@@ -133,7 +136,9 @@ export default function ResetPassword() {
         <div className="breadcrumb-custom">
           <Link to="/">Inicio</Link> &nbsp;/&nbsp;
           {!token && <><Link to="/profile">Perfil</Link> &nbsp;/&nbsp;</>}
-          <span style={{ fontWeight: 700, color: "#000" }}>Restablecer contraseña</span>
+          <span style={{ fontWeight: 700, color: "#000" }}>
+            Restablecer contraseña
+          </span>
         </div>
 
         <h2 className="pass-title mb-4">Restablecer contraseña</h2>
@@ -141,7 +146,7 @@ export default function ResetPassword() {
         {msg && <div className="alert alert-info alert-msg">{msg}</div>}
 
         <form onSubmit={restablecerPass}>
-          
+
           <div className="mb-3">
             <label className="form-label">Nueva contraseña</label>
             <input
@@ -166,12 +171,12 @@ export default function ResetPassword() {
             />
           </div>
 
-          {/* BOTONES: GUARDAR Y CANCELAR */}
-          <div className="d-flex gap-2 mt-3">
+          <div className="d-flex gap-2 mt-4">
             <button className="btn-reset" disabled={loading}>
               {loading ? 'Restableciendo...' : 'Guardar contraseña'}
             </button>
 
+            {/* Botón cancelar */}
             <button
               type="button"
               className="btn-secondary"
