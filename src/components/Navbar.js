@@ -12,8 +12,6 @@ export default function Navbar({ user, onLogout }) {
           letter-spacing: 0.5px;
           color: white !important;
           padding: 6px 14px;
-          border: 3px solid transparent;
-          border-radius: 8px;
           transition: all 0.25s ease-in-out;
         }
         .logo-brand:hover {
@@ -39,75 +37,70 @@ export default function Navbar({ user, onLogout }) {
         .nav-link:hover::after {
           width: 100%;
         }
+
+        @media (max-width: 768px) {
+          .main-menu {
+            gap: 15px !important;
+          }
+          .nav-link {
+            font-size: 1.15rem !important;
+          }
+        }
       `}</style>
 
-      <div className="container-fluid d-flex align-items-center">
-        
-        <Link className="navbar-brand logo-brand ms-3" to="/">
-          SportLike
-        </Link>
+      <div className="container-fluid d-flex align-items-center justify-content-between">
 
-        <button
-          className="navbar-toggler me-3"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navMenu"
-        >
-          <i className="bi bi-list" style={{ fontSize: '1.5rem' }}></i>
-        </button>
+        <Link className="navbar-brand logo-brand ms-2" to="/">SportLike</Link>
 
-        <div className="collapse navbar-collapse" id="navMenu">
-          
-          {/* MENÚ CENTRO RESPONSIVE — YA NO ES ABSOLUTE */}
-          <ul className="navbar-nav mx-auto d-flex flex-row gap-4">
-            <li className="nav-item">
-              <Link className="nav-link text-white fs-5" to="/">Inicio</Link>
+        {/* MENÚ CENTRAL SIEMPRE VISIBLE */}
+        <ul className="navbar-nav d-flex flex-row gap-4 main-menu mx-auto">
+          <li className="nav-item">
+            <Link className="nav-link text-white fs-5" to="/">Inicio</Link>
+          </li>
+          <li className="nav-item">
+            <Link className="nav-link text-white fs-5" to="/catalogo">Catálogo</Link>
+          </li>
+          <li className="nav-item">
+            <Link className="nav-link text-white fs-5" to="/promociones">Promociones</Link>
+          </li>
+        </ul>
+
+        <ul className="navbar-nav d-flex flex-row align-items-center me-3">
+          {user && (
+            <li className="nav-item me-3">
+              <Link className="nav-link text-white" to="/profile">
+                <i className="bi bi-person-circle" style={{ fontSize: '1.5rem' }}></i>
+              </Link>
             </li>
-            <li className="nav-item">
-              <Link className="nav-link text-white fs-5" to="/catalogo">Catálogo</Link>
+          )}
+
+          {!user && (
+            <li className="nav-item me-3">
+              <Link className="nav-link text-white" to="/login">
+                <i className="bi bi-box-arrow-in-right" style={{ fontSize: '1.5rem' }}></i>
+              </Link>
             </li>
-            <li className="nav-item">
-              <Link className="nav-link text-white fs-5" to="/promociones">Promociones</Link>
-            </li>
-          </ul>
+          )}
 
-          <ul className="navbar-nav ms-auto d-flex align-items-center me-4">
-            {user && (
-              <li className="nav-item me-2">
-                <Link className="nav-link text-white" to="/profile">
-                  <i className="bi bi-person-circle" style={{ fontSize: '1.5rem' }}></i>
-                </Link>
-              </li>
-            )}
-
-            {!user && (
-              <li className="nav-item me-3">
-                <Link className="nav-link text-white" to="/login">
-                  <i className="bi bi-box-arrow-in-right" style={{ fontSize: '1.5rem' }}></i>
-                </Link>
-              </li>
-            )}
-
-            {user && (
-              <li className="nav-item me-3">
-                <button className="btn btn-link nav-link text-white" onClick={onLogout}>
-                  <i className="bi bi-box-arrow-right" style={{ fontSize: '1.5rem' }}></i>
-                </button>
-              </li>
-            )}
-
-            <li className="nav-item dropdown">
-              <button className="btn btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
-                <i className="bi bi-list" style={{ fontSize: '1.5rem' }}></i>
+          {user && (
+            <li className="nav-item me-3">
+              <button className="btn btn-link nav-link text-white" onClick={onLogout}>
+                <i className="bi bi-box-arrow-right" style={{ fontSize: '1.5rem' }}></i>
               </button>
-              <ul className="dropdown-menu dropdown-menu-end">
-                <li><Link className="dropdown-item fs-6" to="/configuracion">Configuración</Link></li>
-                <li><Link className="dropdown-item fs-6" to="/ayuda">Ayuda</Link></li>
-              </ul>
             </li>
-          </ul>
+          )}
 
-        </div>
+          <li className="nav-item dropdown">
+            <button className="btn btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
+              <i className="bi bi-list" style={{ fontSize: '1.5rem' }}></i>
+            </button>
+            <ul className="dropdown-menu dropdown-menu-end">
+              <li><Link className="dropdown-item fs-6" to="/configuracion">Configuración</Link></li>
+              <li><Link className="dropdown-item fs-6" to="/ayuda">Ayuda</Link></li>
+            </ul>
+          </li>
+        </ul>
+
       </div>
     </nav>
   );
