@@ -99,13 +99,27 @@ export default function ResetPassword() {
           border-radius: 12px;
           font-size: 1.15rem;
           font-weight: 600;
-          margin-top: 18px;
           transition: all 0.25s ease;
         }
 
         .btn-reset:hover {
           transform: translateY(-2px);
           box-shadow: 0 8px 20px rgba(30, 144, 255, 0.35);
+        }
+
+        .btn-secondary {
+          background-color: #6c757d;
+          color: white;
+          border: none;
+          padding: 13px;
+          width: 100%;
+          border-radius: 12px;
+          font-size: 1.1rem;
+          font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+          background-color: #565e64;
         }
 
         .alert-msg {
@@ -152,9 +166,20 @@ export default function ResetPassword() {
             />
           </div>
 
-          <button className="btn-reset" disabled={loading}>
-            {loading ? 'Restableciendo...' : 'Guardar contraseña'}
-          </button>
+          {/* BOTONES: GUARDAR Y CANCELAR */}
+          <div className="d-flex gap-2 mt-3">
+            <button className="btn-reset" disabled={loading}>
+              {loading ? 'Restableciendo...' : 'Guardar contraseña'}
+            </button>
+
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => navigate('/profile')}
+            >
+              Cancelar
+            </button>
+          </div>
 
         </form>
       </div>
