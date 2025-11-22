@@ -36,18 +36,18 @@ export default function UpdateProfileForm({ user }) {
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '90vh' }}>
+    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '90vh', backgroundColor: '#f5f6fa' }}>
       <style>{`
         .card-update {
           width: 100%;
           max-width: 500px;
           background: #ffffff;
           border-radius: 14px;
-          padding: 40px 35px;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+          padding: 45px 40px;
+          box-shadow: 0 12px 35px rgba(0,0,0,0.18);
         }
         .card-title {
-          font-size: 1.8rem;
+          font-size: 1.85rem;
           font-weight: 700;
           color: #0a1a2f;
           text-align: center;
@@ -57,29 +57,35 @@ export default function UpdateProfileForm({ user }) {
           color: #0a1a2f;
         }
         .form-input {
-          border-radius: 10px !important;
-          padding: 10px 12px !important;
-          border: 1px solid #d2d2d2;
+          border-radius: 12px !important;
+          padding: 12px 14px !important;
+          border: 1px solid #cfcfcf;
           font-size: 1rem;
+          transition: border-color 0.3s;
+        }
+        .form-input:focus {
+          border-color: #ff6b6b;
+          box-shadow: 0 0 5px rgba(255,107,107,0.4);
+          outline: none;
         }
         .btn-update {
-          background: #ff6b6b;
+          background: linear-gradient(135deg, #ff6b6b, #ff4757);
           color: white;
           border: none;
-          padding: 12px;
+          padding: 14px;
           width: 100%;
-          border-radius: 10px;
-          font-size: 1.1rem;
-          margin-top: 15px;
+          border-radius: 12px;
+          font-size: 1.15rem;
+          margin-top: 18px;
           font-weight: 600;
           transition: all 0.3s ease;
         }
         .btn-update:hover {
-          background: #ff4757;
+          background: linear-gradient(135deg, #ff4757, #ff6b6b);
         }
         .breadcrumb {
           font-size: 0.9rem;
-          margin-bottom: 20px;
+          margin-bottom: 25px;
         }
         .breadcrumb a {
           color: #1e90ff;
@@ -89,7 +95,7 @@ export default function UpdateProfileForm({ user }) {
           text-decoration: underline;
         }
         .alert-msg {
-          margin-top: 10px;
+          margin-top: 12px;
         }
       `}</style>
 
@@ -107,6 +113,7 @@ export default function UpdateProfileForm({ user }) {
             <label className="form-label">Nombre</label>
             <input
               className="form-control form-input"
+              placeholder="Tu nombre"
               value={form.nombre}
               onChange={(e) => setForm({ ...form, nombre: e.target.value })}
               required
@@ -117,6 +124,7 @@ export default function UpdateProfileForm({ user }) {
             <label className="form-label">Apellido P</label>
             <input
               className="form-control form-input"
+              placeholder="Apellido paterno"
               value={form.apellidoP}
               onChange={(e) => setForm({ ...form, apellidoP: e.target.value })}
               required
@@ -127,6 +135,7 @@ export default function UpdateProfileForm({ user }) {
             <label className="form-label">Apellido M</label>
             <input
               className="form-control form-input"
+              placeholder="Apellido materno"
               value={form.apellidoM}
               onChange={(e) => setForm({ ...form, apellidoM: e.target.value })}
             />
@@ -136,6 +145,7 @@ export default function UpdateProfileForm({ user }) {
             <label className="form-label">Teléfono</label>
             <input
               className="form-control form-input"
+              placeholder="Número de teléfono"
               value={form.telefono}
               onChange={(e) => setForm({ ...form, telefono: e.target.value })}
             />
@@ -145,6 +155,7 @@ export default function UpdateProfileForm({ user }) {
             <label className="form-label">Usuario</label>
             <input
               className="form-control form-input"
+              placeholder="Usuario de la cuenta"
               value={form.usuario}
               onChange={(e) => setForm({ ...form, usuario: e.target.value })}
               required
