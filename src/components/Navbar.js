@@ -4,7 +4,24 @@ import { Link } from 'react-router-dom';
 export default function Navbar({ user, onLogout }) {
   return (
     <nav className="navbar navbar-expand-lg bg-primary-custom">
+
       <style>{`
+        .logo-brand {
+          font-size: 2rem;
+          font-weight: 900;
+          letter-spacing: 1px;
+          color: white !important;
+          padding: 6px 14px;
+          border: 3px solid transparent;
+          border-radius: 8px;
+          transition: all 0.25s ease-in-out;
+        }
+        .logo-brand:hover {
+          color: #fff700 !important;
+          border-color: #fff700;
+          transform: translateY(-2px);
+          text-shadow: 0 0 8px rgba(255, 247, 0, 0.7);
+        }
         .nav-link {
           position: relative;
           padding-bottom: 5px;
@@ -29,12 +46,10 @@ export default function Navbar({ user, onLogout }) {
       `}</style>
 
       <div className="container-fluid d-flex align-items-center">
-        {/* IZQUIERDA */}
-        <Link className="navbar-brand text-white fs-4 ms-3" to="/">
+        <Link className="navbar-brand logo-brand ms-3" to="/">
           SportLike
         </Link>
 
-        {/* BOTÓN HAMBURGUESA */}
         <button
           className="navbar-toggler me-3"
           type="button"
@@ -45,7 +60,6 @@ export default function Navbar({ user, onLogout }) {
         </button>
 
         <div className="collapse navbar-collapse" id="navMenu">
-          {/* CENTRO */}
           <ul className="navbar-nav position-absolute start-50 translate-middle-x d-flex flex-row gap-4">
             <li className="nav-item">
               <Link className="nav-link text-white fs-5" to="/">Inicio</Link>
@@ -58,9 +72,7 @@ export default function Navbar({ user, onLogout }) {
             </li>
           </ul>
 
-          {/* DERECHA */}
           <ul className="navbar-nav ms-auto d-flex align-items-center me-4">
-            {/* ICONO DE USUARIO */}
             {user && (
               <li className="nav-item me-2">
                 <Link className="nav-link text-white" to="/profile">
@@ -69,7 +81,6 @@ export default function Navbar({ user, onLogout }) {
               </li>
             )}
 
-            {/* LOGIN / LOGOUT */}
             {!user && (
               <li className="nav-item me-3">
                 <Link className="nav-link text-white" to="/login">
@@ -77,6 +88,7 @@ export default function Navbar({ user, onLogout }) {
                 </Link>
               </li>
             )}
+
             {user && (
               <li className="nav-item me-3">
                 <button className="btn btn-link nav-link text-white" onClick={onLogout}>
@@ -85,7 +97,6 @@ export default function Navbar({ user, onLogout }) {
               </li>
             )}
 
-            {/* MENÚ ADICIONAL */}
             <li className="nav-item dropdown">
               <button className="btn btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
                 <i className="bi bi-list" style={{ fontSize: '1.5rem' }}></i>
