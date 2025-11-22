@@ -42,53 +42,59 @@ export default function UpdateProfileForm({ user }) {
     <div
       className="d-flex justify-content-center align-items-center"
       style={{
-        minHeight: "90vh",
-        background: "linear-gradient(135deg, #f0f4ff, #ffffff)"
+        minHeight: '90vh',
+        background: 'linear-gradient(135deg, #eef3ff, #ffffff)'
       }}
     >
-
       <style>{`
         .update-card {
           width: 100%;
-          max-width: 550px;
+          max-width: 520px;
           background: #ffffff;
           border-radius: 16px;
           padding: 40px 35px;
           box-shadow: 0 15px 35px rgba(0,0,0,0.12);
         }
+
         .update-title {
           font-size: 1.9rem;
           font-weight: 700;
           color: #0a2540;
           text-align: center;
         }
+
         .breadcrumb-custom {
           font-size: 0.95rem;
           font-weight: 500;
           margin-bottom: 25px;
           color: #506580;
         }
+
         .breadcrumb-custom a {
           color: #1a73e8;
           text-decoration: none;
           font-weight: 600;
         }
+
         .breadcrumb-custom a:hover {
           text-decoration: underline;
         }
+
         .form-label {
           font-weight: 600;
           color: #0a2540;
         }
+
         .form-input {
           border-radius: 12px !important;
           padding: 11px 14px !important;
           border: 1px solid #cfd8e3;
           font-size: 1rem;
         }
+
         .btn-update {
           background: linear-gradient(135deg, #ff6b6b, #ff4757);
-          color: #ffffff;
+          color: white;
           border: none;
           padding: 13px;
           width: 100%;
@@ -98,10 +104,12 @@ export default function UpdateProfileForm({ user }) {
           margin-top: 18px;
           transition: all 0.25s ease;
         }
+
         .btn-update:hover {
           transform: translateY(-2px);
           box-shadow: 0 8px 20px rgba(255, 71, 87, 0.35);
         }
+
         .alert-msg {
           margin-top: 12px;
         }
@@ -111,8 +119,11 @@ export default function UpdateProfileForm({ user }) {
 
         {/* MIGAS DE PAN */}
         <div className="breadcrumb-custom">
+          <Link to="/">Inicio</Link> &nbsp;/&nbsp;
           <Link to="/profile">Perfil</Link> &nbsp;/&nbsp;
-          <span style={{ color: "#000", fontWeight: 700 }}>Actualizar información</span>
+          <span style={{ fontWeight: 700, color: "#000" }}>
+            Actualizar información
+          </span>
         </div>
 
         <h2 className="update-title mb-4">Actualizar información</h2>
@@ -120,7 +131,7 @@ export default function UpdateProfileForm({ user }) {
         {msg && <div className="alert alert-info alert-msg">{msg}</div>}
 
         <form onSubmit={updateProfile}>
-          
+
           <div className="mb-3">
             <label className="form-label">Nombre</label>
             <input
@@ -170,9 +181,8 @@ export default function UpdateProfileForm({ user }) {
           </div>
 
           <button className="btn-update" disabled={loading}>
-            {loading ? "Actualizando..." : "Guardar cambios"}
+            {loading ? 'Actualizando...' : 'Guardar cambios'}
           </button>
-
         </form>
       </div>
     </div>
