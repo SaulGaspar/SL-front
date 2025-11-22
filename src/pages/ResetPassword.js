@@ -15,7 +15,6 @@ export default function ResetPassword() {
   const restablecerPass = async (e) => {
     e.preventDefault();
     setMsg('');
-
     if (pass !== confirmPass) {
       setMsg('Las contraseñas no coinciden');
       return;
@@ -34,7 +33,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '90vh' }}>
+    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '90vh', background: '#f5f7fa' }}>
       <style>{`
         .card-pass {
           width: 100%;
