@@ -7,18 +7,17 @@ export default function Navbar({ user, onLogout }) {
 
       <style>{`
         .logo-brand {
-          font-size: 2rem;
+          font-size: 2.4rem;
           font-weight: 900;
-          letter-spacing: 1px;
+          letter-spacing: 2px;
           color: white !important;
           padding: 6px 14px;
-          border: 3px solid transparent;
-          border-radius: 8px;
+          border: none;
           transition: all 0.25s ease-in-out;
+          font-family: 'Impact', 'Arial Black', sans-serif;
         }
         .logo-brand:hover {
           color: #fff700 !important;
-          border-color: #fff700;
           transform: translateY(-2px);
           text-shadow: 0 0 8px rgba(255, 247, 0, 0.7);
         }
