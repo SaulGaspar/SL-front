@@ -91,6 +91,7 @@ export default function Navbar({ user, onLogout }) {
 
       <div className="container-fluid">
 
+        {/* -------------------- MOBILE ROW -------------------- */}
         <div className="mobile-row">
           <Link className="logo-brand" to="/">SportLike</Link>
 
@@ -120,6 +121,7 @@ export default function Navbar({ user, onLogout }) {
               </button>
             )}
 
+            {/* 🍔 HAMBURGUESA MOBILE */}
             <button
               className="btn btn-link text-white p-0"
               onClick={() => setMenuOpen(!menuOpen)}
@@ -129,6 +131,7 @@ export default function Navbar({ user, onLogout }) {
           </div>
         </div>
 
+        {/* -------------------- MENÚ HAMBURGUESA COMPARTIDO -------------------- */}
         {menuOpen && (
           <div className="hamburger-menu">
             <Link className="hamburger-item" to="/">Inicio</Link>
@@ -139,12 +142,14 @@ export default function Navbar({ user, onLogout }) {
           </div>
         )}
 
+        {/* -------------------- MOBILE MENU INFERIOR -------------------- */}
         <div className="mobile-menu">
           <Link className="nav-link text-white fs-5" to="/">Inicio</Link>
           <Link className="nav-link text-white fs-5" to="/catalogo">Catálogo</Link>
           <Link className="nav-link text-white fs-5" to="/promociones">Promociones</Link>
         </div>
 
+        {/* -------------------- DESKTOP NAV -------------------- */}
         <Link className="navbar-brand logo-brand ms-2 desktop-only" to="/">SportLike</Link>
 
         <ul className="navbar-nav d-flex flex-row gap-4 mx-auto desktop-only">
@@ -159,7 +164,9 @@ export default function Navbar({ user, onLogout }) {
           </li>
         </ul>
 
+        {/* -------------------- ICONOS DESKTOP + HAMBURGUESA -------------------- */}
         <ul className="navbar-nav d-flex flex-row align-items-center me-3 desktop-only">
+
           {user && (
             <li className="nav-item me-3">
               <Link className="nav-link text-white" to="/profile">
@@ -183,6 +190,17 @@ export default function Navbar({ user, onLogout }) {
               </button>
             </li>
           )}
+
+          {/* 🍔 HAMBURGUESA DESKTOP */}
+          <li className="nav-item">
+            <button
+              className="btn btn-link nav-link text-white"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              <i className="bi bi-list" style={{ fontSize: "1.7rem" }}></i>
+            </button>
+          </li>
+
         </ul>
 
       </div>
