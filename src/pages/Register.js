@@ -22,9 +22,10 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
+  const API_URL = "https://sl-back.vercel.app"; // URL directa del backend
+
   const validar = () => {
     let e = {};
-
     if (!form.nombre.trim() || form.nombre.length < 2) e.nombre = "El nombre debe contener al menos 2 letras.";
     if (!form.apellidoP.trim()) e.apellidoP = "El apellido paterno es obligatorio.";
     if (!form.correo.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.correo = "El correo no es válido.";
@@ -39,25 +40,28 @@ export default function Register() {
 
   async function submit(e) {
     e.preventDefault();
+    setMsg('');
     if (!validar()) return;
 
     try {
-      await axios.post(
-        (process.env.REACT_APP_API_URL || 'http://localhost:5000') + '/api/register',
-        form
-      );
-
+      await axios.post(`${API_URL}/api/register`, form);
       setMsg('Registrado correctamente. Revisa tu correo para verificar tu cuenta.');
       setTimeout(() => navigate('/login'), 2000);
 
-    } catch (e) {
-      setMsg(e.response?.data?.error || 'Error durante el registro.');
+    } catch (error) {
+      if (error.response) {
+        setMsg(error.response.data.error || 'Error en el servidor.');
+      } else if (error.request) {
+        setMsg('No se pudo conectar con el servidor. Revisa tu conexión.');
+      } else {
+        setMsg('Ocurrió un error inesperado.');
+      }
+      console.error(error);
     }
   }
 
   return (
     <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '90vh' }}>
-
       <style>{`
         .register-card {
           width: 100%;
@@ -111,7 +115,6 @@ export default function Register() {
 
         <form onSubmit={submit}>
 
-          {/* NOMBRE Y APELLIDO P */}
           <div className="row mb-3">
             <div className="col">
               <label className="form-label">Nombre</label>
@@ -136,7 +139,6 @@ export default function Register() {
             </div>
           </div>
 
-          {/* APELLIDO M */}
           <div className="mb-3">
             <label className="form-label">Apellido materno</label>
             <input
@@ -147,7 +149,6 @@ export default function Register() {
             />
           </div>
 
-          {/* FECHA */}
           <div className="mb-3">
             <label className="form-label">Fecha de nacimiento</label>
             <input
@@ -158,7 +159,6 @@ export default function Register() {
             />
           </div>
 
-          {/* CORREO */}
           <div className="mb-3">
             <label className="form-label">Correo electrónico</label>
             <input
@@ -171,7 +171,6 @@ export default function Register() {
             {errors.correo && <div className="error-text">{errors.correo}</div>}
           </div>
 
-          {/* TELÉFONO */}
           <div className="mb-3">
             <label className="form-label">Teléfono</label>
             <input
@@ -183,7 +182,6 @@ export default function Register() {
             {errors.telefono && <div className="error-text">{errors.telefono}</div>}
           </div>
 
-          {/* USUARIO */}
           <div className="mb-3">
             <label className="form-label">Usuario</label>
             <input
@@ -195,7 +193,6 @@ export default function Register() {
             {errors.usuario && <div className="error-text">{errors.usuario}</div>}
           </div>
 
-          {/* CONTRASEÑA */}
           <div className="mb-3">
             <label className="form-label">Contraseña</label>
             <input
@@ -208,7 +205,6 @@ export default function Register() {
             {errors.password && <div className="error-text">{errors.password}</div>}
           </div>
 
-          {/* CONFIRMAR CONTRASEÑA */}
           <div className="mb-2">
             <label className="form-label">Confirmar contraseña</label>
             <input
@@ -221,7 +217,6 @@ export default function Register() {
             {errors.password2 && <div className="error-text">{errors.password2}</div>}
           </div>
 
-          {/* VER CONTRASEÑA */}
           <div className="form-check mb-3">
             <input
               className="form-check-input"
