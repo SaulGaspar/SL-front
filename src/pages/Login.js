@@ -10,7 +10,7 @@ export default function Login({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
-  const API_URL = process.env.REACT_APP_API_URL; // <-- solo la variable de entorno
+  const API_URL = "https://sl-back.vercel.app"; // URL directa del backend
 
   const validar = () => {
     const e = {};
@@ -24,6 +24,7 @@ export default function Login({ onLogin }) {
 
   async function submit(e) {
     e.preventDefault();
+    setErr('');
     if (!validar()) return;
 
     try {
@@ -33,7 +34,15 @@ export default function Login({ onLogin }) {
       onLogin && onLogin(res.data.user);
       navigate('/');
     } catch (error) {
-      setErr(error.response?.data?.error || 'Error de conexión con el servidor.');
+      // Mejor manejo de errores
+      if (error.response) {
+        setErr(error.response.data.error || 'Error en el servidor.');
+      } else if (error.request) {
+        setErr('No se pudo conectar con el servidor. Revisa tu conexión.');
+      } else {
+        setErr('Ocurrió un error inesperado.');
+      }
+      console.error(error);
     }
   }
 
