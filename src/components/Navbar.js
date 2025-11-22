@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 export default function Navbar({ user, onLogout }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <nav className="navbar navbar-expand-lg bg-primary-custom">
 
@@ -17,6 +19,26 @@ export default function Navbar({ user, onLogout }) {
         .logo-brand:hover {
           color: #fff700 !important;
           text-shadow: 0 0 8px rgba(255, 247, 0, 0.7);
+        }
+
+        .hamburger-menu {
+          position: absolute;
+          top: 60px;
+          right: 10px;
+          background: #1b1b1b;
+          padding: 15px 20px;
+          border-radius: 10px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          z-index: 99;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .hamburger-item {
+          color: white;
+          font-size: 1.1rem;
+          text-decoration: none;
         }
 
         @media (max-width: 768px) {
@@ -73,6 +95,7 @@ export default function Navbar({ user, onLogout }) {
           <Link className="logo-brand" to="/">SportLike</Link>
 
           <div className="d-flex align-items-center gap-3">
+
             <Link className="text-white" to="/search">
               <i className="bi bi-search" style={{ fontSize: "1.5rem" }}></i>
             </Link>
@@ -96,8 +119,25 @@ export default function Navbar({ user, onLogout }) {
                 <i className="bi bi-box-arrow-right" style={{ fontSize: "1.5rem" }}></i>
               </button>
             )}
+
+            <button
+              className="btn btn-link text-white p-0"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              <i className="bi bi-list" style={{ fontSize: "1.7rem" }}></i>
+            </button>
           </div>
         </div>
+
+        {menuOpen && (
+          <div className="hamburger-menu">
+            <Link className="hamburger-item" to="/">Inicio</Link>
+            <Link className="hamburger-item" to="/catalogo">Catálogo</Link>
+            <Link className="hamburger-item" to="/promociones">Promociones</Link>
+            <Link className="hamburger-item" to="/ayuda">Ayuda</Link>
+            <Link className="hamburger-item" to="/configuracion">Configuración</Link>
+          </div>
+        )}
 
         <div className="mobile-menu">
           <Link className="nav-link text-white fs-5" to="/">Inicio</Link>
