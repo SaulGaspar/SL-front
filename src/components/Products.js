@@ -1,7 +1,16 @@
-// products.js
+import PlayeraImg from '../assets/PLAYERA.jpg'; // importa tu imagen local
+
 const PRODUCTS = [
-  { id: 1, title: "Playera Pro Fit", price: 299, type: "Ropa", sizes: ["CH","M","G"], colors: ["Negro","Blanco"], 
-    desc: "Playera deportiva ligera y de secado rápido. Ideal para entrenamientos intensos y uso diario.", img: "https://picsum.photos/seed/p1/800/600" },
+   { 
+    id: 1, 
+    title: "Playera Pro Fit", 
+    price: 299, 
+    type: "Ropa", 
+    sizes: ["CH","M","G"], 
+    colors: ["Negro","Blanco"], 
+    desc: "Playera deportiva ligera y de secado rápido. Ideal para entrenamientos intensos y uso diario.", 
+    img: "https://i.ibb.co/YFxjtLPx/PLAYERA.jpg" // URL directa de la imagen
+  },
   { id: 2, title: "Tenis Runner X", price: 1599, type: "Calzado", sizes: ["M","G"], colors: ["Azul","Negro"], 
     desc: "Tenis de running con amortiguación avanzada y suela de alta tracción para largas distancias.", img: "https://picsum.photos/seed/p2/800/600" },
   { id: 3, title: "Shorts Speed", price: 249, type: "Ropa", sizes: ["CH","M","G"], colors: ["Rojo","Negro"], 

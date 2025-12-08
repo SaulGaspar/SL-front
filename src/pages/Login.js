@@ -10,7 +10,7 @@ export default function Login({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
-  const API_URL = "https://sl-back.vercel.app"; // URL directa del backend
+  const API_URL = "https://sl-back.vercel.app";
 
   const validar = () => {
     const e = {};
@@ -24,25 +24,30 @@ export default function Login({ onLogin }) {
 
   async function submit(e) {
     e.preventDefault();
-    setErr('');
+    setErr(''); // Limpiar mensaje anterior
+
     if (!validar()) return;
 
     try {
       const res = await axios.post(`${API_URL}/api/login`, { usuario, password });
+
+      // Si llega aquí, login correcto
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       onLogin && onLogin(res.data.user);
       navigate('/');
+
     } catch (error) {
-      // Mejor manejo de errores
-      if (error.response) {
-        setErr(error.response.data.error || 'Error en el servidor.');
+      // Manejo de errores limpio
+      if (error.response?.data?.error) {
+        setErr(error.response.data.error); // Mensaje bonito para el usuario
       } else if (error.request) {
         setErr('No se pudo conectar con el servidor. Revisa tu conexión.');
       } else {
         setErr('Ocurrió un error inesperado.');
       }
-      console.error(error);
+
+      console.error("Login error:", error.response?.data?.error || error.message);
     }
   }
 
@@ -63,6 +68,7 @@ export default function Login({ onLogin }) {
 
       <div className="login-card">
         <h2 className="login-title mb-4">Iniciar sesión</h2>
+
         {err && <div className="alert alert-danger">{err}</div>}
 
         <form onSubmit={submit}>

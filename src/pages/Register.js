@@ -20,19 +20,27 @@ export default function Register() {
   const [errors, setErrors] = useState({});
   const [msg, setMsg] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
+  const [acepta, setAcepta] = useState(false);
 
-  const API_URL = "https://sl-back.vercel.app"; // URL directa del backend
+  const navigate = useNavigate();
+  const API_URL = "https://sl-back.vercel.app";
 
   const validar = () => {
     let e = {};
+
     if (!form.nombre.trim() || form.nombre.length < 2) e.nombre = "El nombre debe contener al menos 2 letras.";
     if (!form.apellidoP.trim()) e.apellidoP = "El apellido paterno es obligatorio.";
     if (!form.correo.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.correo = "El correo no es válido.";
     if (!/^\d{10}$/.test(form.telefono)) e.telefono = "El teléfono debe tener 10 dígitos.";
     if (!form.usuario || form.usuario.length < 4) e.usuario = "El usuario debe tener mínimo 4 caracteres.";
-    if (form.password.length < 8) e.password = "La contraseña debe tener mínimo 8 caracteres.";
+
+    // Validación de contraseña segura
+    const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passRegex.test(form.password)) e.password = "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.";
+
     if (form.password !== form.password2) e.password2 = "Las contraseñas no coinciden.";
+
+    if (!acepta) e.acepta = "Debes aceptar los términos y condiciones.";
 
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -108,13 +116,10 @@ export default function Register() {
       `}</style>
 
       <div className="register-card">
-
         <h2 className="register-title mb-4">Crear cuenta</h2>
-
         {msg && <div className="alert alert-info">{msg}</div>}
 
         <form onSubmit={submit}>
-
           <div className="row mb-3">
             <div className="col">
               <label className="form-label">Nombre</label>
@@ -126,7 +131,6 @@ export default function Register() {
               />
               {errors.nombre && <div className="error-text">{errors.nombre}</div>}
             </div>
-
             <div className="col">
               <label className="form-label">Apellido paterno</label>
               <input
@@ -230,14 +234,27 @@ export default function Register() {
             </label>
           </div>
 
-          <button className="register-btn">Registrarme</button>
+          {/* NUEVO CHECKBOX DE TÉRMINOS Y CONDICIONES */}
+          <div className="form-check mb-3">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              checked={acepta}
+              onChange={() => setAcepta(!acepta)}
+              id="aceptaTC"
+            />
+            <label className="form-check-label" htmlFor="aceptaTC">
+              Acepto los <Link to="/terminos">Términos y Condiciones</Link> y el <Link to="/aviso-privacidad">Aviso de Privacidad</Link>.
+            </label>
+            {errors.acepta && <div className="error-text">{errors.acepta}</div>}
+          </div>
 
+          <button className="register-btn">Registrarme</button>
         </form>
 
         <div className="text-center mt-3">
           ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
         </div>
-
       </div>
     </div>
   );

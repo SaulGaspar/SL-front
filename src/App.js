@@ -8,6 +8,9 @@ import MiniCart from "./components/MiniCart";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
+import AvisoPrivacidad from "./pages/AvisoPrivacidad";
+import Terminos from "./pages/Terminos";
+
 import Home from "./pages/Home";
 import Catalogo from "./pages/Catalogo";
 import ProductoDetalle from "./pages/ProductoDetalle";
@@ -60,6 +63,10 @@ export default function App() {
             <Route path="/producto/:id" element={<ProductoDetalle />} />
             <Route path="/promociones" element={<Promociones />} />
             <Route path="/carrito" element={<Carrito />} />
+
+            {/* nuevas rutas */}
+            <Route path="/aviso-privacidad" element={<AvisoPrivacidad />} />
+            <Route path="/terminos" element={<Terminos />} />
 
             {/* Pago solo si hay token */}
             <Route
