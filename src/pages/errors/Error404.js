@@ -39,23 +39,49 @@ export default function Error404() {
         </p>
         
         {/* Botón principal */}
-        <div className="mt-8 md:mt-12">
-          <Link
-            to="/"
-            onClick={handleClick}
-            className="inline-flex items-center justify-center gap-3 px-8 py-4 text-white font-bold uppercase tracking-wider text-sm rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
-            style={{
-              background: "linear-gradient(135deg, #0a1a2f 0%, #061224 100%)"
-            }}
-          >
-            {loading ? (
-              <Loader2 className="animate-spin w-5 h-5" />
-            ) : (
-              <Home className="w-5 h-5" />
-            )}
-            <span>Volver al inicio</span>
-          </Link>
-        </div>
+        <Link
+          to="/"
+          onClick={handleClick}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "12px",
+            padding: "20px 48px",
+            background: "linear-gradient(135deg, #0a1a2f 0%, #061224 100%)",
+            color: "white",
+            fontWeight: "800",
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            fontSize: "16px",
+            borderRadius: "9999px",
+            boxShadow: "0 12px 35px rgba(10, 26, 47, 0.6)",
+            textDecoration: "none",
+            transition: "all 0.3s ease",
+            marginTop: "48px"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "scale(1.05)";
+            e.currentTarget.style.boxShadow = "0 18px 45px rgba(10, 26, 47, 0.85)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "scale(1)";
+            e.currentTarget.style.boxShadow = "0 12px 35px rgba(10, 26, 47, 0.6)";
+          }}
+          onMouseDown={(e) => {
+            e.currentTarget.style.transform = "scale(0.95)";
+          }}
+          onMouseUp={(e) => {
+            e.currentTarget.style.transform = "scale(1.05)";
+          }}
+        >
+          {loading ? (
+            <Loader2 style={{ width: "24px", height: "24px" }} className="animate-spin" />
+          ) : (
+            <Home style={{ width: "24px", height: "24px" }} />
+          )}
+          <span>Volver al inicio</span>
+        </Link>
       </div>
     </div>
   );
