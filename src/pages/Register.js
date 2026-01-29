@@ -3,7 +3,6 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function Register() {
-
   const [form, setForm] = useState({
     nombre: '',
     apellidoP: '',
@@ -16,7 +15,6 @@ export default function Register() {
     password2: '',
     rol: 'cliente'
   });
-
   const [errors, setErrors] = useState({});
   const [msg, setMsg] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -35,7 +33,6 @@ export default function Register() {
 
     const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passRegex.test(form.password)) e.password = "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.";
-
     if (form.password !== form.password2) e.password2 = "Las contraseñas no coinciden.";
     if (!acepta) e.acepta = "Debes aceptar los términos y condiciones.";
 
@@ -53,13 +50,9 @@ export default function Register() {
       setMsg('Registrado correctamente. Revisa tu correo para verificar tu cuenta.');
       setTimeout(() => navigate('/login'), 2000);
     } catch (error) {
-      if (error.response) {
-        setMsg(error.response.data.error || 'Error en el servidor.');
-      } else if (error.request) {
-        setMsg('No se pudo conectar con el servidor. Revisa tu conexión.');
-      } else {
-        setMsg('Ocurrió un error inesperado.');
-      }
+      if (error.response) setMsg(error.response.data.error || 'Error en el servidor.');
+      else if (error.request) setMsg('No se pudo conectar con el servidor.');
+      else setMsg('Ocurrió un error inesperado.');
       console.error(error);
     }
   }
@@ -67,34 +60,16 @@ export default function Register() {
   return (
     <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '90vh' }}>
       <style>{`
-        .register-card {
-          width: 100%;
-          max-width: 540px;
-          background: #ffffff;
-          border-radius: 14px;
-          padding: 35px 30px;
-          box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-        }
+        .register-card { width: 100%; max-width: 540px; background: #ffffff; border-radius: 14px; padding: 35px 30px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
         .register-title { font-size: 1.9rem; font-weight: 700; color: #0a1a2f; text-align: center; }
         .form-label { font-weight: 600; color: #0a1a2f; }
-        .register-input { border-radius: 10px !important; padding: 10px 40px 10px 12px !important; border: 1px solid #d2d2d2; font-size: 1rem; width: 100%; }
+        .register-input { border-radius: 10px !important; padding: 10px 12px !important; border: 1px solid #d2d2d2; font-size: 1rem; height: 45px; }
         .register-btn { background-color: #0a1a2f; color: white; border: none; padding: 12px; width: 100%; border-radius: 10px; font-size: 1.1rem; margin-top: 10px; }
         .register-btn:hover { background-color: #07121b; }
         .error-text { color: #cc0000; font-size: 0.9rem; margin-top: 3px; }
 
-        /* Icono de mostrar/ocultar contraseña */
-        .password-wrapper { position: relative; width: 100%; margin-bottom: 10px; }
-        .password-toggle {
-          position: absolute;
-          top: 50%;
-          right: 12px;
-          transform: translateY(-50%);
-          background: none;
-          border: none;
-          cursor: pointer;
-          font-size: 1.2rem;
-          color: #555;
-        }
+        .password-container { position: relative; display: flex; align-items: center; }
+        .password-toggle { position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: #555; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; height: 100%; }
       `}</style>
 
       <div className="register-card">
@@ -105,131 +80,70 @@ export default function Register() {
           <div className="row mb-3">
             <div className="col">
               <label className="form-label">Nombre</label>
-              <input
-                className="form-control register-input"
-                value={form.nombre}
-                onChange={e => setForm({ ...form, nombre: e.target.value })}
-                placeholder="Tu nombre"
-              />
+              <input className="form-control register-input" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} placeholder="Tu nombre"/>
               {errors.nombre && <div className="error-text">{errors.nombre}</div>}
             </div>
             <div className="col">
               <label className="form-label">Apellido paterno</label>
-              <input
-                className="form-control register-input"
-                value={form.apellidoP}
-                onChange={e => setForm({ ...form, apellidoP: e.target.value })}
-                placeholder="Apellido paterno"
-              />
+              <input className="form-control register-input" value={form.apellidoP} onChange={e => setForm({ ...form, apellidoP: e.target.value })} placeholder="Apellido paterno"/>
               {errors.apellidoP && <div className="error-text">{errors.apellidoP}</div>}
             </div>
           </div>
 
           <div className="mb-3">
             <label className="form-label">Apellido materno</label>
-            <input
-              className="form-control register-input"
-              value={form.apellidoM}
-              onChange={e => setForm({ ...form, apellidoM: e.target.value })}
-              placeholder="Apellido materno"
-            />
+            <input className="form-control register-input" value={form.apellidoM} onChange={e => setForm({ ...form, apellidoM: e.target.value })} placeholder="Apellido materno"/>
           </div>
 
           <div className="mb-3">
             <label className="form-label">Fecha de nacimiento</label>
-            <input
-              type="date"
-              className="form-control register-input"
-              value={form.fechaNac}
-              onChange={e => setForm({ ...form, fechaNac: e.target.value })}
-            />
+            <input type="date" className="form-control register-input" value={form.fechaNac} onChange={e => setForm({ ...form, fechaNac: e.target.value })}/>
           </div>
 
           <div className="mb-3">
             <label className="form-label">Correo electrónico</label>
-            <input
-              type="email"
-              className="form-control register-input"
-              value={form.correo}
-              onChange={e => setForm({ ...form, correo: e.target.value })}
-              placeholder="ejemplo@gmail.com"
-            />
+            <input type="email" className="form-control register-input" value={form.correo} onChange={e => setForm({ ...form, correo: e.target.value })} placeholder="ejemplo@gmail.com"/>
             {errors.correo && <div className="error-text">{errors.correo}</div>}
           </div>
 
           <div className="mb-3">
             <label className="form-label">Teléfono</label>
-            <input
-              className="form-control register-input"
-              value={form.telefono}
-              onChange={e => setForm({ ...form, telefono: e.target.value })}
-              placeholder="10 dígitos"
-            />
+            <input className="form-control register-input" value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })} placeholder="10 dígitos"/>
             {errors.telefono && <div className="error-text">{errors.telefono}</div>}
           </div>
 
           <div className="mb-3">
             <label className="form-label">Usuario</label>
-            <input
-              className="form-control register-input"
-              value={form.usuario}
-              onChange={e => setForm({ ...form, usuario: e.target.value })}
-              placeholder="Nombre de usuario"
-            />
+            <input className="form-control register-input" value={form.usuario} onChange={e => setForm({ ...form, usuario: e.target.value })} placeholder="Nombre de usuario"/>
             {errors.usuario && <div className="error-text">{errors.usuario}</div>}
           </div>
 
-          {/* Contraseña con icono */}
-          <div className="password-wrapper">
+          {/* Contraseña */}
+          <div className="mb-3">
             <label className="form-label">Contraseña</label>
-            <input
-              type={showPassword ? "text" : "password"}
-              className="form-control register-input"
-              value={form.password}
-              onChange={e => setForm({ ...form, password: e.target.value })}
-              placeholder="••••••••"
-            />
-            <button
-              type="button"
-              className="password-toggle"
-              onClick={() => setShowPassword(!showPassword)}
-              tabIndex={-1}
-            >
-              {showPassword ? <i className="bi bi-eye-slash"></i> : <i className="bi bi-eye"></i>}
-            </button>
+            <div className="password-container">
+              <input type={showPassword ? "text" : "password"} className="form-control register-input" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="••••••••"/>
+              <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
+                {showPassword ? <i className="bi bi-eye-slash"></i> : <i className="bi bi-eye"></i>}
+              </button>
+            </div>
             {errors.password && <div className="error-text">{errors.password}</div>}
           </div>
 
-          {/* Confirmar contraseña con icono */}
-          <div className="password-wrapper">
+          {/* Confirmar contraseña */}
+          <div className="mb-3">
             <label className="form-label">Confirmar contraseña</label>
-            <input
-              type={showPassword ? "text" : "password"}
-              className="form-control register-input"
-              value={form.password2}
-              onChange={e => setForm({ ...form, password2: e.target.value })}
-              placeholder="Repite tu contraseña"
-            />
-            <button
-              type="button"
-              className="password-toggle"
-              onClick={() => setShowPassword(!showPassword)}
-              tabIndex={-1}
-            >
-              {showPassword ? <i className="bi bi-eye-slash"></i> : <i className="bi bi-eye"></i>}
-            </button>
+            <div className="password-container">
+              <input type={showPassword ? "text" : "password"} className="form-control register-input" value={form.password2} onChange={e => setForm({ ...form, password2: e.target.value })} placeholder="Repite tu contraseña"/>
+              <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
+                {showPassword ? <i className="bi bi-eye-slash"></i> : <i className="bi bi-eye"></i>}
+              </button>
+            </div>
             {errors.password2 && <div className="error-text">{errors.password2}</div>}
           </div>
 
-          {/* Términos y condiciones */}
           <div className="form-check mb-3">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              checked={acepta}
-              onChange={() => setAcepta(!acepta)}
-              id="aceptaTC"
-            />
+            <input className="form-check-input" type="checkbox" checked={acepta} onChange={() => setAcepta(!acepta)} id="aceptaTC"/>
             <label className="form-check-label" htmlFor="aceptaTC">
               Acepto los <Link to="/terminos">Términos y Condiciones</Link> y el <Link to="/aviso-privacidad">Aviso de Privacidad</Link>.
             </label>

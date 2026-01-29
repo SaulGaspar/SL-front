@@ -24,24 +24,22 @@ export default function Login({ onLogin }) {
 
   async function submit(e) {
     e.preventDefault();
-    setErr(''); 
+    setErr('');
 
     if (!validar()) return;
 
     try {
       const res = await axios.post(`${API_URL}/api/login`, { usuario, password });
+
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       onLogin && onLogin(res.data.user);
       navigate('/');
+
     } catch (error) {
-      if (error.response?.data?.error) {
-        setErr(error.response.data.error);
-      } else if (error.request) {
-        setErr('No se pudo conectar con el servidor. Revisa tu conexión.');
-      } else {
-        setErr('Ocurrió un error inesperado.');
-      }
+      if (error.response?.data?.error) setErr(error.response.data.error);
+      else if (error.request) setErr('No se pudo conectar con el servidor.');
+      else setErr('Ocurrió un error inesperado.');
       console.error("Login error:", error.response?.data?.error || error.message);
     }
   }
@@ -52,7 +50,7 @@ export default function Login({ onLogin }) {
         .login-card { width: 100%; max-width: 420px; background: #ffffff; border-radius: 14px; padding: 35px 30px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
         .login-title { font-size: 1.9rem; font-weight: 700; color: #0a1a2f; text-align: center; }
         .form-label { font-weight: 600; color: #0a1a2f; }
-        .login-input { border-radius: 10px !important; padding: 10px 40px 10px 12px !important; border: 1px solid #d2d2d2; font-size: 1rem; width: 100%; }
+        .login-input { border-radius: 10px !important; padding: 10px 12px !important; border: 1px solid #d2d2d2; font-size: 1rem; height: 45px; }
         .login-btn { background-color: #0a1a2f; color: white; border: none; padding: 12px; width: 100%; border-radius: 10px; font-size: 1.1rem; margin-top: 10px; }
         .login-btn:hover { background-color: #07121b; }
         .error-text { color: #cc0000; font-size: 0.9rem; margin-top: 3px; }
@@ -60,19 +58,8 @@ export default function Login({ onLogin }) {
         .separator { text-align: center; margin: 20px 0; color: #777; }
         .separator::before, .separator::after { content: ""; display: inline-block; width: 30%; height: 1px; background: #ccc; margin: 0 10px; }
 
-        /* Ícono de mostrar/ocultar */
-        .password-wrapper { position: relative; width: 100%; }
-        .password-toggle {
-          position: absolute;
-          top: 50%;
-          right: 12px;
-          transform: translateY(-50%);
-          background: none;
-          border: none;
-          cursor: pointer;
-          font-size: 1.2rem;
-          color: #555;
-        }
+        .password-container { position: relative; display: flex; align-items: center; }
+        .password-toggle { position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: #555; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; height: 100%; }
       `}</style>
 
       <div className="login-card">
@@ -92,23 +79,20 @@ export default function Login({ onLogin }) {
             {errors.usuario && <div className="error-text">{errors.usuario}</div>}
           </div>
 
-          <div className="mb-3 password-wrapper">
+          <div className="mb-3">
             <label className="form-label">Contraseña</label>
-            <input 
-              type={showPassword ? "text" : "password"}
-              className="form-control login-input"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
-            <button
-              type="button"
-              className="password-toggle"
-              onClick={() => setShowPassword(!showPassword)}
-              tabIndex={-1}
-            >
-              {showPassword ? <i className="bi bi-eye-slash"></i> : <i className="bi bi-eye"></i>}
-            </button>
+            <div className="password-container">
+              <input
+                type={showPassword ? "text" : "password"}
+                className="form-control login-input"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+              <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
+                {showPassword ? <i className="bi bi-eye-slash"></i> : <i className="bi bi-eye"></i>}
+              </button>
+            </div>
             {errors.password && <div className="error-text">{errors.password}</div>}
           </div>
 
@@ -122,10 +106,7 @@ export default function Login({ onLogin }) {
 
         <div className="separator">o continúa con</div>
 
-        <a
-          className="btn btn-outline-dark google-btn"
-          href={`${API_URL}/auth/google`}
-        >
+        <a className="btn btn-outline-dark google-btn" href={`${API_URL}/auth/google`}>
           <i className="bi bi-google me-2"></i> Iniciar con Google
         </a>
       </div>
