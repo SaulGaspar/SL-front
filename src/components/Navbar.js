@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-export default function Navbar({ user }) {
+export default function Navbar({ user, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -80,6 +80,9 @@ export default function Navbar({ user }) {
           font-weight: 700;
           text-decoration: none;
           color: #0a2540;
+          display: flex;
+          align-items: center;
+          gap: 12px;
         }
 
         .side-links a:hover {
@@ -251,12 +254,22 @@ export default function Navbar({ user }) {
               </div>
 
               <nav className="side-links">
-                <Link to="/configuracion" onClick={() => setMenuOpen(false)}>Configuración</Link>
-                <Link to="/ayuda" onClick={() => setMenuOpen(false)}>Ayuda</Link>
-                <Link to="/contacto" onClick={() => setMenuOpen(false)}>Contacto</Link>
-                <Link to="/tiendas" onClick={() => setMenuOpen(false)}>Tiendas</Link>
+                <Link to="/configuracion" onClick={() => setMenuOpen(false)}>
+                  <i className="bi bi-gear"></i> Configuración
+                </Link>
+                <Link to="/ayuda" onClick={() => setMenuOpen(false)}>
+                  <i className="bi bi-question-circle"></i> Ayuda
+                </Link>
+                <Link to="/contacto" onClick={() => setMenuOpen(false)}>
+                  <i className="bi bi-envelope"></i> Contacto
+                </Link>
+                <Link to="/tiendas" onClick={() => setMenuOpen(false)}>
+                  <i className="bi bi-shop"></i> Tiendas
+                </Link>
                 {user && (
-                  <Link to="/" onClick={() => setMenuOpen(false)}>Cerrar sesión</Link>
+                  <Link to="/" onClick={onLogout}>
+                    <i className="bi bi-box-arrow-right"></i> Cerrar sesión
+                  </Link>
                 )}
               </nav>
 
