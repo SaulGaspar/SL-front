@@ -1,31 +1,43 @@
 import { Link } from "react-router-dom";
+import { AlertTriangle, Home, Loader2 } from "lucide-react";
+import { useState } from "react";
 
 export default function Error400() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-orange-500 px-6">
-      <div className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-12 max-w-xl w-full text-center animate-fadeIn">
+  const [loading, setLoading] = useState(false);
 
-        {/* Código */}
-        <h1 className="text-[120px] font-extrabold text-orange-500 drop-shadow-lg tracking-wide">
+  const handleClick = () => {
+    const audio = new Audio("/click.mp3");
+    audio.play();
+    setLoading(true);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.1)_0%,_transparent_60%),repeating-linear-gradient(45deg,rgba(255,255,255,0.05)_0px,rgba(255,255,255,0.05)_2px,transparent_2px,transparent_12px)] bg-[#111] px-6">
+
+      <div className="bg-white/95 rounded-2xl shadow-2xl p-12 max-w-xl w-full text-center">
+
+        <AlertTriangle size={70} className="mx-auto text-orange-500 mb-2" />
+
+        <h1 className="text-[110px] font-extrabold text-orange-500">
           400
         </h1>
 
-        {/* Título */}
-        <h2 className="text-3xl font-bold text-gray-900 uppercase">
+        <h2 className="text-3xl font-bold uppercase">
           Solicitud incorrecta
         </h2>
 
-        {/* Descripción */}
         <p className="mt-4 text-gray-600 text-lg">
-          Algo no salió bien con la información enviada ⚠️  
+          Algo no salió bien con la información enviada.  
           Revisa los datos e inténtalo nuevamente.
         </p>
 
-        {/* Botón */}
         <Link
           to="/"
-          className="mt-8 inline-flex items-center justify-center bg-black text-orange-500 px-8 py-4 rounded-xl font-semibold uppercase tracking-wide hover:bg-orange-500 hover:text-black transition-all duration-300 shadow-lg hover:scale-105"
+          onClick={handleClick}
+          className="mt-10 inline-flex items-center justify-center gap-3 px-10 py-4 rounded-full font-extrabold uppercase tracking-wider text-white shadow-xl transition-all duration-300 hover:scale-110"
+          style={{ backgroundColor: "#0a1a2f" }}
         >
+          {loading ? <Loader2 className="animate-spin" /> : <Home />}
           Volver al inicio
         </Link>
 
