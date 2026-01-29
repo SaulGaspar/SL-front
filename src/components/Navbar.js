@@ -1,13 +1,12 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
-export default function Navbar({ user, onLogout }) {
+export default function Navbar({ user }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <nav className="navbar navbar-expand-lg bg-primary-custom">
 
-      {/* ==================== ESTILOS ==================== */}
       <style>{`
         .logo-brand {
           font-size: 1.8rem;
@@ -17,40 +16,31 @@ export default function Navbar({ user, onLogout }) {
           padding: 4px 6px;
           text-decoration: none !important;
         }
-
         .logo-brand:hover {
           color: #fff700 !important;
           text-shadow: 0 0 8px rgba(255, 247, 0, 0.7);
         }
 
-        /* ============ PANEL PREMIUM ============ */
+        /* ================= PANEL LATERAL ================= */
 
-        .menu-overlay {
+        .side-panel-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(0,0,0,.55);
-          backdrop-filter: blur(3px);
+          background: rgba(0,0,0,.45);
+          z-index: 200;
           display: flex;
           justify-content: flex-end;
-          z-index: 999;
-          animation: fadeIn .25s ease forwards;
         }
 
-        @keyframes fadeIn {
-          from { opacity: 0 }
-          to { opacity: 1 }
-        }
-
-        .menu-panel {
-          background: white;
-          width: 85%;
+        .side-panel {
+          width: 50%;
           max-width: 420px;
           height: 100%;
-          padding: 28px;
+          background: white;
+          padding: 30px;
           box-shadow: -10px 0 40px rgba(0,0,0,.25);
-          animation: slideIn .35s cubic-bezier(.4,0,.2,1);
-          display: flex;
-          flex-direction: column;
+          animation: slideIn .35s ease forwards;
+          overflow-y: auto;
         }
 
         @keyframes slideIn {
@@ -58,49 +48,43 @@ export default function Navbar({ user, onLogout }) {
           to { transform: translateX(0); }
         }
 
-        .menu-header {
+        .side-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 30px;
+          margin-bottom: 28px;
         }
 
-        .menu-header h4 {
+        .side-header h4 {
           font-weight: 900;
-          letter-spacing: .5px;
+          font-size: 1.5rem;
+          color: #0a2540;
+          margin: 0;
         }
 
-        .menu-close {
-          background: none;
+        .side-header button {
           border: none;
+          background: none;
           font-size: 2rem;
           cursor: pointer;
         }
 
-        .menu-links {
+        .side-links {
           display: flex;
           flex-direction: column;
-          gap: 22px;
+          gap: 20px;
         }
 
-        .menu-links a {
-          font-size: 1.2rem;
+        .side-links a {
+          font-size: 1.25rem;
           font-weight: 700;
           text-decoration: none;
           color: #0a2540;
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          transition: .25s;
         }
 
-        .menu-links a:hover {
+        .side-links a:hover {
           color: #1a73e8;
           transform: translateX(6px);
-        }
-
-        .menu-links i {
-          font-size: 1.3rem;
         }
 
         /* ================= MOBILE ================= */
@@ -124,6 +108,10 @@ export default function Navbar({ user, onLogout }) {
 
           .desktop-only {
             display: none !important;
+          }
+
+          .side-panel {
+            width: 100%;
           }
         }
 
@@ -183,13 +171,7 @@ export default function Navbar({ user, onLogout }) {
               </Link>
             )}
 
-            {user && (
-              <button className="btn btn-link text-white p-0" onClick={onLogout}>
-                <i className="bi bi-box-arrow-right" style={{ fontSize: "1.5rem" }} />
-              </button>
-            )}
-
-            {/* 🍔 */}
+            {/* 🍔 HAMBURGUESA */}
             <button
               className="btn btn-link text-white p-0"
               onClick={() => setMenuOpen(true)}
@@ -199,28 +181,35 @@ export default function Navbar({ user, onLogout }) {
           </div>
         </div>
 
-        {/* ---------------- MOBILE MENU ---------------- */}
+        {/* ---------------- MOBILE MENU INFERIOR ---------------- */}
         <div className="mobile-menu">
           <Link className="nav-link text-white fs-5" to="/">Inicio</Link>
           <Link className="nav-link text-white fs-5" to="/catalogo">Catálogo</Link>
           <Link className="nav-link text-white fs-5" to="/promociones">Promociones</Link>
         </div>
 
-        {/* ---------------- DESKTOP ---------------- */}
+        {/* ---------------- DESKTOP NAV ---------------- */}
         <Link className="navbar-brand logo-brand ms-2 desktop-only" to="/">SportLike</Link>
 
         <ul className="navbar-nav d-flex flex-row gap-4 mx-auto desktop-only">
-          <li><Link className="nav-link text-white fs-5" to="/">Inicio</Link></li>
-          <li><Link className="nav-link text-white fs-5" to="/catalogo">Catálogo</Link></li>
-          <li><Link className="nav-link text-white fs-5" to="/promociones">Promociones</Link></li>
+          <li className="nav-item">
+            <Link className="nav-link text-white fs-5" to="/">Inicio</Link>
+          </li>
+          <li className="nav-item">
+            <Link className="nav-link text-white fs-5" to="/catalogo">Catálogo</Link>
+          </li>
+          <li className="nav-item">
+            <Link className="nav-link text-white fs-5" to="/promociones">Promociones</Link>
+          </li>
         </ul>
 
+        {/* ---------------- ICONOS DESKTOP ---------------- */}
         <ul className="navbar-nav d-flex flex-row align-items-center me-3 desktop-only">
 
           {user && (
             <li className="nav-item me-3">
               <Link className="nav-link text-white" to="/profile">
-                <i className="bi bi-person-circle" />
+                <i className="bi bi-person-circle" style={{ fontSize: '1.5rem' }} />
               </Link>
             </li>
           )}
@@ -228,85 +217,47 @@ export default function Navbar({ user, onLogout }) {
           {!user && (
             <li className="nav-item me-3">
               <Link className="nav-link text-white" to="/login">
-                <i className="bi bi-box-arrow-in-right" />
+                <i className="bi bi-box-arrow-in-right" style={{ fontSize: '1.5rem' }} />
               </Link>
             </li>
           )}
 
-          {user && (
-            <li className="nav-item me-3">
-              <button
-                className="btn btn-link nav-link text-white"
-                onClick={onLogout}
-              >
-                <i className="bi bi-box-arrow-right" />
-              </button>
-            </li>
-          )}
-
+          {/* 🍔 HAMBURGUESA */}
           <li className="nav-item">
             <button
               className="btn btn-link nav-link text-white"
               onClick={() => setMenuOpen(true)}
             >
-              <i className="bi bi-list fs-4" />
+              <i className="bi bi-list" style={{ fontSize: "1.7rem" }} />
             </button>
           </li>
 
         </ul>
 
-        {/* ==================== MENU LATERAL ==================== */}
-
+        {/* ================= PANEL LATERAL ================= */}
         {menuOpen && (
           <div
-            className="menu-overlay"
+            className="side-panel-overlay"
             onClick={() => setMenuOpen(false)}
           >
             <div
-              className="menu-panel"
+              className="side-panel"
               onClick={(e) => e.stopPropagation()}
             >
 
-              <div className="menu-header">
+              <div className="side-header">
                 <h4>Menú</h4>
-
-                <button
-                  className="menu-close"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  ✕
-                </button>
+                <button onClick={() => setMenuOpen(false)}>✕</button>
               </div>
 
-              <nav className="menu-links">
-
-                <Link to="/configuracion" onClick={() => setMenuOpen(false)}>
-                  <i className="bi bi-gear" />
-                  Configuración
-                </Link>
-
-                <Link to="/ayuda" onClick={() => setMenuOpen(false)}>
-                  <i className="bi bi-question-circle" />
-                  Ayuda
-                </Link>
-
-                <Link to="/contacto" onClick={() => setMenuOpen(false)}>
-                  <i className="bi bi-envelope" />
-                  Contacto
-                </Link>
-
-                <Link to="/tiendas" onClick={() => setMenuOpen(false)}>
-                  <i className="bi bi-shop" />
-                  Tiendas
-                </Link>
-
+              <nav className="side-links">
+                <Link to="/configuracion" onClick={() => setMenuOpen(false)}>Configuración</Link>
+                <Link to="/ayuda" onClick={() => setMenuOpen(false)}>Ayuda</Link>
+                <Link to="/contacto" onClick={() => setMenuOpen(false)}>Contacto</Link>
+                <Link to="/tiendas" onClick={() => setMenuOpen(false)}>Tiendas</Link>
                 {user && (
-                  <Link to="/" onClick={onLogout}>
-                    <i className="bi bi-box-arrow-right" />
-                    Cerrar sesión
-                  </Link>
+                  <Link to="/" onClick={() => setMenuOpen(false)}>Cerrar sesión</Link>
                 )}
-
               </nav>
 
             </div>
