@@ -21,25 +21,69 @@ export default function Navbar({ user, onLogout }) {
           text-shadow: 0 0 8px rgba(255, 247, 0, 0.7);
         }
 
-        .hamburger-menu {
-          position: absolute;
-          top: 60px;
-          right: 10px;
-          background: #1b1b1b;
-          padding: 15px 20px;
-          border-radius: 10px;
+        /* ================= PANEL LATERAL ================= */
+
+        .side-panel-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,.45);
+          z-index: 200;
           display: flex;
-          flex-direction: column;
-          gap: 10px;
-          z-index: 99;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+          justify-content: flex-end;
         }
 
-        .hamburger-item {
-          color: white;
-          font-size: 1.1rem;
-          text-decoration: none;
+        .side-panel {
+          width: 50%;
+          max-width: 480px;
+          height: 100%;
+          background: white;
+          padding: 28px;
+          box-shadow: -10px 0 40px rgba(0,0,0,.25);
+          animation: slideIn .35s ease forwards;
+          overflow-y: auto;
         }
+
+        @keyframes slideIn {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+
+        .side-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 28px;
+        }
+
+        .side-header h4 {
+          font-weight: 800;
+        }
+
+        .side-header button {
+          border: none;
+          background: none;
+          font-size: 1.9rem;
+          cursor: pointer;
+        }
+
+        .side-links {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .side-links a {
+          font-size: 1.25rem;
+          font-weight: 700;
+          text-decoration: none;
+          color: #0a2540;
+        }
+
+        .side-links a:hover {
+          color: #1a73e8;
+        }
+
+        /* ================= MOBILE ================= */
 
         @media (max-width: 768px) {
           .mobile-row {
@@ -49,6 +93,7 @@ export default function Navbar({ user, onLogout }) {
             width: 100%;
             padding: 6px 10px;
           }
+
           .mobile-menu {
             display: flex;
             justify-content: center;
@@ -56,8 +101,13 @@ export default function Navbar({ user, onLogout }) {
             width: 100%;
             padding-bottom: 8px;
           }
+
           .desktop-only {
             display: none !important;
+          }
+
+          .side-panel {
+            width: 100%;
           }
         }
 
@@ -73,6 +123,7 @@ export default function Navbar({ user, onLogout }) {
           padding-bottom: 5px;
           text-decoration: none !important;
         }
+
         .nav-link::after {
           content: "";
           position: absolute;
@@ -84,6 +135,7 @@ export default function Navbar({ user, onLogout }) {
           transition: width 0.25s ease-in-out;
           border-radius: 4px;
         }
+
         .nav-link:hover::after {
           width: 100%;
         }
@@ -91,65 +143,54 @@ export default function Navbar({ user, onLogout }) {
 
       <div className="container-fluid">
 
-        {/* -------------------- MOBILE ROW -------------------- */}
+        {/* ---------------- MOBILE ROW ---------------- */}
         <div className="mobile-row">
           <Link className="logo-brand" to="/">SportLike</Link>
 
           <div className="d-flex align-items-center gap-3">
 
             <Link className="text-white" to="/search">
-              <i className="bi bi-search" style={{ fontSize: "1.5rem" }}></i>
+              <i className="bi bi-search" style={{ fontSize: "1.5rem" }} />
             </Link>
 
             <Link className="text-white" to="/carrito">
-              <i className="bi bi-cart" style={{ fontSize: "1.5rem" }}></i>
+              <i className="bi bi-cart" style={{ fontSize: "1.5rem" }} />
             </Link>
 
             {user ? (
               <Link className="text-white" to="/profile">
-                <i className="bi bi-person-circle" style={{ fontSize: "1.5rem" }}></i>
+                <i className="bi bi-person-circle" style={{ fontSize: "1.5rem" }} />
               </Link>
             ) : (
               <Link className="text-white" to="/login">
-                <i className="bi bi-box-arrow-in-right" style={{ fontSize: "1.5rem" }}></i>
+                <i className="bi bi-box-arrow-in-right" style={{ fontSize: "1.5rem" }} />
               </Link>
             )}
 
             {user && (
               <button className="btn btn-link text-white p-0" onClick={onLogout}>
-                <i className="bi bi-box-arrow-right" style={{ fontSize: "1.5rem" }}></i>
+                <i className="bi bi-box-arrow-right" style={{ fontSize: "1.5rem" }} />
               </button>
             )}
 
-            {/* 🍔 HAMBURGUESA MOBILE */}
+            {/* 🍔 HAMBURGUESA */}
             <button
               className="btn btn-link text-white p-0"
-              onClick={() => setMenuOpen(!menuOpen)}
+              onClick={() => setMenuOpen(true)}
             >
-              <i className="bi bi-list" style={{ fontSize: "1.7rem" }}></i>
+              <i className="bi bi-list" style={{ fontSize: "1.7rem" }} />
             </button>
           </div>
         </div>
 
-        {/* -------------------- MENÚ HAMBURGUESA COMPARTIDO -------------------- */}
-        {menuOpen && (
-          <div className="hamburger-menu">
-            <Link className="hamburger-item" to="/">Inicio</Link>
-            <Link className="hamburger-item" to="/catalogo">Catálogo</Link>
-            <Link className="hamburger-item" to="/promociones">Promociones</Link>
-            <Link className="hamburger-item" to="/ayuda">Ayuda</Link>
-            <Link className="hamburger-item" to="/configuracion">Configuración</Link>
-          </div>
-        )}
-
-        {/* -------------------- MOBILE MENU INFERIOR -------------------- */}
+        {/* ---------------- MOBILE MENU INFERIOR ---------------- */}
         <div className="mobile-menu">
           <Link className="nav-link text-white fs-5" to="/">Inicio</Link>
           <Link className="nav-link text-white fs-5" to="/catalogo">Catálogo</Link>
           <Link className="nav-link text-white fs-5" to="/promociones">Promociones</Link>
         </div>
 
-        {/* -------------------- DESKTOP NAV -------------------- */}
+        {/* ---------------- DESKTOP NAV ---------------- */}
         <Link className="navbar-brand logo-brand ms-2 desktop-only" to="/">SportLike</Link>
 
         <ul className="navbar-nav d-flex flex-row gap-4 mx-auto desktop-only">
@@ -164,13 +205,13 @@ export default function Navbar({ user, onLogout }) {
           </li>
         </ul>
 
-        {/* -------------------- ICONOS DESKTOP + HAMBURGUESA -------------------- */}
+        {/* ---------------- ICONOS DESKTOP ---------------- */}
         <ul className="navbar-nav d-flex flex-row align-items-center me-3 desktop-only">
 
           {user && (
             <li className="nav-item me-3">
               <Link className="nav-link text-white" to="/profile">
-                <i className="bi bi-person-circle" style={{ fontSize: '1.5rem' }}></i>
+                <i className="bi bi-person-circle" style={{ fontSize: '1.5rem' }} />
               </Link>
             </li>
           )}
@@ -178,7 +219,7 @@ export default function Navbar({ user, onLogout }) {
           {!user && (
             <li className="nav-item me-3">
               <Link className="nav-link text-white" to="/login">
-                <i className="bi bi-box-arrow-in-right" style={{ fontSize: '1.5rem' }}></i>
+                <i className="bi bi-box-arrow-in-right" style={{ fontSize: '1.5rem' }} />
               </Link>
             </li>
           )}
@@ -186,22 +227,50 @@ export default function Navbar({ user, onLogout }) {
           {user && (
             <li className="nav-item me-3">
               <button className="btn btn-link nav-link text-white" onClick={onLogout}>
-                <i className="bi bi-box-arrow-right" style={{ fontSize: '1.5rem' }}></i>
+                <i className="bi bi-box-arrow-right" style={{ fontSize: '1.5rem' }} />
               </button>
             </li>
           )}
 
-          {/* 🍔 HAMBURGUESA DESKTOP */}
+          {/* 🍔 HAMBURGUESA */}
           <li className="nav-item">
             <button
               className="btn btn-link nav-link text-white"
-              onClick={() => setMenuOpen(!menuOpen)}
+              onClick={() => setMenuOpen(true)}
             >
-              <i className="bi bi-list" style={{ fontSize: "1.7rem" }}></i>
+              <i className="bi bi-list" style={{ fontSize: "1.7rem" }} />
             </button>
           </li>
 
         </ul>
+
+        {/* ================= PANEL LATERAL ================= */}
+
+        {menuOpen && (
+          <div
+            className="side-panel-overlay"
+            onClick={() => setMenuOpen(false)}
+          >
+            <div
+              className="side-panel"
+              onClick={(e) => e.stopPropagation()}
+            >
+
+              <div className="side-header">
+                <h4>Menú</h4>
+                <button onClick={() => setMenuOpen(false)}>✕</button>
+              </div>
+
+              <nav className="side-links">
+                <Link to="/configuracion" onClick={() => setMenuOpen(false)}>Configuración</Link>
+                <Link to="/ayuda" onClick={() => setMenuOpen(false)}>Ayuda</Link>
+                <Link to="/contacto" onClick={() => setMenuOpen(false)}>Contacto</Link>
+                <Link to="/tiendas" onClick={() => setMenuOpen(false)}>Tiendas</Link>
+              </nav>
+
+            </div>
+          </div>
+        )}
 
       </div>
     </nav>
