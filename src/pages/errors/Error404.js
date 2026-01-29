@@ -35,11 +35,12 @@ export default function Error404() {
 
         {/* Texto */}
         <p className="mt-6 text-gray-600 text-lg max-w-lg mx-auto">
-          Esta ruta se perdió en el camino.  
+          Esta ruta se perdió en el camino.
+          <br />
           La página que buscas no existe o fue movida.
         </p>
 
-        {/* Botón */}
+        {/* Botón principal */}
         <Link
           to="/"
           onClick={handleClick}
@@ -65,7 +66,9 @@ export default function Error404() {
             hover:shadow-[0_18px_45px_rgba(10,26,47,0.85)]
             active:scale-95
           "
-          style={{ backgroundColor: "#0a1a2f" }}
+          style={{
+            background: "linear-gradient(135deg, #0a1a2f, #061224)"
+          }}
         >
           {loading ? (
             <Loader2 className="animate-spin w-6 h-6" />
