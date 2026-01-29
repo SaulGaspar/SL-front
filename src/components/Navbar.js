@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function Navbar({ user, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -16,34 +16,44 @@ export default function Navbar({ user, onLogout }) {
           padding: 4px 6px;
           text-decoration: none !important;
         }
+
         .logo-brand:hover {
           color: #fff700 !important;
           text-shadow: 0 0 8px rgba(255, 247, 0, 0.7);
         }
 
-        /* ================= PANEL LATERAL ================= */
+        /* ================= PANEL LATERAL PRO ================= */
 
         .side-panel-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(0,0,0,.45);
-          z-index: 200;
+          background: rgba(0,0,0,.55);
+          backdrop-filter: blur(4px);
+          z-index: 999;
           display: flex;
           justify-content: flex-end;
+          animation: fadeOverlay .25s ease forwards;
+        }
+
+        @keyframes fadeOverlay {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
 
         .side-panel {
           width: 50%;
-          max-width: 480px;
+          max-width: 420px;
           height: 100%;
           background: white;
-          padding: 28px;
-          box-shadow: -10px 0 40px rgba(0,0,0,.25);
-          animation: slideIn .35s ease forwards;
+          padding: 30px;
+          box-shadow: -12px 0 45px rgba(0,0,0,.3);
+          animation: slidePanel .35s cubic-bezier(.4,0,.2,1);
           overflow-y: auto;
+          border-top-left-radius: 22px;
+          border-bottom-left-radius: 22px;
         }
 
-        @keyframes slideIn {
+        @keyframes slidePanel {
           from { transform: translateX(100%); }
           to { transform: translateX(0); }
         }
@@ -56,31 +66,27 @@ export default function Navbar({ user, onLogout }) {
         }
 
         .side-header h4 {
-          font-weight: 800;
-        }
-
-        .side-header button {
-          border: none;
-          background: none;
-          font-size: 1.9rem;
-          cursor: pointer;
+          font-weight: 900;
+          letter-spacing: .5px;
         }
 
         .side-links {
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 22px;
         }
 
         .side-links a {
-          font-size: 1.25rem;
+          font-size: 1.2rem;
           font-weight: 700;
           text-decoration: none;
           color: #0a2540;
+          transition: .25s;
         }
 
         .side-links a:hover {
           color: #1a73e8;
+          transform: translateX(8px);
         }
 
         /* ================= MOBILE ================= */
@@ -108,6 +114,7 @@ export default function Navbar({ user, onLogout }) {
 
           .side-panel {
             width: 100%;
+            border-radius: 0;
           }
         }
 
@@ -211,7 +218,7 @@ export default function Navbar({ user, onLogout }) {
           {user && (
             <li className="nav-item me-3">
               <Link className="nav-link text-white" to="/profile">
-                <i className="bi bi-person-circle" style={{ fontSize: '1.5rem' }} />
+                <i className="bi bi-person-circle" style={{ fontSize: "1.5rem" }} />
               </Link>
             </li>
           )}
@@ -219,15 +226,18 @@ export default function Navbar({ user, onLogout }) {
           {!user && (
             <li className="nav-item me-3">
               <Link className="nav-link text-white" to="/login">
-                <i className="bi bi-box-arrow-in-right" style={{ fontSize: '1.5rem' }} />
+                <i className="bi bi-box-arrow-in-right" style={{ fontSize: "1.5rem" }} />
               </Link>
             </li>
           )}
 
           {user && (
             <li className="nav-item me-3">
-              <button className="btn btn-link nav-link text-white" onClick={onLogout}>
-                <i className="bi bi-box-arrow-right" style={{ fontSize: '1.5rem' }} />
+              <button
+                className="btn btn-link nav-link text-white"
+                onClick={onLogout}
+              >
+                <i className="bi bi-box-arrow-right" style={{ fontSize: "1.5rem" }} />
               </button>
             </li>
           )}
@@ -258,14 +268,36 @@ export default function Navbar({ user, onLogout }) {
 
               <div className="side-header">
                 <h4>Menú</h4>
-                <button onClick={() => setMenuOpen(false)}>✕</button>
+
+                <button
+                  onClick={() => setMenuOpen(false)}
+                  style={{
+                    border: "none",
+                    background: "none",
+                    fontSize: "2rem",
+                    cursor: "pointer"
+                  }}
+                >
+                  ✕
+                </button>
               </div>
 
               <nav className="side-links">
-                <Link to="/configuracion" onClick={() => setMenuOpen(false)}>Configuración</Link>
-                <Link to="/ayuda" onClick={() => setMenuOpen(false)}>Ayuda</Link>
-                <Link to="/contacto" onClick={() => setMenuOpen(false)}>Contacto</Link>
-                <Link to="/tiendas" onClick={() => setMenuOpen(false)}>Tiendas</Link>
+                <Link to="/configuracion" onClick={() => setMenuOpen(false)}>
+                  Configuración
+                </Link>
+
+                <Link to="/ayuda" onClick={() => setMenuOpen(false)}>
+                  Ayuda
+                </Link>
+
+                <Link to="/contacto" onClick={() => setMenuOpen(false)}>
+                  Contacto
+                </Link>
+
+                <Link to="/tiendas" onClick={() => setMenuOpen(false)}>
+                  Tiendas
+                </Link>
               </nav>
 
             </div>
