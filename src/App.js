@@ -27,6 +27,11 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import GoogleCallback from "./pages/GoogleCallback";
 
+import Error400 from "./pages/errors/Error400";
+import Error404 from "./pages/errors/Error404";
+import Error500 from "./pages/errors/Error500";
+
+
 export default function App() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
@@ -89,6 +94,14 @@ export default function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/google-callback" element={<GoogleCallback onLogin={setUser} />} />
+
+            {/* Paginas de error */}
+            <Route path="/400" element={<Error400 />} />
+            <Route path="/500" element={<Error500 />} />
+
+            {/* 404 - siempre al final */}
+            <Route path="*" element={<Error404 />} />
+
           </Routes>
         </div>
 
