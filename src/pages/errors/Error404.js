@@ -42,36 +42,12 @@ export default function Error404() {
         <Link
           to="/"
           onClick={handleClick}
-          className="
-            mt-8 md:mt-12
-            mx-auto
-            inline-flex
-            items-center
-            justify-center
-            gap-3
-            px-10 md:px-16
-            py-4 md:py-6
-            rounded-full
-            font-extrabold
-            uppercase
-            tracking-widest
-            text-white
-            text-sm md:text-lg
-            shadow-[0_12px_35px_rgba(10,26,47,0.6)]
-            transition-all
-            duration-300
-            hover:scale-110
-            hover:shadow-[0_18px_45px_rgba(10,26,47,0.85)]
-            active:scale-95
-          "
-          style={{
-            background: "linear-gradient(135deg, #0a1a2f, #061224)"
-          }}
+          className="mt-8 md:mt-12 mx-auto inline-flex items-center justify-center gap-3 px-8 md:px-12 py-4 md:py-5 bg-gradient-to-r from-[#0a1a2f] to-[#061224] text-white font-extrabold uppercase tracking-widest text-sm md:text-base rounded-full shadow-[0_12px_35px_rgba(10,26,47,0.6)] hover:scale-110 hover:shadow-[0_18px_45px_rgba(10,26,47,0.85)] active:scale-95 transition-all duration-300"
         >
           {loading ? (
-            <Loader2 className="animate-spin w-6 h-6" />
+            <Loader2 className="animate-spin w-5 h-5" />
           ) : (
-            <Home className="w-6 h-6" />
+            <Home className="w-5 h-5" />
           )}
           Volver al inicio
         </Link>
