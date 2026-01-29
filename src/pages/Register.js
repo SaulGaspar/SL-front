@@ -27,19 +27,16 @@ export default function Register() {
 
   const validar = () => {
     let e = {};
-
     if (!form.nombre.trim() || form.nombre.length < 2) e.nombre = "El nombre debe contener al menos 2 letras.";
     if (!form.apellidoP.trim()) e.apellidoP = "El apellido paterno es obligatorio.";
     if (!form.correo.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.correo = "El correo no es válido.";
     if (!/^\d{10}$/.test(form.telefono)) e.telefono = "El teléfono debe tener 10 dígitos.";
     if (!form.usuario || form.usuario.length < 4) e.usuario = "El usuario debe tener mínimo 4 caracteres.";
 
-    // Validación de contraseña segura
     const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passRegex.test(form.password)) e.password = "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.";
 
     if (form.password !== form.password2) e.password2 = "Las contraseñas no coinciden.";
-
     if (!acepta) e.acepta = "Debes aceptar los términos y condiciones.";
 
     setErrors(e);
@@ -55,7 +52,6 @@ export default function Register() {
       await axios.post(`${API_URL}/api/register`, form);
       setMsg('Registrado correctamente. Revisa tu correo para verificar tu cuenta.');
       setTimeout(() => navigate('/login'), 2000);
-
     } catch (error) {
       if (error.response) {
         setMsg(error.response.data.error || 'Error en el servidor.');
@@ -79,39 +75,25 @@ export default function Register() {
           padding: 35px 30px;
           box-shadow: 0 8px 30px rgba(0,0,0,0.12);
         }
-        .register-title {
-          font-size: 1.9rem;
-          font-weight: 700;
-          color: #0a1a2f;
-          text-align: center;
-        }
-        .form-label {
-          font-weight: 600;
-          color: #0a1a2f;
-        }
-        .register-input {
-          border-radius: 10px !important;
-          padding: 10px 12px !important;
-          border: 1px solid #d2d2d2;
-          font-size: 1rem;
-        }
-        .register-btn {
-          background-color: #0a1a2f;
-          color: white;
+        .register-title { font-size: 1.9rem; font-weight: 700; color: #0a1a2f; text-align: center; }
+        .form-label { font-weight: 600; color: #0a1a2f; }
+        .register-input { border-radius: 10px !important; padding: 10px 40px 10px 12px !important; border: 1px solid #d2d2d2; font-size: 1rem; width: 100%; }
+        .register-btn { background-color: #0a1a2f; color: white; border: none; padding: 12px; width: 100%; border-radius: 10px; font-size: 1.1rem; margin-top: 10px; }
+        .register-btn:hover { background-color: #07121b; }
+        .error-text { color: #cc0000; font-size: 0.9rem; margin-top: 3px; }
+
+        /* Icono de mostrar/ocultar contraseña */
+        .password-wrapper { position: relative; width: 100%; margin-bottom: 10px; }
+        .password-toggle {
+          position: absolute;
+          top: 50%;
+          right: 12px;
+          transform: translateY(-50%);
+          background: none;
           border: none;
-          padding: 12px;
-          width: 100%;
-          border-radius: 10px;
-          font-size: 1.1rem;
-          margin-top: 10px;
-        }
-        .register-btn:hover {
-          background-color: #07121b;
-        }
-        .error-text {
-          color: #cc0000;
-          font-size: 0.9rem;
-          margin-top: 3px;
+          cursor: pointer;
+          font-size: 1.2rem;
+          color: #555;
         }
       `}</style>
 
@@ -197,7 +179,8 @@ export default function Register() {
             {errors.usuario && <div className="error-text">{errors.usuario}</div>}
           </div>
 
-          <div className="mb-3">
+          {/* Contraseña con icono */}
+          <div className="password-wrapper">
             <label className="form-label">Contraseña</label>
             <input
               type={showPassword ? "text" : "password"}
@@ -206,10 +189,19 @@ export default function Register() {
               onChange={e => setForm({ ...form, password: e.target.value })}
               placeholder="••••••••"
             />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+              tabIndex={-1}
+            >
+              {showPassword ? <i className="bi bi-eye-slash"></i> : <i className="bi bi-eye"></i>}
+            </button>
             {errors.password && <div className="error-text">{errors.password}</div>}
           </div>
 
-          <div className="mb-2">
+          {/* Confirmar contraseña con icono */}
+          <div className="password-wrapper">
             <label className="form-label">Confirmar contraseña</label>
             <input
               type={showPassword ? "text" : "password"}
@@ -218,23 +210,18 @@ export default function Register() {
               onChange={e => setForm({ ...form, password2: e.target.value })}
               placeholder="Repite tu contraseña"
             />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+              tabIndex={-1}
+            >
+              {showPassword ? <i className="bi bi-eye-slash"></i> : <i className="bi bi-eye"></i>}
+            </button>
             {errors.password2 && <div className="error-text">{errors.password2}</div>}
           </div>
 
-          <div className="form-check mb-3">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              checked={showPassword}
-              onChange={() => setShowPassword(!showPassword)}
-              id="verContra"
-            />
-            <label className="form-check-label" htmlFor="verContra">
-              Mostrar contraseña
-            </label>
-          </div>
-
-          {/* NUEVO CHECKBOX DE TÉRMINOS Y CONDICIONES */}
+          {/* Términos y condiciones */}
           <div className="form-check mb-3">
             <input
               className="form-check-input"
