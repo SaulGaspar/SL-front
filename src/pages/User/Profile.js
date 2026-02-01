@@ -20,12 +20,10 @@ export default function Profile({ user, setUser }) {
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
-
     try {
       await axios.post(`${API_URL}/api/update-profile`, form, {
         headers: { Authorization: 'Bearer ' + token }
       });
-
       setMsg("Perfil actualizado con éxito");
 
       const updated = { ...user, ...form };
@@ -33,7 +31,6 @@ export default function Profile({ user, setUser }) {
       setUser(updated);
 
       setEditing(false);
-
     } catch (error) {
       setMsg(error.response?.data?.error || "Error actualizando perfil");
     }
@@ -42,26 +39,25 @@ export default function Profile({ user, setUser }) {
   return (
     <div
       className="profile-container d-flex justify-content-center align-items-start py-5"
-      style={{
-        minHeight: "92vh",
-        background: "linear-gradient(135deg, #eef3ff, #ffffff)"
-      }}
+      style={{ minHeight: "92vh", background: "var(--bg-main)" }}
     >
 
       <style>{`
         .profile-card {
           width: 100%;
           max-width: 650px;
-          background: white;
+          background: var(--bg-card);
           padding: 40px;
           border-radius: 18px;
-          box-shadow: 0 18px 40px rgba(0,0,0,0.12);
+          box-shadow: 0 18px 40px rgba(0,0,0,0.25);
+          color: var(--text-main);
+          transition: background .25s ease, color .25s ease;
         }
 
         .profile-title {
           font-size: 2rem;
           font-weight: 800;
-          color: #0a2540;
+          color: var(--text-main);
           text-align: center;
           margin-bottom: 25px;
         }
@@ -71,45 +67,52 @@ export default function Profile({ user, setUser }) {
           margin-bottom: 20px;
         }
         .breadcrumb-custom a {
-          color: #1a73e8;
+          color: var(--accent);
           text-decoration: none;
           font-weight: 600;
         }
         .breadcrumb-custom span {
           font-weight: 700;
-          color: #000;
+          color: var(--text-main);
         }
 
-        /* === TARJETAS DE INFO CENTRADAS === */
         .info-box {
-          background: #f8f9fc;
+          background: var(--bg-section, var(--bg-card));
           padding: 18px 22px;
           border-radius: 14px;
           margin-bottom: 15px;
-          border: 1px solid #e3e8f0;
+          border: 1px solid var(--border-soft);
           text-align: center;
+          color: var(--text-main);
         }
         .info-label {
           font-weight: 700;
-          color: #0a2540;
+          color: var(--text-main);
           text-align: center;
         }
         .info-value {
           font-size: 1.05rem;
-          color: #2f3b52;
+          color: var(--text-main);
           text-align: center;
         }
 
         .form-input {
           border-radius: 12px !important;
           padding: 11px 14px !important;
-          border: 1px solid #cfd8e3;
+          border: 1px solid var(--border-soft);
           font-size: 1rem;
+          background: var(--bg-card);
+          color: var(--text-main);
+          transition: background .25s ease, color .25s ease, border-color .25s ease;
+        }
+
+        .form-input::placeholder {
+          color: var(--text-muted);
         }
 
         .btn-main {
-          background: linear-gradient(135deg, #0a2540, #06182a);
-          color: #fff;
+          background: var(--btn-main-bg);
+          color: var(--btn-main-text);
           border: none;
           padding: 13px;
           border-radius: 12px;
@@ -119,13 +122,13 @@ export default function Profile({ user, setUser }) {
           transition: all .25s ease;
         }
         .btn-main:hover {
+          opacity: 0.9;
           transform: translateY(-2px);
-          box-shadow: 0 10px 25px rgba(10, 37, 64, 0.35);
         }
 
         .btn-secondary {
-          background: #0a2540;
-          color: white;
+          background: var(--btn-secondary-bg);
+          color: var(--btn-secondary-text);
           border: none;
           padding: 12px;
           border-radius: 12px;
@@ -135,20 +138,23 @@ export default function Profile({ user, setUser }) {
           transition: all .2s ease;
         }
         .btn-secondary:hover {
-          background: #06182a;
+          opacity: 0.85;
         }
 
         .btn-gray {
-          background: #6c757d;
-          color: white;
+          background: var(--btn-gray-bg);
+          color: var(--btn-gray-text);
           border: none;
           padding: 12px;
           border-radius: 12px;
           width: 100%;
           font-size: 1.1rem;
         }
-        .btn-gray:hover {
-          background: #565e64;
+
+        .alert-info {
+          background: var(--alert-bg, #e0f0ff);
+          color: var(--alert-text, var(--text-main));
+          border: 1px solid var(--border-soft);
         }
       `}</style>
 

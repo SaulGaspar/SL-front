@@ -1,4 +1,3 @@
-// src/pages/Terminos.jsx
 import { Link } from "react-router-dom";
 
 export default function Terminos() {
@@ -9,11 +8,11 @@ export default function Terminos() {
           max-width: 900px;
           margin: 40px auto;
           padding: 40px;
-          background: #ffffff;
+          background: var(--bg-card);
           border-radius: 16px;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+          box-shadow: 0 4px 20px rgba(0,0,0,0.3);
           font-family: "Poppins", sans-serif;
-          color: #333;
+          color: var(--text-main);
           line-height: 1.75;
           font-size: 1.05rem;
         }
@@ -21,7 +20,7 @@ export default function Terminos() {
         .terminos-title {
           font-size: 2rem;
           margin-bottom: 25px;
-          color: #1f2937;
+          color: var(--text-main);
           font-weight: 700;
           text-align: center;
         }
@@ -32,11 +31,11 @@ export default function Terminos() {
           gap: 6px;
           font-size: 0.95rem;
           margin-bottom: 20px;
-          color: #3b82f6;
+          color: var(--accent-primary);
         }
 
         .breadcrumb a {
-          color: #3b82f6;
+          color: var(--accent-primary);
           text-decoration: none;
           font-weight: 600;
         }
@@ -44,7 +43,7 @@ export default function Terminos() {
         .back-arrow {
           font-size: 1.2rem;
           font-weight: bold;
-          color: #3b82f6;
+          color: var(--accent-primary);
           text-decoration: none;
           margin-bottom: 15px;
           display: inline-block;
@@ -53,9 +52,9 @@ export default function Terminos() {
         h2 {
           font-size: 1.4rem;
           margin-top: 25px;
-          color: #1f2937;
+          color: var(--text-main);
           font-weight: 600;
-          border-left: 5px solid #3b82f6;
+          border-left: 5px solid var(--accent-primary);
           padding-left: 10px;
         }
 
@@ -69,26 +68,27 @@ export default function Terminos() {
         }
 
         .section-box {
-          background: #f1f5f9;
+          background: var(--bg-section);
           padding: 15px;
-          border-left: 4px solid #3b82f6;
+          border-left: 4px solid var(--accent-primary);
           border-radius: 8px;
           margin: 20px 0;
+          color: var(--text-main);
         }
 
         .last-update {
           margin-top: 35px;
           padding: 18px;
           text-align: center;
-          background: #e0f2fe;
-          border-left: 5px solid #0284c7;
+          background: var(--bg-accent);
+          border-left: 5px solid var(--accent-secondary);
           border-radius: 10px;
           font-weight: 600;
+          color: var(--text-main);
         }
       `}</style>
 
       <div className="terminos-container">
-
         {/* 🔙 Flecha para volver */}
         <Link to="/login" className="back-arrow">⬅ Volver al inicio de sesión</Link>
 

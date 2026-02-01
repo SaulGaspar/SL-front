@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import PRODUCTS from "../components/Products";
-import { useCart } from "../context/CartContext";
+import PRODUCTS from "../../components/Products";
+import { useCart } from "../../context/CartContext";
 
 export default function Catalogo() {
   const navigate = useNavigate();

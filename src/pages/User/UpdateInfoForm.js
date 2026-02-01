@@ -27,10 +27,8 @@ export default function UpdateProfileForm({ user }) {
       await axios.post(`${API_URL}/api/update-profile`, form, {
         headers: { Authorization: 'Bearer ' + token }
       });
-
       setMsg('Perfil actualizado correctamente. Redirigiendo...');
       setTimeout(() => navigate('/profile'), 1500);
-
     } catch (error) {
       setMsg(error.response?.data?.error || 'Error actualizando perfil');
     } finally {
@@ -41,25 +39,23 @@ export default function UpdateProfileForm({ user }) {
   return (
     <div
       className="d-flex justify-content-center align-items-center"
-      style={{
-        minHeight: '90vh',
-        background: 'linear-gradient(135deg, #eef3ff, #ffffff)'
-      }}
+      style={{ minHeight: '90vh', background: 'var(--bg-main)' }}
     >
       <style>{`
         .update-card {
           width: 100%;
           max-width: 520px;
-          background: #ffffff;
+          background: var(--bg-card);
           border-radius: 16px;
           padding: 40px 35px;
-          box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+          box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+          color: var(--text-main);
         }
 
         .update-title {
           font-size: 1.9rem;
           font-weight: 700;
-          color: #0a2540;
+          color: var(--text-main);
           text-align: center;
         }
 
@@ -67,11 +63,11 @@ export default function UpdateProfileForm({ user }) {
           font-size: 0.95rem;
           font-weight: 500;
           margin-bottom: 25px;
-          color: #506580;
+          color: var(--text-muted);
         }
 
         .breadcrumb-custom a {
-          color: #1a73e8;
+          color: var(--accent-primary);
           text-decoration: none;
           font-weight: 600;
         }
@@ -82,20 +78,25 @@ export default function UpdateProfileForm({ user }) {
 
         .form-label {
           font-weight: 600;
-          color: #0a2540;
+          color: var(--text-main);
         }
 
         .form-input {
           border-radius: 12px !important;
           padding: 11px 14px !important;
-          border: 1px solid #cfd8e3;
+          border: 1px solid var(--border-light);
           font-size: 1rem;
+          background: var(--bg-input);
+          color: var(--text-main);
         }
 
-        /* === BOTÓN ACTUALIZADO === */
+        .form-input::placeholder {
+          color: var(--text-muted);
+        }
+
         .btn-update {
-          background: linear-gradient(135deg, #1e90ff, #0c75d6) !important;
-          color: white;
+          background: var(--btn-main-bg) !important;
+          color: var(--btn-main-text);
           border: none;
           padding: 13px;
           width: 100%;
@@ -108,21 +109,23 @@ export default function UpdateProfileForm({ user }) {
 
         .btn-update:hover {
           transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(30, 144, 255, 0.35);
+          box-shadow: 0 8px 20px rgba(0,0,0,0.35);
         }
 
         .alert-msg {
           margin-top: 12px;
+          background: var(--alert-bg);
+          color: var(--alert-text);
+          border: 1px solid var(--border-light);
         }
       `}</style>
 
       <div className="update-card">
 
-        {/* MIGAS DE PAN */}
         <div className="breadcrumb-custom">
           <Link to="/">Inicio</Link> &nbsp;/&nbsp;
           <Link to="/profile">Perfil</Link> &nbsp;/&nbsp;
-          <span style={{ fontWeight: 700, color: "#000" }}>
+          <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>
             Actualizar información
           </span>
         </div>

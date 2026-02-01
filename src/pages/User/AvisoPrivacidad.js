@@ -9,11 +9,11 @@ export default function AvisoPrivacidad() {
           max-width: 900px;
           margin: 40px auto;
           padding: 40px;
-          background: #ffffff;
+          background: var(--bg-card); /* adaptado dark mode */
           border-radius: 16px;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+          box-shadow: 0 4px 20px rgba(0,0,0,0.3);
           font-family: "Poppins", sans-serif;
-          color: #333;
+          color: var(--text-main);
           line-height: 1.75;
           font-size: 1.05rem;
         }
@@ -21,7 +21,7 @@ export default function AvisoPrivacidad() {
         .aviso-title {
           font-size: 2rem;
           margin-bottom: 25px;
-          color: #1f2937;
+          color: var(--text-main);
           font-weight: 700;
           text-align: center;
         }
@@ -32,11 +32,11 @@ export default function AvisoPrivacidad() {
           gap: 6px;
           font-size: 0.95rem;
           margin-bottom: 20px;
-          color: #3b82f6;
+          color: var(--accent);
         }
 
         .breadcrumb a {
-          color: #3b82f6;
+          color: var(--accent);
           text-decoration: none;
           font-weight: 600;
         }
@@ -44,7 +44,7 @@ export default function AvisoPrivacidad() {
         .back-arrow {
           font-size: 1.2rem;
           font-weight: bold;
-          color: #3b82f6;
+          color: var(--accent);
           text-decoration: none;
           margin-bottom: 15px;
           display: inline-block;
@@ -53,9 +53,9 @@ export default function AvisoPrivacidad() {
         h2 {
           font-size: 1.4rem;
           margin-top: 25px;
-          color: #1f2937;
+          color: var(--text-main);
           font-weight: 600;
-          border-left: 5px solid #3b82f6;
+          border-left: 5px solid var(--accent);
           padding-left: 10px;
         }
 
@@ -69,21 +69,27 @@ export default function AvisoPrivacidad() {
         }
 
         .aviso-box {
-          background: #f1f5f9;
+          background: var(--bg-muted); /* antes #f1f5f9 */
           padding: 15px;
-          border-left: 4px solid #ef4444;
+          border-left: 4px solid var(--accent-danger); /* antes #ef4444 */
           border-radius: 8px;
           margin: 20px 0;
+          color: var(--text-main);
         }
 
         .aviso-consent {
           margin-top: 35px;
           padding: 18px;
           text-align: center;
-          background: #e0f2fe;
-          border-left: 5px solid #0284c7;
+          background: var(--bg-accent); /* antes #e0f2fe */
+          border-left: 5px solid var(--accent);
           border-radius: 10px;
           font-weight: 600;
+          color: var(--text-main);
+        }
+
+        p {
+          color: var(--text-main);
         }
       `}</style>
 

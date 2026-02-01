@@ -30,9 +30,6 @@ export default function ResetPassword() {
       });
 
       setMsg('Contraseña restablecida correctamente. Redirigiendo...');
-
-      // Si viene del correo => login
-      // Si viene del perfil => perfil
       setTimeout(() => navigate(token ? '/login' : '/profile'), 1500);
 
     } catch (error) {
@@ -45,25 +42,23 @@ export default function ResetPassword() {
   return (
     <div
       className="d-flex justify-content-center align-items-center"
-      style={{
-        minHeight: '90vh',
-        background: 'linear-gradient(135deg, #eef3ff, #ffffff)'
-      }}
+      style={{ minHeight: '90vh', background: 'var(--bg-main)' }}
     >
       <style>{`
         .pass-card {
           width: 100%;
           max-width: 500px;
-          background: #ffffff;
+          background: var(--bg-card);
           border-radius: 16px;
           padding: 40px 35px;
-          box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+          box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+          color: var(--text-main);
         }
 
         .pass-title {
           font-size: 1.9rem;
           font-weight: 700;
-          color: #0a2540;
+          color: var(--text-main);
           text-align: center;
         }
 
@@ -71,30 +66,40 @@ export default function ResetPassword() {
           font-size: 0.95rem;
           font-weight: 500;
           margin-bottom: 25px;
-          color: #506580;
+          color: var(--text-muted);
         }
 
         .breadcrumb-custom a {
-          color: #1a73e8;
+          color: var(--accent-primary);
           text-decoration: none;
           font-weight: 600;
         }
 
+        .breadcrumb-custom a:hover {
+          text-decoration: underline;
+        }
+
         .form-label {
           font-weight: 600;
-          color: #0a2540;
+          color: var(--text-main);
         }
 
         .form-input {
           border-radius: 12px !important;
           padding: 11px 14px !important;
-          border: 1px solid #cfd8e3;
+          border: 1px solid var(--border-light);
           font-size: 1rem;
+          background: var(--bg-input);
+          color: var(--text-main);
+        }
+
+        .form-input::placeholder {
+          color: var(--text-muted);
         }
 
         .btn-reset {
-          background: linear-gradient(135deg, #1e90ff, #0c75d6);
-          color: #ffffff;
+          background: var(--btn-main-bg);
+          color: var(--btn-main-text);
           border: none;
           padding: 13px;
           width: 100%;
@@ -110,8 +115,8 @@ export default function ResetPassword() {
         }
 
         .btn-secondary {
-          background: #0a2540;
-          color: white;
+          background: var(--btn-secondary-bg);
+          color: var(--btn-secondary-text);
           border: none;
           padding: 13px;
           width: 100%;
@@ -122,21 +127,23 @@ export default function ResetPassword() {
         }
 
         .btn-secondary:hover {
-          background: #06182a;
+          background: var(--btn-secondary-hover);
         }
 
         .alert-msg {
           margin-top: 12px;
+          background: var(--alert-bg);
+          color: var(--alert-text);
+          border: 1px solid var(--border-light);
         }
       `}</style>
 
       <div className="pass-card">
 
-        {/* MIGAS DE PAN */}
         <div className="breadcrumb-custom">
           <Link to="/">Inicio</Link> &nbsp;/&nbsp;
           {!token && <><Link to="/profile">Perfil</Link> &nbsp;/&nbsp;</>}
-          <span style={{ fontWeight: 700, color: "#000" }}>
+          <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>
             Restablecer contraseña
           </span>
         </div>
@@ -176,7 +183,6 @@ export default function ResetPassword() {
               {loading ? 'Restableciendo...' : 'Guardar contraseña'}
             </button>
 
-            {/* Botón cancelar */}
             <button
               type="button"
               className="btn-secondary"

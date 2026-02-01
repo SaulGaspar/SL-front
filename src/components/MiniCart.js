@@ -15,7 +15,7 @@ export default function MiniCart() {
 
   return (
     <div
-      className="position-fixed top-0 end-0 bg-white shadow"
+      className="position-fixed top-0 end-0 shadow"
       style={{
         width: 320,
         height: "80vh",
@@ -27,12 +27,21 @@ export default function MiniCart() {
         top: 70,
         borderRadius: 8,
         overflow: "hidden",
+        background: "var(--bg-card)", // usa variable
+        color: "var(--text-main)",    // usa variable
+        border: "1px solid var(--border-soft)"
       }}
     >
       {/* Header */}
-      <div className="p-3 border-bottom d-flex justify-content-between align-items-center">
+      <div
+        className="p-3 d-flex justify-content-between align-items-center"
+        style={{ borderBottom: "1px solid var(--border-soft)" }}
+      >
         <h6 className="mb-0">Tu carrito</h6>
-        <button className="btn btn-sm btn-outline-secondary" onClick={toggleMiniCart}>
+        <button
+          className="btn btn-sm btn-outline-secondary"
+          onClick={toggleMiniCart}
+        >
           ✕
         </button>
       </div>
@@ -43,12 +52,15 @@ export default function MiniCart() {
         style={{ padding: "0 12px" }}
       >
         {cart.length === 0 ? (
-          <p className="text-muted mt-3">Tu carrito está vacío.</p>
+          <p style={{ color: "var(--text-muted)", marginTop: "1rem" }}>
+            Tu carrito está vacío.
+          </p>
         ) : (
           cart.map((item, i) => (
             <div
               key={i}
-              className="d-flex align-items-center gap-2 border-bottom py-2"
+              className="d-flex align-items-center gap-2 py-2"
+              style={{ borderBottom: "1px solid var(--border-soft)" }}
             >
               <img
                 src={item.img}
@@ -62,7 +74,12 @@ export default function MiniCart() {
               />
               <div className="flex-grow-1">
                 <div className="d-flex justify-content-between align-items-start">
-                  <p className="mb-1 fw-bold" style={{ fontSize: 14 }}>{item.title}</p>
+                  <p
+                    className="mb-1 fw-bold"
+                    style={{ fontSize: 14, color: "var(--text-main)" }}
+                  >
+                    {item.title}
+                  </p>
                   <button
                     className="btn btn-sm btn-outline-danger p-1"
                     onClick={() => removeItem(item)}
@@ -70,13 +87,21 @@ export default function MiniCart() {
                     ✕
                   </button>
                 </div>
-                <p className="text-muted mb-1" style={{ fontSize: 12 }}>
+                <p
+                  style={{
+                    fontSize: 12,
+                    marginBottom: 0,
+                    color: "var(--text-muted)"
+                  }}
+                >
                   {item.size} | {item.color}
                 </p>
-                <div className="d-flex align-items-center gap-1">
+                <div className="d-flex align-items-center gap-1 mt-1">
                   <button
                     className="btn btn-outline-secondary btn-sm"
-                    onClick={() => updateQty(item, Math.max(1, (item.qty || 1) - 1))}
+                    onClick={() =>
+                      updateQty(item, Math.max(1, (item.qty || 1) - 1))
+                    }
                   >
                     -
                   </button>
@@ -85,11 +110,20 @@ export default function MiniCart() {
                     readOnly
                     value={item.qty || 1}
                     className="form-control text-center"
-                    style={{ width: 36, fontSize: 12, padding: "2px" }}
+                    style={{
+                      width: 36,
+                      fontSize: 12,
+                      padding: "2px",
+                      background: "var(--bg-card)",
+                      color: "var(--text-main)",
+                      border: "1px solid var(--border-soft)"
+                    }}
                   />
                   <button
                     className="btn btn-outline-secondary btn-sm"
-                    onClick={() => updateQty(item, (item.qty || 1) + 1)}
+                    onClick={() =>
+                      updateQty(item, (item.qty || 1) + 1)
+                    }
                   >
                     +
                   </button>
@@ -101,14 +135,25 @@ export default function MiniCart() {
         )}
       </div>
 
-      {/* Footer con total y botón siempre visible */}
-      <div className="p-3 border-top bg-light">
+      {/* Footer con total y botón */}
+      <div
+        className="p-3"
+        style={{
+          borderTop: "1px solid var(--border-soft)",
+          background: "var(--bg-main)",
+          color: "var(--text-main)"
+        }}
+      >
         <div className="d-flex justify-content-between fw-bold mb-2">
           <span>Total:</span>
           <span>${total.toFixed(2)}</span>
         </div>
         <button
-          className="btn btn-dark w-100"
+          className="btn w-100"
+          style={{
+            background: "var(--accent)",
+            color: "var(--text-main)"
+          }}
           onClick={() => {
             navigate("/carrito");
             toggleMiniCart();

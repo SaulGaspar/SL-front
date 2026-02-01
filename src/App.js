@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
+import axios from "axios";
+
+import Dashboard from "./Admin/pages/Dashboard/Dashboard";
+
 import { CartProvider } from "./context/CartContext";
 import CartFloatingButton from "./components/CartFloatingButton";
 import MiniCart from "./components/MiniCart";
@@ -8,22 +12,22 @@ import MiniCart from "./components/MiniCart";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
-import AvisoPrivacidad from "./pages/AvisoPrivacidad";
-import Terminos from "./pages/Terminos";
+import AvisoPrivacidad from "./pages/User/AvisoPrivacidad";
+import Terminos from "./pages/User/Terminos";
 
-import Home from "./pages/Home";
-import Catalogo from "./pages/Catalogo";
-import ProductoDetalle from "./pages/ProductoDetalle";
-import Promociones from "./pages/Promociones";
-import Carrito from "./pages/Carrito";
-import Pago from "./pages/Pago";
+import Home from "./pages/User/Home";
+import Catalogo from "./pages/User/Catalogo";
+import ProductoDetalle from "./pages/User/ProductoDetalle";
+import Promociones from "./pages/User/Promociones";
+import Carrito from "./pages/User/Carrito";
+import Pago from "./pages/User/Pago";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Profile from "./pages/Profile";
+import Profile from "./pages/User/Profile";
 
 import VerifyEmail from "./pages/VerifyEmail";
-import ForgotPassword from "./pages/ForgotPassword";
+import ForgotPassword from "./pages/User/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import GoogleCallback from "./pages/GoogleCallback";
 
@@ -32,10 +36,14 @@ import Error404 from "./pages/errors/Error404";
 import Error500 from "./pages/errors/Error500";
 
 /* 👉 nuevas páginas menú hamburguesa */
-import Ayuda from "./pages/Ayuda";
-import Configuracion from "./pages/Configuracion";
-import Contacto from "./pages/Contacto";
-import Tiendas from "./pages/Tiendas";
+import Ayuda from "./pages/menu/Ayuda";
+import Configuracion from "./pages/menu/Configuracion";
+import Contacto from "./pages/menu/Contacto";
+import Tiendas from "./pages/menu/Tiendas";
+
+const storedUser = JSON.parse(localStorage.getItem("user"));
+const API_URL = "https://sl-back.vercel.app";
+
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -49,16 +57,29 @@ export default function App() {
   }
 
   // Sincroniza usuario con localStorage
-  useEffect(() => {
+useEffect(() => {
+  async function cargarUsuario() {
     const token = localStorage.getItem("token");
-    const u = localStorage.getItem("user");
+    if (!token) return;
 
-    if (token && u) {
-      setUser(JSON.parse(u));
-    } else {
+    try {
+      const res = await axios.get(`${API_URL}/api/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      setUser(res.data);
+
+    } catch {
+      localStorage.clear();
       setUser(null);
     }
-  }, []);
+  }
+
+  cargarUsuario();
+}, []);
+
 
   return (
     <CartProvider>
@@ -67,7 +88,7 @@ export default function App() {
         <CartFloatingButton />
         <MiniCart />
 
-        <div className="container my-4 flex-grow-1">
+        <div className="container-fluid flex-grow-1 px-4 py-4">
           <Routes>
 
             {/* PRINCIPALES */}
@@ -125,6 +146,15 @@ export default function App() {
 
             {/* 404 SIEMPRE AL FINAL */}
             <Route path="*" element={<Error404 />} />
+
+            <Route
+               path="/admin"
+               element={
+                user?.rol === "admin"
+                 ? <Dashboard />
+                  : <Navigate to="/" />
+             }
+            />
 
           </Routes>
         </div>
