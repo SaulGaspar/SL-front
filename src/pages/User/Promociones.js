@@ -18,7 +18,7 @@ export default function Promociones() {
         <h2 className="promo-highlight">
           🎉 ¡Todo el año descuentos especiales!
         </h2>
-        <p className="mt-3" style={{ fontSize: "1.1rem" }}>
+        <p className="mt-3" style={{ fontSize: "1.1rem", color: "var(--text-main)" }}>
           Llévate <strong>2 productos</strong> y recibe un <strong>descuento especial</strong>.  
           <br />
           Al llevarte <strong>5 productos o más</strong>, obtienes un precio <strong>por mayoreo</strong>.
@@ -36,10 +36,10 @@ export default function Promociones() {
                 alt={`promo-${n}`}
               />
               <div className="card-body text-center">
-                <h5 className="fw-bold">
+                <h5 className="fw-bold" style={{ color: "var(--text-main)" }}>
                   {n === 1 ? "Descuento por Dúo" : n === 2 ? "Mayoreo" : "Temporada Activa"}
                 </h5>
-                <p>
+                <p style={{ color: "var(--text-muted)" }}>
                   {n === 1 && "Compra 2 productos y recibe descuentos inmediatos."}
                   {n === 2 && "Al llevarte 5 o más productos obtienes precios especiales."}
                   {n === 3 && "Promos en ropa, accesorios y artículos deportivos."}
@@ -54,7 +54,9 @@ export default function Promociones() {
       </div>
 
       {/* Beneficios */}
-      <h3 className="text-center mb-4">¿Por qué elegir SportLike?</h3>
+      <h3 className="text-center mb-4" style={{ color: "var(--text-main)" }}>
+        ¿Por qué elegir SportLike?
+      </h3>
       <div className="row g-4 mb-5">
         {[
           { icon: "🚚", title: "Envíos rápidos", text: "Tu pedido llega entre 2 y 5 días hábiles." },
@@ -64,8 +66,8 @@ export default function Promociones() {
           <div key={i} className="col-md-4">
             <div className="benefit-box shadow-sm">
               <div className="benefit-icon">{b.icon}</div>
-              <h5 className="mt-3">{b.title}</h5>
-              <p>{b.text}</p>
+              <h5 className="mt-3" style={{ color: "var(--text-main)" }}>{b.title}</h5>
+              <p style={{ color: "var(--text-muted)" }}>{b.text}</p>
             </div>
           </div>
         ))}
@@ -73,7 +75,9 @@ export default function Promociones() {
 
       {/* CTA */}
       <div className="text-center mt-5 mb-5">
-        <h3 className="mb-3">¿Listo para aprovechar las ofertas?</h3>
+        <h3 className="mb-3" style={{ color: "var(--text-main)" }}>
+          ¿Listo para aprovechar las ofertas?
+        </h3>
         <Link to="/catalogo" className="btn cta-btn">
           Ver catálogo completo
         </Link>

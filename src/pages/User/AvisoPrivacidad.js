@@ -96,11 +96,11 @@ export default function AvisoPrivacidad() {
       <div className="aviso-container">
 
         {/* 🔙 Flecha para volver */}
-        <Link to="/login" className="back-arrow">⬅ Volver al inicio de sesión</Link>
+        <Link to="/register" className="back-arrow">⬅ Volver al registro</Link>
 
         {/* 📌 Migas de pan */}
         <div className="breadcrumb">
-          <Link to="/login">Login</Link> / <span>Aviso de Privacidad</span>
+          <Link to="/register">Registro</Link> / <span>Aviso de Privacidad</span>
         </div>
 
         <h1 className="aviso-title">Aviso de Privacidad</h1>

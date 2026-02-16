@@ -90,11 +90,11 @@ export default function Terminos() {
 
       <div className="terminos-container">
         {/* 🔙 Flecha para volver */}
-        <Link to="/login" className="back-arrow">⬅ Volver al inicio de sesión</Link>
+        <Link to="/register" className="back-arrow">⬅ Volver al registro</Link>
 
         {/* 📌 Migas de pan */}
         <div className="breadcrumb">
-          <Link to="/login">Login</Link> / <span>Términos y Condiciones</span>
+          <Link to="/register">Registro</Link> / <span>Términos y Condiciones</span>
         </div>
 
         <h1 className="terminos-title">Términos y Condiciones</h1>

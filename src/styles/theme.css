@@ -58,7 +58,7 @@ body,
 ============================= */
 .card {
   background: var(--bg-card) !important;
-  color: var(--text-main);
+  color: var(--text-main) !important;
   border-radius: 18px;
   transition: transform .2s ease, box-shadow .2s ease;
 }
@@ -66,6 +66,43 @@ body,
 .card:hover {
   transform: translateY(-5px);
   box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+/* Títulos y textos dentro de cards */
+.card h1, .card h2, .card h3, .card h4, .card h5, .card h6,
+.card-title, .card-body h1, .card-body h2, .card-body h3, 
+.card-body h4, .card-body h5, .card-body h6 {
+  color: var(--text-main) !important;
+}
+
+.card p, .card-body p, .card-text {
+  color: var(--text-main) !important;
+}
+
+/* =============================
+   TEXTOS GLOBALES - FIX UNIVERSAL
+============================= */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-main) !important;
+}
+
+p, span, div, label {
+  color: var(--text-main);
+}
+
+/* Fix para text-muted de Bootstrap */
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+/* Fix para text-secondary de Bootstrap */
+.text-secondary {
+  color: var(--text-muted) !important;
+}
+
+/* Fix para small */
+.small, small {
+  color: var(--text-muted) !important;
 }
 
 /* =============================
@@ -76,7 +113,7 @@ body,
 }
 
 .navbar a {
-  color: white;
+  color: white !important;
 }
 
 /* =============================
@@ -85,18 +122,24 @@ body,
 .btn-primary {
   background: var(--accent);
   border: none;
-  color: var(--text-main);
+  color: #ffffff !important;
   transition: background .25s ease, color .25s ease;
 }
 
 .btn-primary:hover {
   background: #3b5ed8;
+  color: #ffffff !important;
+}
+
+body[data-bs-theme="dark"] .btn-primary {
+  background: var(--accent);
+  color: #020617 !important;
 }
 
 /* CTA BUTTON */
 .cta-btn {
   background-color: var(--accent);
-  color: var(--text-main);
+  color: #ffffff !important;
   padding: 12px 28px;
   font-size: 1.1rem;
   border-radius: 8px;
@@ -110,7 +153,7 @@ body,
 
 body[data-bs-theme="dark"] .cta-btn {
   background-color: #60a5fa;
-  color: #020617;
+  color: #020617 !important;
 }
 
 body[data-bs-theme="dark"] .cta-btn:hover {
@@ -118,7 +161,7 @@ body[data-bs-theme="dark"] .cta-btn:hover {
 }
 
 /* =============================
-   INPUTS
+   INPUTS Y PLACEHOLDERS - FIX GLOBAL
 ============================= */
 input,
 select,
@@ -130,8 +173,34 @@ textarea,
   border: 1px solid var(--border-soft) !important;
 }
 
+/* Placeholders en modo claro */
+input::placeholder,
+textarea::placeholder,
+.form-control::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+/* Placeholders en modo oscuro */
+body[data-bs-theme="dark"] input::placeholder,
+body[data-bs-theme="dark"] textarea::placeholder,
 body[data-bs-theme="dark"] .form-control::placeholder {
-  color: #94a3b8;
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+/* Options de select */
+select option {
+  background: var(--bg-card) !important;
+  color: var(--text-main) !important;
+}
+
+/* =============================
+   LABELS DE FORMULARIOS
+============================= */
+.form-label, label {
+  color: var(--text-main) !important;
+  font-weight: 600;
 }
 
 /* =============================
@@ -141,8 +210,28 @@ a {
   color: var(--accent);
 }
 
+a:hover {
+  color: var(--accent);
+  filter: brightness(1.2);
+}
+
 body[data-bs-theme="dark"] a:hover {
   color: #93c5fd;
+}
+
+/* =============================
+   BREADCRUMBS
+============================= */
+.breadcrumb {
+  background: transparent !important;
+}
+
+.breadcrumb-item, .breadcrumb-item a {
+  color: var(--text-muted) !important;
+}
+
+.breadcrumb-item.active {
+  color: var(--text-main) !important;
 }
 
 /* =============================
@@ -194,41 +283,45 @@ body[data-bs-theme="dark"] .footer {
 ============================= */
 .promo-banner {
   background: linear-gradient(135deg, var(--accent), #142b47);
-  color: var(--text-main);
+  color: #ffffff !important;
   padding: 50px 30px;
   border-radius: 14px;
   text-align: center;
   box-shadow: 0 6px 20px rgba(0,0,0,0.15);
 }
 
+.promo-banner * {
+  color: #ffffff !important;
+}
+
 body[data-bs-theme="dark"] .promo-banner {
   background: linear-gradient(135deg, #0b1220, #142b47);
-  color: var(--text-muted);
 }
 
 .promo-title {
   font-size: 2.2rem;
   font-weight: 700;
+  color: #ffffff !important;
 }
 
 .promo-sub {
   font-size: 1.2rem;
   opacity: 0.9;
+  color: #ffffff !important;
 }
 
 .promo-highlight {
-  color: var(--accent);
+  color: var(--accent) !important;
   font-weight: 700;
   font-size: 1.4rem;
 }
 
 .benefit-box {
-  background: var(--bg-main);
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 18px;
   text-align: center;
   border: 1px solid var(--border-soft);
-  color: var(--text-main);
   transition: transform .25s ease;
 }
 
@@ -236,9 +329,12 @@ body[data-bs-theme="dark"] .promo-banner {
   transform: scale(1.02);
 }
 
+.benefit-box h5, .benefit-box p {
+  color: var(--text-main) !important;
+}
+
 body[data-bs-theme="dark"] .benefit-box {
   background: #0b1220;
-  color: var(--text-muted);
 }
 
 .benefit-icon {
@@ -256,14 +352,36 @@ body[data-bs-theme="dark"] .bg-body-tertiary {
 /* ===============================
    LOGIN / REGISTER DARK FIX
 =============================== */
+.login-card,
+.register-card {
+  background: var(--bg-card) !important;
+  color: var(--text-main) !important;
+}
+
+.login-title,
+.register-title {
+  color: var(--text-main) !important;
+}
+
+.login-input,
+.register-input {
+  background: var(--bg-card) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-soft) !important;
+}
+
+.login-input::placeholder,
+.register-input::placeholder {
+  color: #94a3b8 !important;
+}
+
 body[data-bs-theme="dark"] .login-card,
 body[data-bs-theme="dark"] .register-card {
   background: #0b1220 !important;
 }
 
 body[data-bs-theme="dark"] .login-title,
-body[data-bs-theme="dark"] .register-title,
-body[data-bs-theme="dark"] .form-label {
+body[data-bs-theme="dark"] .register-title {
   color: #f1f5f9 !important;
 }
 
@@ -274,8 +392,40 @@ body[data-bs-theme="dark"] .register-input {
   border: 1px solid #1e293b !important;
 }
 
+body[data-bs-theme="dark"] .login-input::placeholder,
+body[data-bs-theme="dark"] .register-input::placeholder {
+  color: #64748b !important;
+}
+
+.password-toggle {
+  color: var(--text-main) !important;
+}
+
 body[data-bs-theme="dark"] .password-toggle {
   color: #cbd5f5 !important;
+}
+
+.error-text {
+  color: #dc3545 !important;
+}
+
+/* =============================
+   PRODUCTO DETALLE
+============================= */
+.pd-title {
+  color: var(--text-main) !important;
+}
+
+.pd-price {
+  color: var(--text-main) !important;
+}
+
+.pd-small {
+  color: var(--text-muted) !important;
+}
+
+.pd-breadcrumb, .pd-breadcrumb * {
+  color: var(--text-muted) !important;
 }
 
 /* =============================
@@ -287,10 +437,6 @@ body[data-bs-theme="dark"] .password-toggle {
 
 .bg-white {
   background: var(--bg-card) !important;
-}
-
-.text-secondary {
-  color: var(--text-muted) !important;
 }
 
 .border {
@@ -308,13 +454,143 @@ body[data-bs-theme="dark"] .password-toggle {
   transform: scale(1.01);
 }
 
-/* SWITCH ANIMADO */
-.animated-switch {
+/* ========================================
+   SWITCH iOS MODERNO CON ON/OFF
+======================================== */
+.ios-switch {
+  position: relative;
+  display: inline-block;
+  width: 90px;
+  height: 40px;
   cursor: pointer;
 }
 
-.animated-switch:checked {
-  transform: scale(1.15);
+.ios-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ios-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(145deg, #d1d5db, #e5e7eb);
+  border-radius: 40px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    inset 2px 2px 5px rgba(0, 0, 0, 0.1),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.7);
+}
+
+/* Etiqueta ON/OFF */
+.ios-label {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #94a3b8;
+  right: 12px;
+}
+
+/* Círculo del switch */
+.ios-slider::before {
+  content: "";
+  position: absolute;
+  height: 32px;
+  width: 32px;
+  left: 4px;
+  bottom: 4px;
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  border-radius: 50%;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    2px 2px 5px rgba(0, 0, 0, 0.2),
+    -1px -1px 3px rgba(255, 255, 255, 0.9);
+}
+
+/* Estado ACTIVADO (ON) */
+.ios-switch input:checked + .ios-slider {
+  background: linear-gradient(145deg, #6366f1, #818cf8);
+  box-shadow: 
+    inset 2px 2px 5px rgba(79, 70, 229, 0.4),
+    inset -2px -2px 5px rgba(139, 92, 246, 0.3),
+    0 0 15px rgba(99, 102, 241, 0.4);
+}
+
+.ios-switch input:checked + .ios-slider .ios-label {
+  left: 12px;
+  right: auto;
+  color: #ffffff;
+}
+
+.ios-switch input:checked + .ios-slider::before {
+  transform: translateX(50px);
+  background: linear-gradient(145deg, #ffffff, #fefefe);
+  box-shadow: 
+    2px 2px 8px rgba(0, 0, 0, 0.3),
+    -2px -2px 5px rgba(255, 255, 255, 1);
+}
+
+/* Efecto hover */
+.ios-switch:hover .ios-slider {
+  filter: brightness(1.05);
+}
+
+.ios-switch:hover .ios-slider::before {
+  box-shadow: 
+    2px 2px 8px rgba(0, 0, 0, 0.25),
+    -1px -1px 4px rgba(255, 255, 255, 1);
+}
+
+/* Efecto active/press */
+.ios-switch:active .ios-slider::before {
+  width: 38px;
+}
+
+/* MODO OSCURO */
+body[data-bs-theme="dark"] .ios-slider {
+  background: linear-gradient(145deg, #334155, #475569);
+  box-shadow: 
+    inset 2px 2px 5px rgba(0, 0, 0, 0.3),
+    inset -2px -2px 5px rgba(71, 85, 105, 0.2);
+}
+
+body[data-bs-theme="dark"] .ios-slider .ios-label {
+  color: #64748b;
+}
+
+body[data-bs-theme="dark"] .ios-slider::before {
+  background: linear-gradient(145deg, #cbd5e1, #e2e8f0);
+}
+
+body[data-bs-theme="dark"] .ios-switch input:checked + .ios-slider {
+  background: linear-gradient(145deg, #60a5fa, #818cf8);
+  box-shadow: 
+    inset 2px 2px 5px rgba(59, 130, 246, 0.4),
+    inset -2px -2px 5px rgba(96, 165, 250, 0.3),
+    0 0 15px rgba(96, 165, 250, 0.5);
+}
+
+body[data-bs-theme="dark"] .ios-switch input:checked + .ios-slider .ios-label {
+  color: #ffffff;
+}
+
+/* ANIMACIÓN NOTIFICACIÓN */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 /* =============================
@@ -373,4 +649,44 @@ body[data-bs-theme="dark"] {
   --sidepanel-bg: #0b1220;
   --sidepanel-text: #e5edff;
   --sidepanel-link-hover: #60a5fa;
+}
+
+/* =============================
+   SIDE PANEL - FIX ESPECÍFICO
+============================= */
+.side-panel,
+.side-panel * {
+  color: var(--sidepanel-text) !important;
+}
+
+.side-panel {
+  background: var(--sidepanel-bg) !important;
+}
+
+.side-panel h4,
+.side-panel button,
+.side-panel a {
+  color: var(--sidepanel-text) !important;
+}
+
+.side-panel a:hover {
+  color: var(--sidepanel-link-hover) !important;
+}
+
+.side-header button {
+  color: var(--sidepanel-text) !important;
+}
+
+/* Modo claro */
+body:not([data-bs-theme="dark"]) .side-panel {
+  background: #ffffff !important;
+}
+
+body:not([data-bs-theme="dark"]) .side-panel,
+body:not([data-bs-theme="dark"]) .side-panel * {
+  color: #0a2540 !important;
+}
+
+body:not([data-bs-theme="dark"]) .side-panel a:hover {
+  color: #1a73e8 !important;
 }

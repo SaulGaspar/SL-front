@@ -12,8 +12,13 @@ export default function Home() {
           Bienvenido a <span style={{ color: "var(--accent)" }}>SportLike</span>
         </h1>
         <p
-          className="lead text-secondary text-center mx-auto"
-          style={{ maxWidth: "750px", fontSize: "1.2rem", lineHeight: "1.6" }}
+          className="lead mx-auto"
+          style={{ 
+            maxWidth: "750px", 
+            fontSize: "1.2rem", 
+            lineHeight: "1.6",
+            color: "var(--text-muted)"
+          }}
         >
           En SportLike nos dedicamos a ofrecer productos deportivos de alta calidad, combinando innovación, rendimiento y estilo. Nuestra misión es acompañarte en tu camino hacia un estilo de vida activo, proporcionándote una plataforma moderna, segura y eficiente para tus compras deportivas.
         </p>
@@ -37,8 +42,10 @@ export default function Home() {
             <div key={i} className="col-md-4">
               <div className="card shadow-sm h-100 transition-box">
                 <div className="card-body text-center">
-                  <h4 className="fw-bold mb-3">{card.title}</h4>
-                  <p className="text-secondary" style={{ fontSize: "1.05rem" }}>
+                  <h4 className="fw-bold mb-3" style={{ color: "var(--text-main)" }}>
+                    {card.title}
+                  </h4>
+                  <p style={{ fontSize: "1.05rem", color: "var(--text-muted)" }}>
                     {card.text}
                   </p>
                 </div>
@@ -52,11 +59,29 @@ export default function Home() {
       {/* SECCIÓN INFERIOR */}
       <div className="bg-light py-5 mt-4 section-bg">
         <div className="container">
-          <h2 className="fw-bold text-center mb-4">¿Por qué elegir SportLike?</h2>
-          <p className="text-secondary text-center mx-auto" style={{ maxWidth: "850px", fontSize: "1.1rem", lineHeight: "1.7" }}>
+          <h2 className="fw-bold text-center mb-4" style={{ color: "var(--text-main)" }}>
+            ¿Por qué elegir SportLike?
+          </h2>
+          <p 
+            className="text-center mx-auto" 
+            style={{ 
+              maxWidth: "850px", 
+              fontSize: "1.1rem", 
+              lineHeight: "1.7",
+              color: "var(--text-muted)"
+            }}
+          >
             En SportLike trabajamos diariamente para ofrecer una experiencia sobresaliente. Nuestra plataforma combina tecnología moderna, seguridad en tus compras y una selección de productos cuidadosamente pensados para atletas, deportistas recreativos y quienes buscan un estilo de vida más saludable.
           </p>
-          <p className="text-secondary text-center mx-auto mt-3" style={{ maxWidth: "850px", fontSize: "1.1rem", lineHeight: "1.7" }}>
+          <p 
+            className="text-center mx-auto mt-3" 
+            style={{ 
+              maxWidth: "850px", 
+              fontSize: "1.1rem", 
+              lineHeight: "1.7",
+              color: "var(--text-muted)"
+            }}
+          >
             Creemos firmemente que el deporte transforma vidas, y queremos ser parte de ese proceso brindándote herramientas, productos y apoyo para que avances hacia tus metas con confianza.
           </p>
         </div>

@@ -5,7 +5,7 @@ import { useCart } from "../../context/CartContext";
 
 export default function Catalogo() {
   const navigate = useNavigate();
-  const { addToCart, toggleMiniCart } = useCart(); // <- nombre correcto
+  const { addToCart, toggleMiniCart } = useCart(); 
 
   const [search, setSearch] = useState("");
   const [type, setType] = useState("");
@@ -128,7 +128,7 @@ export default function Catalogo() {
                       size: p.sizes[0],
                       color: p.colors[0]
                     });
-                    toggleMiniCart(); // <--- ahora funciona
+                    toggleMiniCart();
                   }}
                 >
                   Agregar al carrito
