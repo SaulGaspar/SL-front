@@ -162,10 +162,10 @@ export default function Profile({ user, setUser }) {
 
         <div className="breadcrumb-custom">
           <Link to="/">Inicio</Link> &nbsp;/&nbsp;
-          <span>Mi perfil</span>
+          <span>{editing ? "Actualizar información" : "Mi perfil"}</span>
         </div>
 
-        <h2 className="profile-title">Mi Perfil</h2>
+        <h2 className="profile-title">{editing ? "Actualizar información" : "Mi Perfil"}</h2>
 
         {msg && <div className="alert alert-info">{msg}</div>}
 
@@ -181,10 +181,7 @@ export default function Profile({ user, setUser }) {
               <div className="info-value">{user.correo}</div>
             </div>
 
-            <div className="info-box">
-              <div className="info-label">Rol</div>
-              <div className="info-value">{user.rol}</div>
-            </div>
+            {/* ✅ ROL eliminado */}
 
             <hr className="my-4" />
 
@@ -258,7 +255,9 @@ export default function Profile({ user, setUser }) {
 
             <div className="d-flex gap-2 mt-4">
               <button className="btn-main" type="submit">Guardar cambios</button>
-              <button className="btn-gray" type="button" onClick={() => setEditing(false)}>Cancelar</button>
+              <button className="btn-gray" type="button" onClick={() => { setEditing(false); setMsg(''); }}>
+                Cancelar
+              </button>
             </div>
 
           </form>

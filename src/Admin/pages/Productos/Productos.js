@@ -8,7 +8,7 @@ const API_URL = "https://sl-back.vercel.app";
 const token   = () => localStorage.getItem("token");
 const hdrs    = () => ({ Authorization: `Bearer ${token()}`, "Content-Type": "application/json" });
 const fmt     = (v) => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(v || 0);
-const EMPTY   = { nombre: "", marca: "", descripcion: "", precio: "", categoria: "", imagen: "", activo: 1 };
+const EMPTY   = { nombre: "", marca: "", descripcion: "", precio: "", categoria: "", imagen: "", talla: "", colores: "", activo: 1 };
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
@@ -24,13 +24,13 @@ const CSS = `
   width:100%; padding:10px 10px 10px 36px; border:1.5px solid #e2e8f0;
   border-radius:8px; font-size:.9rem; font-family:inherit; background:#f8fafc;
 }
-.pro-search input:focus { outline:none; border-color:#667eea; background:white; }
+.pro-search input:focus { outline:none; border-color:#1e3a5f; background:white; }
 .pro-search-ico { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#a0aec0; pointer-events:none; }
 .pro-sel { padding:10px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:.88rem; font-family:inherit; background:#f8fafc; min-width:140px; }
-.pro-sel:focus { outline:none; border-color:#667eea; }
+.pro-sel:focus { outline:none; border-color:#1e3a5f; }
 .pro-btn { padding:10px 16px; border-radius:8px; border:none; cursor:pointer; font-family:inherit; font-size:.88rem; font-weight:600; display:flex; align-items:center; gap:6px; transition:all .2s; }
-.pro-btn-primary { background:linear-gradient(135deg,#667eea,#764ba2); color:white; }
-.pro-btn-primary:hover { opacity:.9; transform:translateY(-1px); box-shadow:0 6px 16px rgba(102,126,234,.3); }
+.pro-btn-primary { background:#1e3a5f; color:white; }
+.pro-btn-primary:hover { background:#2c5282; transform:translateY(-1px); box-shadow:0 6px 16px rgba(30,58,95,.3); }
 .pro-btn-ghost { background:#f7fafc; color:#2d3748; border:1.5px solid #e2e8f0; }
 .pro-btn-ghost:hover { background:#edf2f7; }
 .pro-btn:disabled { opacity:.5; cursor:not-allowed; transform:none !important; }
@@ -43,13 +43,16 @@ const CSS = `
 .pro-table tbody tr:last-child td { border-bottom:none; }
 .pro-img { width:46px; height:46px; border-radius:8px; object-fit:cover; background:#edf2f7; border:1px solid #e2e8f0; }
 .pro-name { font-weight:700; color:#1e3a5f; font-size:.9rem; }
-.pro-brand { font-size:.76rem; color:#667eea; font-weight:600; margin-top:2px; }
+.pro-brand { font-size:.76rem; color:#2c5282; font-weight:600; margin-top:2px; }
 .pro-desc { font-size:.76rem; color:#a0aec0; margin-top:2px; max-width:220px; }
 .pro-tag { background:#edf2f7; padding:3px 9px; border-radius:6px; font-size:.75rem; color:#4a5568; display:inline-block; }
 .pro-price { font-weight:700; color:#38a169; font-size:.95rem; }
 .pro-status { padding:4px 10px; border-radius:20px; font-size:.75rem; font-weight:700; display:inline-block; }
 .pro-status-on  { background:#c6f6d5; color:#276749; }
 .pro-status-off { background:#fed7d7; color:#9b2c2c; }
+.pro-chips { display:flex; flex-wrap:wrap; gap:4px; max-width:180px; }
+.pro-chip { background:#edf2f7; padding:2px 8px; border-radius:12px; font-size:.72rem; color:#4a5568; font-weight:600; }
+.pro-color-dot { width:14px; height:14px; border-radius:50%; display:inline-block; border:2px solid white; box-shadow:0 0 0 1px #e2e8f0; }
 .pro-actions { display:flex; gap:7px; }
 .pro-act { padding:7px 11px; border:none; border-radius:7px; cursor:pointer; font-size:.8rem; font-family:inherit; font-weight:600; display:flex; align-items:center; gap:4px; transition:all .15s; }
 .pro-act-edit   { background:#bee3f8; color:#2c5282; }
@@ -59,7 +62,7 @@ const CSS = `
 .pro-empty { padding:56px; text-align:center; color:#a0aec0; }
 .pro-foot { padding:10px 16px; font-size:.8rem; color:#718096; border-top:1px solid #f0f4f8; }
 .pro-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:4000; display:flex; align-items:center; justify-content:center; padding:16px; }
-.pro-modal { background:white; border-radius:16px; width:100%; max-width:560px; max-height:92vh; overflow-y:auto; box-shadow:0 24px 64px rgba(0,0,0,.28); animation:proIn .22s ease; }
+.pro-modal { background:white; border-radius:16px; width:100%; max-width:580px; max-height:92vh; overflow-y:auto; box-shadow:0 24px 64px rgba(0,0,0,.28); animation:proIn .22s ease; }
 @keyframes proIn { from{transform:translateY(18px);opacity:0} to{transform:translateY(0);opacity:1} }
 .pro-mhead { padding:18px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:white; z-index:1; border-radius:16px 16px 0 0; }
 .pro-mhead h3 { margin:0; color:#1e3a5f; font-size:1.1rem; font-weight:700; }
@@ -69,8 +72,9 @@ const CSS = `
 .pro-field { display:flex; flex-direction:column; gap:5px; }
 .pro-field label { font-size:.75rem; font-weight:700; color:#4a5568; text-transform:uppercase; letter-spacing:.5px; }
 .pro-field input, .pro-field textarea, .pro-field select { padding:10px 13px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:.92rem; font-family:inherit; background:#f8fafc; transition:border-color .15s; }
-.pro-field input:focus, .pro-field textarea:focus { outline:none; border-color:#667eea; background:white; box-shadow:0 0 0 3px rgba(102,126,234,.1); }
+.pro-field input:focus, .pro-field textarea:focus { outline:none; border-color:#1e3a5f; background:white; box-shadow:0 0 0 3px rgba(30,58,95,.08); }
 .pro-field textarea { resize:vertical; min-height:80px; }
+.pro-field-hint { font-size:.75rem; color:#a0aec0; margin-top:3px; }
 .pro-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 .pro-img-preview { width:100%; height:120px; border-radius:10px; border:1.5px dashed #e2e8f0; background:#f8fafc; display:flex; align-items:center; justify-content:center; color:#a0aec0; overflow:hidden; }
 .pro-img-preview img { width:100%; height:100%; object-fit:cover; }
@@ -78,6 +82,9 @@ const CSS = `
 .pro-toggle { flex:1; padding:10px; border:2px solid #e2e8f0; border-radius:8px; cursor:pointer; font-family:inherit; font-size:.86rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:5px; background:#f8fafc; transition:all .2s; }
 .pro-toggle.on  { border-color:#38a169; background:#c6f6d5; color:#276749; }
 .pro-toggle.off { border-color:#e53e3e; background:#fed7d7; color:#9b2c2c; }
+.pro-section-divider { font-size:.75rem; font-weight:700; color:#4a5568; text-transform:uppercase; letter-spacing:.5px; padding-bottom:6px; border-bottom:1.5px solid #e2e8f0; margin-top:4px; }
+.pro-chips-preview { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; min-height:28px; }
+.pro-chip-preview { background:#ebf8ff; color:#2b6cb0; padding:3px 10px; border-radius:12px; font-size:.76rem; font-weight:600; }
 .pro-mfoot { padding:16px 24px; border-top:1px solid #e2e8f0; display:flex; gap:10px; justify-content:flex-end; position:sticky; bottom:0; background:white; border-radius:0 0 16px 16px; }
 .pro-err { background:#fff5f5; border:1px solid #fc8181; color:#9b2c2c; padding:10px 14px; border-radius:8px; font-size:.86rem; }
 .pro-toast { position:fixed; bottom:24px; right:24px; z-index:9999; padding:12px 20px; border-radius:10px; color:white; font-family:'DM Sans',sans-serif; font-size:.88rem; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.2); animation:proIn .3s ease; }
@@ -86,6 +93,41 @@ const CSS = `
 .spinning { animation:spin .9s linear infinite; }
 @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 `;
+
+const COLOR_MAP = {
+  negro:"#111",blanco:"#fff",rojo:"#e53e3e",azul:"#3182ce",verde:"#38a169",
+  amarillo:"#d69e2e",naranja:"#dd6b20",morado:"#805ad5",rosa:"#d53f8c",
+  gris:"#718096",cafe:"#92400e",beige:"#d4a574",navy:"#1e3a5f",celeste:"#63b3ed",
+};
+
+function ColorDots({ value }) {
+  if (!value) return <span style={{ color: "#a0aec0", fontSize: ".75rem" }}>—</span>;
+  const colores = value.split(",").map(s => s.trim()).filter(Boolean);
+  return (
+    <div style={{ display:"flex", flexWrap:"wrap", gap:"4px", alignItems:"center" }}>
+      {colores.slice(0,6).map(c => {
+        const hex = COLOR_MAP[c.toLowerCase()];
+        return hex ? (
+          <span key={c} className="pro-color-dot" style={{ background: hex }} title={c} />
+        ) : (
+          <span key={c} className="pro-chip">{c}</span>
+        );
+      })}
+      {colores.length > 6 && <span className="pro-chip">+{colores.length-6}</span>}
+    </div>
+  );
+}
+
+function TallaChips({ value }) {
+  if (!value) return <span style={{ color:"#a0aec0", fontSize:".75rem" }}>—</span>;
+  const tallas = value.split(",").map(s => s.trim()).filter(Boolean);
+  return (
+    <div className="pro-chips">
+      {tallas.slice(0,4).map(t => <span key={t} className="pro-chip">{t}</span>)}
+      {tallas.length > 4 && <span className="pro-chip">+{tallas.length-4}</span>}
+    </div>
+  );
+}
 
 export default function Productos() {
   const [products, setProducts]       = useState([]);
@@ -129,7 +171,11 @@ export default function Productos() {
 
   const openEdit = (p) => {
     setEditing(p);
-    setForm({ nombre: p.nombre||"", marca: p.marca||"", descripcion: p.descripcion||"", precio: p.precio||"", categoria: p.categoria||"", imagen: p.imagen||"", activo: p.activo??1 });
+    setForm({
+      nombre: p.nombre||"", marca: p.marca||"", descripcion: p.descripcion||"",
+      precio: p.precio||"", categoria: p.categoria||"", imagen: p.imagen||"",
+      talla: p.talla||"", colores: p.colores||"", activo: p.activo??1
+    });
     setFormErr(""); setShowModal(true);
   };
 
@@ -143,7 +189,8 @@ export default function Productos() {
     try {
       const url    = editing ? `${API_URL}/api/admin/products/${editing.id}` : `${API_URL}/api/admin/products`;
       const method = editing ? "PUT" : "POST";
-      const res    = await fetch(url, { method, headers: hdrs(), body: JSON.stringify({ ...form, precio: Number(form.precio) }) });
+      const payload = { ...form, precio: Number(form.precio) };
+      const res    = await fetch(url, { method, headers: hdrs(), body: JSON.stringify(payload) });
       const data   = await res.json();
       if (res.ok) { showToast(editing ? "Producto actualizado" : "Producto creado"); closeModal(); fetchProducts(); }
       else { setFormErr(data.error || "Error al guardar el producto"); }
@@ -162,6 +209,10 @@ export default function Productos() {
 
   const categories = [...new Set(products.map(p => p.categoria).filter(Boolean))];
   const brands     = [...new Set(products.map(p => p.marca).filter(Boolean))];
+
+  // Preview de tallas y colores en el modal
+  const tallasPreview = form.talla ? form.talla.split(",").map(s=>s.trim()).filter(Boolean) : [];
+  const coloresPreview = form.colores ? form.colores.split(",").map(s=>s.trim()).filter(Boolean) : [];
 
   return (
     <div className="pro">
@@ -218,6 +269,8 @@ export default function Productos() {
                   <th>Imagen</th>
                   <th>Nombre / Marca</th>
                   <th>Categoría</th>
+                  <th>Tallas</th>
+                  <th>Colores</th>
                   <th>Precio</th>
                   <th>Estado</th>
                   <th>Acciones</th>
@@ -239,6 +292,8 @@ export default function Productos() {
                       {p.descripcion && <div className="pro-desc">{p.descripcion.substring(0,55)}{p.descripcion.length > 55 ? "…" : ""}</div>}
                     </td>
                     <td><span className="pro-tag">{p.categoria || "—"}</span></td>
+                    <td><TallaChips value={p.talla} /></td>
+                    <td><ColorDots value={p.colores} /></td>
                     <td><span className="pro-price">{fmt(p.precio)}</span></td>
                     <td>
                       <span className={`pro-status ${p.activo ? "pro-status-on" : "pro-status-off"}`}>
@@ -251,7 +306,7 @@ export default function Productos() {
                           <MdEdit size={14} /> Editar
                         </button>
                         <button className="pro-act pro-act-delete" onClick={() => handleDelete(p.id, p.nombre)}>
-                          <MdDelete size={14} /> {p.activo ? "Desactivar" : "Activar"}
+                          <MdDelete size={14} /> {p.activo ? "Desactivar" : "Eliminar"}
                         </button>
                       </div>
                     </td>
@@ -264,6 +319,7 @@ export default function Productos() {
         )}
       </div>
 
+      {/* ── Modal ── */}
       {showModal && (
         <div className="pro-overlay" onClick={e => { if (e.target.classList.contains("pro-overlay")) closeModal(); }}>
           <div className="pro-modal">
@@ -275,11 +331,15 @@ export default function Productos() {
             <div className="pro-mbody">
               {formErr && <div className="pro-err">⚠ {formErr}</div>}
 
+              {/* Preview imagen */}
               <div className="pro-img-preview">
                 {form.imagen
                   ? <img src={form.imagen} alt="preview" onError={e => { e.target.style.display="none"; }} />
                   : <span style={{ fontSize:"2rem" }}>🖼</span>}
               </div>
+
+              {/* Sección: Info básica */}
+              <div className="pro-section-divider">Información básica</div>
 
               <div className="pro-row">
                 <div className="pro-field">
@@ -315,8 +375,50 @@ export default function Productos() {
                 <input placeholder="https://…" value={form.imagen} onChange={set("imagen")} />
               </div>
 
+              {/* Sección: Variantes */}
+              <div className="pro-section-divider">Variantes del producto</div>
+
               <div className="pro-field">
-                <label>Estado</label>
+                <label>Tallas</label>
+                <input
+                  placeholder="Ej. XS, S, M, L, XL  o  38, 39, 40, 41"
+                  value={form.talla}
+                  onChange={set("talla")}
+                />
+                <span className="pro-field-hint">Separa con comas. Ej: S, M, L, XL</span>
+                {tallasPreview.length > 0 && (
+                  <div className="pro-chips-preview">
+                    {tallasPreview.map(t => <span key={t} className="pro-chip-preview">{t}</span>)}
+                  </div>
+                )}
+              </div>
+
+              <div className="pro-field">
+                <label>Colores</label>
+                <input
+                  placeholder="Ej. Negro, Blanco, Rojo, Azul"
+                  value={form.colores}
+                  onChange={set("colores")}
+                />
+                <span className="pro-field-hint">Separa con comas. Usa nombres en español para ver puntos de color</span>
+                {coloresPreview.length > 0 && (
+                  <div className="pro-chips-preview" style={{ alignItems:"center" }}>
+                    {coloresPreview.map(c => {
+                      const hex = COLOR_MAP[c.toLowerCase()];
+                      return hex ? (
+                        <span key={c} className="pro-color-dot" style={{ background: hex, width:18, height:18 }} title={c} />
+                      ) : (
+                        <span key={c} className="pro-chip-preview">{c}</span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Estado */}
+              <div className="pro-section-divider">Estado</div>
+
+              <div className="pro-field">
                 <div className="pro-toggle-row">
                   <button className={`pro-toggle ${form.activo === 1 ? "on" : ""}`} onClick={() => setForm(f => ({ ...f, activo: 1 }))}>
                     <MdCheckCircle size={16} /> Activo

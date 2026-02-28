@@ -2,59 +2,68 @@
    VARIABLES GLOBALES
 ============================= */
 :root {
-  --bg-main: #f2f4f8;
-  --bg-card: #ffffff;
+  --bg-main:   #f2f4f8;
+  --bg-card:   #ffffff;
   --text-main: #0a2540;
-  --text-muted: #667085;
+  --text-muted:#667085;
+  --nav-bg:    linear-gradient(90deg,#0b1f44,#06204b);
+  --accent:    #4f7cff;
+  --border-soft:#e4e7ef;
 
-  --nav-bg: linear-gradient(90deg,#0b1f44,#06204b);
-  --accent: #4f7cff;
+  --btn-main-bg:        #4f7cff;
+  --btn-main-text:      #ffffff;
+  --btn-secondary-bg:   #e0e0e0;
+  --btn-secondary-text: #0a2540;
+  --btn-gray-bg:        #f5f5f5;
+  --btn-gray-text:      #0a2540;
 
-  --border-soft: #e4e7ef;
+  --sidepanel-bg:        #ffffff;
+  --sidepanel-text:      #0a2540;
+  --sidepanel-link-hover:#1a73e8;
 }
 
 /* =============================
-   DARK MODE (BOOTSTRAP)
+   DARK MODE
 ============================= */
 body[data-bs-theme="dark"] {
-  --bg-main: #020617;
-  --bg-card: #0b1220;
+  --bg-main:   #020617;
+  --bg-card:   #0b1220;
   --text-main: #e5edff;
-  --text-muted: #9aa5ce;
+  --text-muted:#9aa5ce;
+  --nav-bg:    linear-gradient(90deg,#020617,#020617);
+  --accent:    #60a5fa;
+  --border-soft:#1e293b;
 
-  --nav-bg: linear-gradient(90deg,#020617,#020617);
-  --accent: #60a5fa;
+  --btn-main-bg:        #60a5fa;
+  --btn-main-text:      #020617;
+  --btn-secondary-bg:   #1e293b;
+  --btn-secondary-text: #e5edff;
+  --btn-gray-bg:        #0b1220;
+  --btn-gray-text:      #9aa5ce;
 
-  --border-soft: #1e293b;
+  --sidepanel-bg:        #0b1220;
+  --sidepanel-text:      #e5edff;
+  --sidepanel-link-hover:#60a5fa;
 }
 
 /* =============================
-   BASE
+   BASE — SIN TOCAR TAGS GLOBALES
 ============================= */
-html,
-body,
-#root {
+html, body, #root {
   min-height: 100%;
   background: var(--bg-main);
   color: var(--text-main);
+  /* ⚠️ Solo aquí, en el root, aplicamos el color base */
 }
 
-* {
-  transition: background .25s ease, 
-              color .25s ease,
-              border-color .25s ease;
-}
-
-/* =============================
-   CONTENEDORES
-============================= */
-.container,
-.page-wrapper {
-  background: transparent;
+/* Transiciones suaves de tema — solo en elementos Bootstrap/globales */
+.card, .btn, .form-control, .form-select, .navbar,
+.footer, .breadcrumb, .badge, .alert, .modal-content {
+  transition: background .25s ease, color .25s ease, border-color .25s ease;
 }
 
 /* =============================
-   CARDS
+   CARDS BOOTSTRAP
 ============================= */
 .card {
   background: var(--bg-card) !important;
@@ -62,81 +71,40 @@ body,
   border-radius: 18px;
   transition: transform .2s ease, box-shadow .2s ease;
 }
-
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-}
-
-/* Títulos y textos dentro de cards */
-.card h1, .card h2, .card h3, .card h4, .card h5, .card h6,
-.card-title, .card-body h1, .card-body h2, .card-body h3, 
-.card-body h4, .card-body h5, .card-body h6 {
-  color: var(--text-main) !important;
-}
-
-.card p, .card-body p, .card-text {
-  color: var(--text-main) !important;
-}
+.card:hover { transform: translateY(-5px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+.card h1,.card h2,.card h3,.card h4,.card h5,.card h6,
+.card-title,.card-body h1,.card-body h2,.card-body h3,
+.card-body h4,.card-body h5,.card-body h6 { color: var(--text-main) !important; }
+.card p, .card-body p, .card-text { color: var(--text-main) !important; }
 
 /* =============================
-   TEXTOS GLOBALES - FIX UNIVERSAL
+   TEXTOS — solo dentro de contenedores Bootstrap
+   NO aplicamos a tags globales para no romper otros componentes
 ============================= */
-h1, h2, h3, h4, h5, h6 {
-  color: var(--text-main) !important;
-}
+.container h1, .container h2, .container h3,
+.container h4, .container h5, .container h6 { color: var(--text-main) !important; }
 
-p, span, div, label {
-  color: var(--text-main);
-}
-
-/* Fix para text-muted de Bootstrap */
-.text-muted {
-  color: var(--text-muted) !important;
-}
-
-/* Fix para text-secondary de Bootstrap */
-.text-secondary {
-  color: var(--text-muted) !important;
-}
-
-/* Fix para small */
-.small, small {
-  color: var(--text-muted) !important;
-}
+.text-muted    { color: var(--text-muted) !important; }
+.text-secondary{ color: var(--text-muted) !important; }
+.small, small  { color: var(--text-muted) !important; }
 
 /* =============================
-   NAVBAR
+   NAVBAR BOOTSTRAP (no afecta .nb del Navbar.js)
 ============================= */
-.navbar {
-  background: var(--nav-bg);
-}
-
-.navbar a {
-  color: white !important;
-}
+.navbar { background: var(--nav-bg); }
+.navbar a { color: white !important; }
 
 /* =============================
-   BOTONES
+   BOTONES BOOTSTRAP
 ============================= */
 .btn-primary {
-  background: var(--accent);
+  background: var(--accent) !important;
   border: none;
   color: #ffffff !important;
-  transition: background .25s ease, color .25s ease;
 }
+.btn-primary:hover { background: #3b5ed8 !important; }
+body[data-bs-theme="dark"] .btn-primary { color: #020617 !important; }
 
-.btn-primary:hover {
-  background: #3b5ed8;
-  color: #ffffff !important;
-}
-
-body[data-bs-theme="dark"] .btn-primary {
-  background: var(--accent);
-  color: #020617 !important;
-}
-
-/* CTA BUTTON */
 .cta-btn {
   background-color: var(--accent);
   color: #ffffff !important;
@@ -144,142 +112,55 @@ body[data-bs-theme="dark"] .btn-primary {
   font-size: 1.1rem;
   border-radius: 8px;
   border: none;
-  transition: background .25s ease, color .25s ease;
 }
-
-.cta-btn:hover {
-  background-color: #3b5ed8;
-}
-
-body[data-bs-theme="dark"] .cta-btn {
-  background-color: #60a5fa;
-  color: #020617 !important;
-}
-
-body[data-bs-theme="dark"] .cta-btn:hover {
-  background-color: #3a7ee0;
-}
+.cta-btn:hover { background-color: #3b5ed8; }
+body[data-bs-theme="dark"] .cta-btn { background-color: #60a5fa; color: #020617 !important; }
 
 /* =============================
-   INPUTS Y PLACEHOLDERS - FIX GLOBAL
+   INPUTS BOOTSTRAP
 ============================= */
-input,
-select,
-textarea,
-.form-control,
-.form-select {
+.form-control, .form-select {
   background: var(--bg-card) !important;
   color: var(--text-main) !important;
   border: 1px solid var(--border-soft) !important;
 }
-
-/* Placeholders en modo claro */
-input::placeholder,
-textarea::placeholder,
-.form-control::placeholder {
-  color: #94a3b8 !important;
-  opacity: 1 !important;
-}
-
-/* Placeholders en modo oscuro */
-body[data-bs-theme="dark"] input::placeholder,
-body[data-bs-theme="dark"] textarea::placeholder,
-body[data-bs-theme="dark"] .form-control::placeholder {
-  color: #64748b !important;
-  opacity: 1 !important;
-}
-
-/* Options de select */
-select option {
-  background: var(--bg-card) !important;
-  color: var(--text-main) !important;
-}
+.form-control::placeholder { color: #94a3b8 !important; opacity: 1 !important; }
+body[data-bs-theme="dark"] .form-control::placeholder { color: #64748b !important; }
+select option { background: var(--bg-card) !important; color: var(--text-main) !important; }
+.form-label, .form-label label { color: var(--text-main) !important; font-weight: 600; }
 
 /* =============================
-   LABELS DE FORMULARIOS
+   LINKS — solo Bootstrap context
 ============================= */
-.form-label, label {
-  color: var(--text-main) !important;
-  font-weight: 600;
-}
-
-/* =============================
-   LINKS
-============================= */
-a {
-  color: var(--accent);
-}
-
-a:hover {
-  color: var(--accent);
-  filter: brightness(1.2);
-}
-
-body[data-bs-theme="dark"] a:hover {
-  color: #93c5fd;
-}
+a { color: var(--accent); }
+a:hover { filter: brightness(1.2); }
+body[data-bs-theme="dark"] a:hover { color: #93c5fd; }
 
 /* =============================
    BREADCRUMBS
 ============================= */
-.breadcrumb {
-  background: transparent !important;
-}
-
-.breadcrumb-item, .breadcrumb-item a {
-  color: var(--text-muted) !important;
-}
-
-.breadcrumb-item.active {
-  color: var(--text-main) !important;
-}
+.breadcrumb { background: transparent !important; }
+.breadcrumb-item, .breadcrumb-item a { color: var(--text-muted) !important; }
+.breadcrumb-item.active { color: var(--text-main) !important; }
 
 /* =============================
-   FOOTER DEFINITIVO
+   FOOTER
 ============================= */
 .footer {
   background: #eef1f7;
   color: var(--text-main);
   border-top: 1px solid var(--border-soft);
 }
-
-body[data-bs-theme="dark"] .footer {
-  background: #0f172a;
-}
-
-.footer .container {
-  background: transparent !important;
-}
-
-.footer hr {
-  border-color: var(--border-soft);
-}
-
-.footer a {
-  color: var(--text-muted);
-  text-decoration: none;
-}
-
-.footer a:hover {
-  color: var(--accent);
-}
-
-.footer h5,
-.footer h6 {
-  color: var(--text-main);
-}
-
-.social-icons a {
-  transition: transform .25s ease, color .25s ease;
-}
-
-.social-icons a:hover {
-  transform: translateY(-3px);
-  color: var(--accent);
-}
+body[data-bs-theme="dark"] .footer { background: #0f172a; }
+.footer .container { background: transparent !important; }
+.footer hr { border-color: var(--border-soft); }
+.footer a { color: var(--text-muted); text-decoration: none; }
+.footer a:hover { color: var(--accent); }
+.footer h5, .footer h6 { color: var(--text-main); }
+.social-icons a:hover { transform: translateY(-3px); color: var(--accent); }
 
 /* =============================
-   SECCIONES PROMOCIONES Y BENEFICIOS
+   SECCIONES PROMOCIONES
 ============================= */
 .promo-banner {
   background: linear-gradient(135deg, var(--accent), #142b47);
@@ -289,32 +170,11 @@ body[data-bs-theme="dark"] .footer {
   text-align: center;
   box-shadow: 0 6px 20px rgba(0,0,0,0.15);
 }
-
-.promo-banner * {
-  color: #ffffff !important;
-}
-
-body[data-bs-theme="dark"] .promo-banner {
-  background: linear-gradient(135deg, #0b1220, #142b47);
-}
-
-.promo-title {
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: #ffffff !important;
-}
-
-.promo-sub {
-  font-size: 1.2rem;
-  opacity: 0.9;
-  color: #ffffff !important;
-}
-
-.promo-highlight {
-  color: var(--accent) !important;
-  font-weight: 700;
-  font-size: 1.4rem;
-}
+.promo-banner * { color: #ffffff !important; }
+body[data-bs-theme="dark"] .promo-banner { background: linear-gradient(135deg, #0b1220, #142b47); }
+.promo-title  { font-size: 2.2rem; font-weight: 700; color: #ffffff !important; }
+.promo-sub    { font-size: 1.2rem; opacity: .9; color: #ffffff !important; }
+.promo-highlight { color: var(--accent) !important; font-weight: 700; font-size: 1.4rem; }
 
 .benefit-box {
   background: var(--bg-card);
@@ -322,371 +182,102 @@ body[data-bs-theme="dark"] .promo-banner {
   padding: 18px;
   text-align: center;
   border: 1px solid var(--border-soft);
-  transition: transform .25s ease;
 }
-
-.benefit-box:hover {
-  transform: scale(1.02);
-}
-
-.benefit-box h5, .benefit-box p {
-  color: var(--text-main) !important;
-}
-
-body[data-bs-theme="dark"] .benefit-box {
-  background: #0b1220;
-}
-
-.benefit-icon {
-  font-size: 2rem;
-  color: var(--accent);
-}
-
-/* =============================
-   DARK MODE FIX BOOTSTRAP
-============================= */
-body[data-bs-theme="dark"] .bg-body-tertiary {
-  background-color: #0b1220 !important;
-}
-
-/* ===============================
-   LOGIN / REGISTER DARK FIX
-=============================== */
-.login-card,
-.register-card {
-  background: var(--bg-card) !important;
-  color: var(--text-main) !important;
-}
-
-.login-title,
-.register-title {
-  color: var(--text-main) !important;
-}
-
-.login-input,
-.register-input {
-  background: var(--bg-card) !important;
-  color: var(--text-main) !important;
-  border: 1px solid var(--border-soft) !important;
-}
-
-.login-input::placeholder,
-.register-input::placeholder {
-  color: #94a3b8 !important;
-}
-
-body[data-bs-theme="dark"] .login-card,
-body[data-bs-theme="dark"] .register-card {
-  background: #0b1220 !important;
-}
-
-body[data-bs-theme="dark"] .login-title,
-body[data-bs-theme="dark"] .register-title {
-  color: #f1f5f9 !important;
-}
-
-body[data-bs-theme="dark"] .login-input,
-body[data-bs-theme="dark"] .register-input {
-  background: #020617 !important;
-  color: #e5edff !important;
-  border: 1px solid #1e293b !important;
-}
-
-body[data-bs-theme="dark"] .login-input::placeholder,
-body[data-bs-theme="dark"] .register-input::placeholder {
-  color: #64748b !important;
-}
-
-.password-toggle {
-  color: var(--text-main) !important;
-}
-
-body[data-bs-theme="dark"] .password-toggle {
-  color: #cbd5f5 !important;
-}
-
-.error-text {
-  color: #dc3545 !important;
-}
-
-/* =============================
-   PRODUCTO DETALLE
-============================= */
-.pd-title {
-  color: var(--text-main) !important;
-}
-
-.pd-price {
-  color: var(--text-main) !important;
-}
-
-.pd-small {
-  color: var(--text-muted) !important;
-}
-
-.pd-breadcrumb, .pd-breadcrumb * {
-  color: var(--text-muted) !important;
-}
+.benefit-box:hover { transform: scale(1.02); }
+.benefit-box h5, .benefit-box p { color: var(--text-main) !important; }
+body[data-bs-theme="dark"] .benefit-box { background: #0b1220; }
+.benefit-icon { font-size: 2rem; color: var(--accent); }
 
 /* =============================
    BOOTSTRAP OVERRIDES
 ============================= */
-.bg-light {
-  background: var(--bg-main) !important;
-}
-
-.bg-white {
-  background: var(--bg-card) !important;
-}
-
-.border {
-  border-color: var(--border-soft) !important;
-}
+.bg-light  { background: var(--bg-main) !important; }
+.bg-white  { background: var(--bg-card) !important; }
+.border    { border-color: var(--border-soft) !important; }
+body[data-bs-theme="dark"] .bg-body-tertiary { background-color: #0b1220 !important; }
 
 /* =============================
-   ANIMACIONES / TRANSICIONES
+   ANIMACIÓN
 ============================= */
-.transition-box {
-  transition: background .25s ease, transform .15s ease;
-}
+.transition-box { transition: background .25s ease, transform .15s ease; }
+.transition-box:hover { transform: scale(1.01); }
 
-.transition-box:hover {
-  transform: scale(1.01);
-}
-
-/* ========================================
-   SWITCH iOS MODERNO CON ON/OFF
-======================================== */
-.ios-switch {
-  position: relative;
-  display: inline-block;
-  width: 90px;
-  height: 40px;
-  cursor: pointer;
-}
-
-.ios-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
+/* =============================
+   SWITCH iOS (Configuracion.js legacy)
+============================= */
+.ios-switch { position:relative; display:inline-block; width:90px; height:40px; cursor:pointer; }
+.ios-switch input { opacity:0; width:0; height:0; }
 .ios-slider {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(145deg, #d1d5db, #e5e7eb);
-  border-radius: 40px;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
-    inset 2px 2px 5px rgba(0, 0, 0, 0.1),
-    inset -2px -2px 5px rgba(255, 255, 255, 0.7);
+  position:absolute; top:0; left:0; right:0; bottom:0;
+  background:linear-gradient(145deg,#d1d5db,#e5e7eb);
+  border-radius:40px;
+  transition:all .4s cubic-bezier(.4,0,.2,1);
+  box-shadow:inset 2px 2px 5px rgba(0,0,0,.1),inset -2px -2px 5px rgba(255,255,255,.7);
 }
-
-/* Etiqueta ON/OFF */
 .ios-label {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  color: #94a3b8;
-  right: 12px;
+  position:absolute; top:50%; transform:translateY(-50%);
+  font-size:13px; font-weight:700; letter-spacing:.5px;
+  transition:all .4s cubic-bezier(.4,0,.2,1);
+  color:#94a3b8; right:12px;
 }
-
-/* Círculo del switch */
 .ios-slider::before {
-  content: "";
-  position: absolute;
-  height: 32px;
-  width: 32px;
-  left: 4px;
-  bottom: 4px;
-  background: linear-gradient(145deg, #ffffff, #f8fafc);
-  border-radius: 50%;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
-    2px 2px 5px rgba(0, 0, 0, 0.2),
-    -1px -1px 3px rgba(255, 255, 255, 0.9);
+  content:""; position:absolute; height:32px; width:32px;
+  left:4px; bottom:4px;
+  background:linear-gradient(145deg,#ffffff,#f8fafc);
+  border-radius:50%;
+  transition:all .4s cubic-bezier(.4,0,.2,1);
+  box-shadow:2px 2px 5px rgba(0,0,0,.2),-1px -1px 3px rgba(255,255,255,.9);
 }
-
-/* Estado ACTIVADO (ON) */
 .ios-switch input:checked + .ios-slider {
-  background: linear-gradient(145deg, #6366f1, #818cf8);
-  box-shadow: 
-    inset 2px 2px 5px rgba(79, 70, 229, 0.4),
-    inset -2px -2px 5px rgba(139, 92, 246, 0.3),
-    0 0 15px rgba(99, 102, 241, 0.4);
+  background:linear-gradient(145deg,#6366f1,#818cf8);
+  box-shadow:inset 2px 2px 5px rgba(79,70,229,.4),0 0 15px rgba(99,102,241,.4);
 }
-
-.ios-switch input:checked + .ios-slider .ios-label {
-  left: 12px;
-  right: auto;
-  color: #ffffff;
-}
-
-.ios-switch input:checked + .ios-slider::before {
-  transform: translateX(50px);
-  background: linear-gradient(145deg, #ffffff, #fefefe);
-  box-shadow: 
-    2px 2px 8px rgba(0, 0, 0, 0.3),
-    -2px -2px 5px rgba(255, 255, 255, 1);
-}
-
-/* Efecto hover */
-.ios-switch:hover .ios-slider {
-  filter: brightness(1.05);
-}
-
-.ios-switch:hover .ios-slider::before {
-  box-shadow: 
-    2px 2px 8px rgba(0, 0, 0, 0.25),
-    -1px -1px 4px rgba(255, 255, 255, 1);
-}
-
-/* Efecto active/press */
-.ios-switch:active .ios-slider::before {
-  width: 38px;
-}
-
-/* MODO OSCURO */
+.ios-switch input:checked + .ios-slider .ios-label { left:12px; right:auto; color:#ffffff; }
+.ios-switch input:checked + .ios-slider::before { transform:translateX(50px); }
+.ios-switch:active .ios-slider::before { width:38px; }
 body[data-bs-theme="dark"] .ios-slider {
-  background: linear-gradient(145deg, #334155, #475569);
-  box-shadow: 
-    inset 2px 2px 5px rgba(0, 0, 0, 0.3),
-    inset -2px -2px 5px rgba(71, 85, 105, 0.2);
+  background:linear-gradient(145deg,#334155,#475569);
 }
-
-body[data-bs-theme="dark"] .ios-slider .ios-label {
-  color: #64748b;
-}
-
-body[data-bs-theme="dark"] .ios-slider::before {
-  background: linear-gradient(145deg, #cbd5e1, #e2e8f0);
-}
-
+body[data-bs-theme="dark"] .ios-slider::before { background:linear-gradient(145deg,#cbd5e1,#e2e8f0); }
 body[data-bs-theme="dark"] .ios-switch input:checked + .ios-slider {
-  background: linear-gradient(145deg, #60a5fa, #818cf8);
-  box-shadow: 
-    inset 2px 2px 5px rgba(59, 130, 246, 0.4),
-    inset -2px -2px 5px rgba(96, 165, 250, 0.3),
-    0 0 15px rgba(96, 165, 250, 0.5);
-}
-
-body[data-bs-theme="dark"] .ios-switch input:checked + .ios-slider .ios-label {
-  color: #ffffff;
-}
-
-/* ANIMACIÓN NOTIFICACIÓN */
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
+  background:linear-gradient(145deg,#60a5fa,#818cf8);
 }
 
 /* =============================
-   SECCIONES ESPECIALES
+   LOGIN / REGISTER
+============================= */
+.login-card, .register-card { background:var(--bg-card) !important; color:var(--text-main) !important; }
+.login-title, .register-title { color:var(--text-main) !important; }
+.login-input, .register-input {
+  background:var(--bg-card) !important; color:var(--text-main) !important;
+  border:1px solid var(--border-soft) !important;
+}
+.login-input::placeholder, .register-input::placeholder { color:#94a3b8 !important; }
+body[data-bs-theme="dark"] .login-card, body[data-bs-theme="dark"] .register-card { background:#0b1220 !important; }
+body[data-bs-theme="dark"] .login-title, body[data-bs-theme="dark"] .register-title { color:#f1f5f9 !important; }
+body[data-bs-theme="dark"] .login-input, body[data-bs-theme="dark"] .register-input {
+  background:#020617 !important; color:#e5edff !important; border:1px solid #1e293b !important;
+}
+.password-toggle { color:var(--text-main) !important; }
+.error-text { color:#dc3545 !important; }
+
+/* =============================
+   SIDE PANEL (Navbar legacy)
+============================= */
+.side-panel { background:var(--sidepanel-bg) !important; }
+.side-panel h4, .side-panel button, .side-panel a { color:var(--sidepanel-text) !important; }
+.side-panel a:hover { color:var(--sidepanel-link-hover) !important; }
+
+/* =============================
+   SECTION BG
 ============================= */
 .section-bg {
-  background-color: var(--bg-main) !important;
-  color: var(--text-main);
-  transition: background .25s ease, color .25s ease;
-}
-
-.section-bg h2,
-.section-bg p {
-  color: var(--text-main);
-}
-
-body[data-bs-theme="dark"] .section-bg {
-  background-color: var(--bg-main) !important;
-  color: var(--text-main);
-}
-
-/* ==============================
-   BOTONES ADAPTATIVOS
-============================== */
-:root {
-  /* Modo claro */
-  --btn-main-bg: #4f7cff;
-  --btn-main-text: #ffffff;
-
-  --btn-secondary-bg: #e0e0e0;
-  --btn-secondary-text: #0a2540;
-
-  --btn-gray-bg: #f5f5f5;
-  --btn-gray-text: #0a2540;
-}
-
-/* Modo oscuro */
-body[data-bs-theme="dark"] {
-  --btn-main-bg: #60a5fa;
-  --btn-main-text: #020617;
-
-  --btn-secondary-bg: #1e293b;
-  --btn-secondary-text: #e5edff;
-
-  --btn-gray-bg: #0b1220;
-  --btn-gray-text: #9aa5ce;
-}
-
-:root {
-  --sidepanel-bg: #ffffff;
-  --sidepanel-text: #0a2540;
-  --sidepanel-link-hover: #1a73e8;
-}
-
-body[data-bs-theme="dark"] {
-  --sidepanel-bg: #0b1220;
-  --sidepanel-text: #e5edff;
-  --sidepanel-link-hover: #60a5fa;
+  background-color:var(--bg-main) !important;
+  color:var(--text-main);
 }
 
 /* =============================
-   SIDE PANEL - FIX ESPECÍFICO
+   PAGE HEADER (Admin)
 ============================= */
-.side-panel,
-.side-panel * {
-  color: var(--sidepanel-text) !important;
-}
-
-.side-panel {
-  background: var(--sidepanel-bg) !important;
-}
-
-.side-panel h4,
-.side-panel button,
-.side-panel a {
-  color: var(--sidepanel-text) !important;
-}
-
-.side-panel a:hover {
-  color: var(--sidepanel-link-hover) !important;
-}
-
-.side-header button {
-  color: var(--sidepanel-text) !important;
-}
-
-/* Modo claro */
-body:not([data-bs-theme="dark"]) .side-panel {
-  background: #ffffff !important;
-}
-
-body:not([data-bs-theme="dark"]) .side-panel,
-body:not([data-bs-theme="dark"]) .side-panel * {
-  color: #0a2540 !important;
-}
-
-body:not([data-bs-theme="dark"]) .side-panel a:hover {
-  color: #1a73e8 !important;
-}
+.page-header h2 { color: var(--text-main) !important; }
+.page-header p  { color: var(--text-muted) !important; }

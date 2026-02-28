@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 
 import axios from "axios";
 
-import AdminLayout from "./Admin/AdminLayout"; // ← CAMBIADO: antes era Dashboard
+import AdminLayout from "./Admin/AdminLayout";
 
 import { CartProvider } from "./context/CartContext";
 import CartFloatingButton from "./components/CartFloatingButton";
@@ -42,10 +42,17 @@ import Tiendas from "./pages/menu/Tiendas";
 
 const API_URL = "https://sl-back.vercel.app";
 
+// Rutas donde se oculta Navbar, Footer y botones flotantes
+const HIDDEN_NAV_ROUTES = ["/login", "/register", "/../UpdateInfoForm", "/../ForgotPassword"];
+
 export default function App() {
   const [user, setUser] = useState(null);
-  const [loadingUser, setLoadingUser] = useState(true); // ← NUEVO: evita flash de redirect
+  const [loadingUser, setLoadingUser] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // true cuando la ruta actual es login o register
+  const hideNav = HIDDEN_NAV_ROUTES.includes(location.pathname);
 
   function handleLogout() {
     localStorage.removeItem("token");
@@ -57,16 +64,11 @@ export default function App() {
   useEffect(() => {
     async function cargarUsuario() {
       const token = localStorage.getItem("token");
-      if (!token) {
-        setLoadingUser(false);
-        return;
-      }
+      if (!token) { setLoadingUser(false); return; }
 
       try {
         const res = await axios.get(`${API_URL}/api/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` }
         });
         setUser(res.data);
       } catch {
@@ -76,21 +78,14 @@ export default function App() {
         setLoadingUser(false);
       }
     }
-
     cargarUsuario();
   }, []);
 
-  // Mientras carga el usuario no redirigimos todavía
-  // (evita que /admin redirija a / antes de saber si es admin)
   if (loadingUser) {
     return (
       <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-        fontSize: "1.2rem",
-        color: "#718096"
+        display: "flex", alignItems: "center", justifyContent: "center",
+        minHeight: "100vh", fontSize: "1.2rem", color: "#718096"
       }}>
         Cargando...
       </div>
@@ -99,7 +94,6 @@ export default function App() {
 
   return (
     <CartProvider>
-      {/* Las rutas /admin NO deben tener Navbar ni Footer */}
       <Routes>
 
         {/* ===== RUTAS ADMIN (sin Navbar/Footer) ===== */}
@@ -112,55 +106,48 @@ export default function App() {
           }
         />
 
-        {/* ===== RUTAS PÚBLICAS (con Navbar/Footer) ===== */}
+        {/* ===== RUTAS PÚBLICAS ===== */}
         <Route
           path="/*"
           element={
             <div className="d-flex flex-column" style={{ minHeight: "100vh" }}>
-              <Navbar user={user} onLogout={handleLogout} />
-              <CartFloatingButton />
-              <MiniCart />
 
-              <div className="container-fluid flex-grow-1 px-4 py-4">
+              {/* Se ocultan en /login y /register */}
+              {!hideNav && <Navbar user={user} onLogout={handleLogout} />}
+              {!hideNav && <CartFloatingButton />}
+              {!hideNav && <MiniCart />}
+
+              <div className={`flex-grow-1 ${!hideNav ? "container-fluid px-4 py-4" : ""}`}>
                 <Routes>
-                  {/* PRINCIPALES */}
                   <Route path="/" element={<Home />} />
                   <Route path="/catalogo" element={<Catalogo />} />
                   <Route path="/producto/:id" element={<ProductoDetalle />} />
                   <Route path="/promociones" element={<Promociones />} />
                   <Route path="/carrito" element={<Carrito />} />
 
-                  {/* FOOTER */}
                   <Route path="/aviso-privacidad" element={<AvisoPrivacidad />} />
                   <Route path="/terminos" element={<Terminos />} />
 
-                  {/* MENU HAMBURGUESA */}
                   <Route path="/ayuda" element={<Ayuda />} />
                   <Route path="/configuracion" element={<Configuracion />} />
                   <Route path="/contacto" element={<Contacto />} />
                   <Route path="/tiendas" element={<Tiendas />} />
 
-                  {/* PAGO protegido */}
                   <Route
                     path="/pago"
-                    element={
-                      localStorage.getItem("token")
-                        ? <Pago />
-                        : <Navigate to="/login" />
-                    }
+                    element={localStorage.getItem("token") ? <Pago /> : <Navigate to="/login" />}
                   />
 
-                  {/* AUTH */}
-                  <Route path="/login" element={<Login onLogin={setUser} />} />
+                  <Route path="/login" element={<Login onLogin={(u) => {
+                    setUser(u);
+                    if (u?.rol === "admin") navigate("/admin", { replace: true });
+                    else navigate("/");
+                  }} />} />
                   <Route path="/register" element={<Register />} />
 
                   <Route
                     path="/profile"
-                    element={
-                      localStorage.getItem("token")
-                        ? <Profile user={user} setUser={setUser} />
-                        : <Navigate to="/login" />
-                    }
+                    element={localStorage.getItem("token") ? <Profile user={user} setUser={setUser} /> : <Navigate to="/login" />}
                   />
 
                   <Route path="/verify-email" element={<VerifyEmail />} />
@@ -168,16 +155,14 @@ export default function App() {
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/google-callback" element={<GoogleCallback onLogin={setUser} />} />
 
-                  {/* ERRORES */}
                   <Route path="/400" element={<Error400 />} />
                   <Route path="/500" element={<Error500 />} />
-
-                  {/* 404 SIEMPRE AL FINAL */}
                   <Route path="*" element={<Error404 />} />
                 </Routes>
               </div>
 
-              <Footer />
+              {/* Footer también se oculta */}
+              {!hideNav && <Footer />}
             </div>
           }
         />

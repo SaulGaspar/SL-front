@@ -34,7 +34,13 @@ export default function Login({ onLogin }) {
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       onLogin && onLogin(res.data.user);
-      navigate('/');
+
+      // ✅ Si es admin va al panel, si no va al inicio
+      if (res.data.user?.rol === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/');
+      }
 
     } catch (error) {
       if (error.response?.data?.error) setErr(error.response.data.error);
@@ -57,7 +63,6 @@ export default function Login({ onLogin }) {
         .google-btn { border-radius: 10px; width: 100%; padding: 10px; font-size: 1rem; }
         .separator { text-align: center; margin: 20px 0; color: #777; }
         .separator::before, .separator::after { content: ""; display: inline-block; width: 30%; height: 1px; background: #ccc; margin: 0 10px; }
-
         .password-container { position: relative; display: flex; align-items: center; }
         .password-toggle { position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: #555; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; height: 100%; }
       `}</style>
@@ -70,7 +75,7 @@ export default function Login({ onLogin }) {
         <form onSubmit={submit}>
           <div className="mb-3">
             <label className="form-label">Usuario</label>
-            <input 
+            <input
               className="form-control login-input"
               value={usuario}
               onChange={e => setUsuario(e.target.value)}
