@@ -8,19 +8,16 @@ export default function Catalogo() {
   const navigate = useNavigate();
   const { addToCart, toggleMiniCart } = useCart();
 
-  // Estado de productos
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Filtros
   const [search, setSearch] = useState("");
-  const [type, setType] = useState("");
-  const [size, setSize] = useState("");
-  const [color, setColor] = useState("");
-  const [maxPrice, setMaxPrice] = useState(2000);
+  const [categoria, setCategoria] = useState("");
+  const [marca, setMarca] = useState("");
+  const [maxPrice, setMaxPrice] = useState(5000);
 
-  // Cargar productos desde la API
   useEffect(() => {
     async function fetchProducts() {
       try {
@@ -38,21 +35,30 @@ export default function Catalogo() {
     fetchProducts();
   }, []);
 
-  // Derivar tipos, tallas y colores únicos de los productos
-  // NOTA: la BD no tiene tallas/colores por defecto; si los agregas en el futuro
-  // solo cambia estas líneas. Por ahora tomamos categoría como "tipo".
-  const types = useMemo(() => [...new Set(products.map(p => p.categoria).filter(Boolean))], [products]);
-  
-  // Filtrado (los campos sizes/colors son opcionales; si no existen en BD se ignoran)
+  const categorias = useMemo(
+    () => [...new Set(products.map(p => p.categoria).filter(Boolean))].sort(),
+    [products]
+  );
+
+  const marcas = useMemo(
+    () => [...new Set(products.map(p => p.marca).filter(Boolean))].sort(),
+    [products]
+  );
+
   const filtered = products.filter(p => {
     const matchSearch = p.nombre.toLowerCase().includes(search.toLowerCase());
-    const matchType = type ? p.categoria === type : true;
+    const matchCategoria = categoria ? p.categoria === categoria : true;
+    const matchMarca = marca ? p.marca === marca : true;
     const matchPrice = p.precio <= maxPrice;
-    // Si tu BD tiene sizes/colors en el futuro, agrégalos aquí
-    const matchSize = size ? (p.sizes && p.sizes.includes(size)) : true;
-    const matchColor = color ? (p.colors && p.colors.includes(color)) : true;
-    return matchSearch && matchType && matchPrice && matchSize && matchColor;
+    return matchSearch && matchCategoria && matchMarca && matchPrice;
   });
+
+  const limpiarFiltros = () => {
+    setSearch("");
+    setCategoria("");
+    setMarca("");
+    setMaxPrice(5000);
+  };
 
   return (
     <div className="container my-4">
@@ -61,7 +67,7 @@ export default function Catalogo() {
       {/* FILTROS */}
       <div className="card p-3 shadow-sm mb-4">
         <div className="row g-3 align-items-end">
-          <div className="col-md-4">
+          <div className="col-md-3">
             <label className="form-label">Buscar</label>
             <input
               className="form-control"
@@ -71,15 +77,27 @@ export default function Catalogo() {
             />
           </div>
 
-          <div className="col-md-3">
+          <div className="col-md-2">
             <label className="form-label">Categoría</label>
             <select
               className="form-select"
-              value={type}
-              onChange={e => setType(e.target.value)}
+              value={categoria}
+              onChange={e => setCategoria(e.target.value)}
             >
               <option value="">Todas</option>
-              {types.map(t => <option key={t} value={t}>{t}</option>)}
+              {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
+          <div className="col-md-2">
+            <label className="form-label">Marca</label>
+            <select
+              className="form-select"
+              value={marca}
+              onChange={e => setMarca(e.target.value)}
+            >
+              <option value="">Todas</option>
+              {marcas.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
 
@@ -98,7 +116,7 @@ export default function Catalogo() {
           <div className="col-md-2 d-flex align-items-end">
             <button
               className="btn btn-outline-secondary w-100"
-              onClick={() => { setSearch(""); setType(""); setMaxPrice(5000); }}
+              onClick={limpiarFiltros}
             >
               Limpiar
             </button>
@@ -106,19 +124,16 @@ export default function Catalogo() {
         </div>
       </div>
 
-      {/* ESTADOS DE CARGA / ERROR */}
+      {/* ESTADOS */}
       {loading && (
         <div className="text-center py-5">
           <div className="spinner-border text-secondary" role="status" />
           <p className="mt-2 text-muted">Cargando productos...</p>
         </div>
       )}
+      {error && <div className="alert alert-danger text-center">{error}</div>}
 
-      {error && (
-        <div className="alert alert-danger text-center">{error}</div>
-      )}
-
-      {/* LISTA DE PRODUCTOS */}
+      {/* LISTA */}
       {!loading && !error && (
         <div className="row">
           {filtered.map(p => (
@@ -136,7 +151,12 @@ export default function Catalogo() {
 
                 <div className="card-body d-flex flex-column">
                   <div onClick={() => navigate(`/producto/${p.id}`)}>
-                    <h5 className="card-title fw-bold">{p.nombre}</h5>
+                    {p.marca && (
+                      <p className="text-uppercase text-muted small mb-0" style={{ fontSize: "0.7rem", letterSpacing: "0.05em" }}>
+                        {p.marca}
+                      </p>
+                    )}
+                    <h5 className="card-title fw-bold mb-1">{p.nombre}</h5>
                     <p className="text-muted mb-2">${p.precio}</p>
                     <p className="small text-secondary mb-3">
                       {p.descripcion && p.descripcion.length > 80
