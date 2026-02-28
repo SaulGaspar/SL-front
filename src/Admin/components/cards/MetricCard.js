@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 
 const API = "https://sl-back.vercel.app";
 
-export default function MetricCard({ title, apiKey, icon, bgColor = "bg-gray-50" }) {
+export default function MetricCard({
+  title,
+  apiKey,
+  icon,
+  tone = "blue", // blue | green | purple | amber | red
+}) {
   const [value, setValue] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -14,33 +19,38 @@ export default function MetricCard({ title, apiKey, icon, bgColor = "bg-gray-50"
         const res = await fetch(`${API}/api/admin/dashboard`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        if (!res.ok) throw new Error();
+
         const data = await res.json();
 
         let val = 0;
+
         switch (apiKey) {
           case "totalSales":
             val = (data.salesTimeline || []).reduce(
-              (sum, d) => sum + parseFloat(d.total),
+              (sum, d) => sum + Number(d.total),
               0
             );
             break;
+
           case "branchesCount":
             val = (data.branchRanking || []).length;
             break;
+
           case "topProductSales":
             val = (data.topProducts || []).reduce(
-              (sum, p) => sum + parseFloat(p.vendidos),
+              (sum, p) => sum + Number(p.vendidos),
               0
             );
             break;
+
           default:
             val = 0;
         }
 
         setValue(val);
-      } catch (err) {
-        console.error(err);
+      } catch {
         setError(true);
         setValue(0);
       } finally {
@@ -51,18 +61,18 @@ export default function MetricCard({ title, apiKey, icon, bgColor = "bg-gray-50"
     fetchMetric();
   }, [apiKey]);
 
-  // Animación de contador
+  // ===== contador animado =====
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
     if (value !== null && !loading && !error) {
       let start = 0;
       const end = value;
-      const duration = 1000; // 1 segundo
-      const increment = end / (duration / 16); // 60 FPS
+      const duration = 900;
+      const step = end / (duration / 16);
 
       const timer = setInterval(() => {
-        start += increment;
+        start += step;
         if (start >= end) {
           setDisplayValue(end);
           clearInterval(timer);
@@ -75,83 +85,103 @@ export default function MetricCard({ title, apiKey, icon, bgColor = "bg-gray-50"
     }
   }, [value, loading, error]);
 
+  // ===== tonos visuales =====
+  const tones = {
+    blue: {
+      bg: "bg-blue-50",
+      iconBg: "bg-blue-100",
+      text: "text-blue-600",
+      accent: "bg-blue-500",
+    },
+    green: {
+      bg: "bg-emerald-50",
+      iconBg: "bg-emerald-100",
+      text: "text-emerald-600",
+      accent: "bg-emerald-500",
+    },
+    purple: {
+      bg: "bg-violet-50",
+      iconBg: "bg-violet-100",
+      text: "text-violet-600",
+      accent: "bg-violet-500",
+    },
+    amber: {
+      bg: "bg-amber-50",
+      iconBg: "bg-amber-100",
+      text: "text-amber-600",
+      accent: "bg-amber-500",
+    },
+    red: {
+      bg: "bg-red-50",
+      iconBg: "bg-red-100",
+      text: "text-red-600",
+      accent: "bg-red-500",
+    },
+  };
+
+  const t = tones[tone] || tones.blue;
+
   return (
-    <div 
-      className={`
-        ${bgColor} 
-        rounded-2xl 
-        shadow-lg 
-        hover:shadow-2xl 
-        transition-all 
-        duration-300
-        p-6 
-        border-2 
-        border-gray-200 
-        hover:border-gray-300
-        hover:scale-105
+    <div
+      className="
         relative
-        overflow-hidden
-        group
-      `}
+        rounded-2xl
+        border border-slate-200
+        bg-white
+        p-5
+        shadow-sm
+        transition
+        hover:shadow-md
+      "
     >
-      {/* Efecto de brillo en hover */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 group-hover:translate-x-full transition-all duration-1000 -translate-x-full"></div>
-      
-      <div className="relative z-10 flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-gray-600 text-sm font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
+      {/* barra superior KPI */}
+      <div className={`absolute top-0 left-0 h-1 w-full ${t.accent}`} />
+
+      <div className="flex items-center justify-between">
+        {/* texto */}
+        <div>
+          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
             {title}
-            <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
           </p>
-          
-          <h2 className="text-4xl font-black text-gray-900 mb-2">
+
+          <div className="mt-2 text-3xl font-bold text-slate-900">
             {loading ? (
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce"></div>
-                <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-              </div>
+              <div className="h-8 w-20 bg-slate-200 animate-pulse rounded" />
             ) : error ? (
-              <span className="text-red-500 font-black">Error</span>
+              <span className="text-red-500">—</span>
             ) : apiKey === "totalSales" ? (
-              `$${displayValue.toLocaleString('es-MX')}`
+              `$${displayValue.toLocaleString("es-MX")}`
             ) : (
               displayValue
             )}
-          </h2>
+          </div>
 
-          {/* Indicador de cambio */}
+          {/* change indicator */}
           {!loading && !error && (
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-green-600 font-bold flex items-center gap-1">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                </svg>
-                +12.5%
+            <div className="mt-2 flex items-center gap-1 text-xs font-semibold text-emerald-600">
+              ▲ 12.5%
+              <span className="text-slate-400 font-medium">
+                vs periodo anterior
               </span>
-              <span className="text-gray-500 font-semibold">vs. semana pasada</span>
             </div>
           )}
         </div>
 
-        {/* Icono con efecto */}
+        {/* icono */}
         {icon && (
-          <div className="ml-4 transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
-            <div className="w-16 h-16 rounded-2xl bg-white shadow-lg flex items-center justify-center border-2 border-gray-200">
-              <div className="text-4xl">
-                {icon}
-              </div>
-            </div>
+          <div
+            className={`
+              ${t.iconBg}
+              ${t.text}
+              w-12 h-12
+              rounded-xl
+              flex items-center justify-center
+              text-2xl
+            `}
+          >
+            {icon}
           </div>
         )}
-      </div>
-
-      {/* Barra de progreso decorativa */}
-      <div className="mt-4 w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div 
-          className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-1000 ease-out"
-          style={{ width: loading ? '0%' : '100%' }}
-        ></div>
       </div>
     </div>
   );

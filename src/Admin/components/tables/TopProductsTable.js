@@ -12,175 +12,85 @@ export default function TopProductsTable() {
         const res = await fetch("https://sl-back.vercel.app/api/admin/dashboard", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!res.ok) throw new Error(`Error en API: ${res.status}`);
+        if (!res.ok) throw new Error(`Error API ${res.status}`);
         const data = await res.json();
 
-        const mappedProducts = (data.topProducts || []).map((p) => ({
+        const mapped = (data.topProducts || []).map((p) => ({
           ...p,
           ingresos: parseFloat(p.ingresos || 0),
           vendidos: parseInt(p.vendidos || 0, 10),
         }));
 
-        setProducts(mappedProducts);
-      } catch (err) {
-        setError("Error cargando productos");
+        setProducts(mapped);
+      } catch {
+        setError("No se pudieron cargar productos");
       } finally {
         setLoading(false);
       }
     };
+
     fetchTopProducts();
   }, []);
 
-  if (loading) return <div className="p-8 text-center animate-pulse text-gray-400">Cargando productos...</div>;
-  if (error) return <div className="p-4 text-red-500 bg-red-50 rounded-lg">{error}</div>;
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} />;
+  if (!products.length) return <EmptyState />;
 
-  const maxVendidos = Math.max(...products.map(p => p.vendidos), 1);
+  const totalVendidos = products.reduce((s, p) => s + p.vendidos, 0);
 
   return (
-    <div style={{
-      backgroundColor: 'white',
-      borderRadius: '16px',
-      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-      border: '2px solid #e5e7eb',
-      overflow: 'hidden'
-    }}>
+    <div className="bg-white rounded-2xl border border-slate-300 shadow-sm overflow-hidden">
+      
       {/* HEADER */}
-      <div style={{
-        background: '#0a1a2f',
-        padding: '24px',
-        borderBottom: '4px solid #0a1a2f'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{
-            fontSize: '20px',
-            fontWeight: '800',
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            margin: 0
-          }}>
-            <span style={{ fontSize: '30px' }}>🔥</span>
-            Productos más vendidos
-          </h3>
-          <span style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.2)',
-            color: 'white',
-            fontSize: '12px',
-            fontWeight: '700',
-            padding: '8px 16px',
-            borderRadius: '9999px',
-            border: '1px solid rgba(255, 255, 255, 0.3)'
-          }}>
-            Top {products.length}
-          </span>
-        </div>
+      <div className="px-6 py-4 border-b border-slate-300 bg-slate-50">
+        <h3 className="text-base font-semibold text-slate-800">
+          Top productos
+        </h3>
       </div>
 
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      {/* TABLA */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full border-collapse">
+          
+          {/* HEAD */}
           <thead>
-            <tr style={{ backgroundColor: '#f3f4f6' }}>
-              <th style={{
-                padding: '16px 24px',
-                textAlign: 'left',
-                fontSize: '12px',
-                fontWeight: '700',
-                color: '#374151',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                borderRight: '1px solid #d1d5db',
-                borderBottom: '2px solid #d1d5db'
-              }}>
-                Ranking
-              </th>
-              <th style={{
-                padding: '16px 24px',
-                textAlign: 'left',
-                fontSize: '12px',
-                fontWeight: '700',
-                color: '#374151',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                borderBottom: '2px solid #d1d5db'
-              }}>
-                Producto
-              </th>
+            <tr className="bg-slate-100 text-slate-700 text-sm">
+              <th className="px-4 py-3 border border-slate-300 text-left w-12">#</th>
+              <th className="px-4 py-3 border border-slate-300 text-left">Producto</th>
+              <th className="px-4 py-3 border border-slate-300 text-right">Vendidos</th>
+              <th className="px-4 py-3 border border-slate-300 text-right">Ingresos</th>
+              <th className="px-4 py-3 border border-slate-300 text-right">% ventas</th>
             </tr>
           </thead>
+
+          {/* BODY */}
           <tbody>
             {products.map((p, idx) => {
-              let medalBg = '';
-              let medalBorder = '';
-              let medalText = '';
-              
-              if (idx === 0) {
-                medalBg = 'linear-gradient(to bottom right, #fde047, #eab308)';
-                medalBorder = '#ca8a04';
-                medalText = '#713f12';
-              } else if (idx === 1) {
-                medalBg = 'linear-gradient(to bottom right, #d1d5db, #9ca3af)';
-                medalBorder = '#6b7280';
-                medalText = '#1f2937';
-              } else if (idx === 2) {
-                medalBg = 'linear-gradient(to bottom right, #fdba74, #f97316)';
-                medalBorder = '#ea580c';
-                medalText = '#7c2d12';
-              } else {
-                medalBg = 'linear-gradient(to bottom right, #dbeafe, #bfdbfe)';
-                medalBorder = '#93c5fd';
-                medalText = '#1e40af';
-              }
+              const percent = (p.vendidos / totalVendidos) * 100;
 
               return (
-                <tr 
+                <tr
                   key={idx}
-                  style={{
-                    borderBottom: '1px solid #e5e7eb',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'linear-gradient(to right, #e0f2fe, #dbeafe)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'white';
-                  }}
+                  className="hover:bg-blue-50 transition"
                 >
-                  {/* Ranking */}
-                  <td style={{
-                    padding: '20px 24px',
-                    whiteSpace: 'nowrap',
-                    borderRight: '2px solid #e5e7eb'
-                  }}>
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: '900',
-                      fontSize: '16px',
-                      background: medalBg,
-                      color: medalText,
-                      border: `2px solid ${medalBorder}`,
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}>
-                      {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1}
-                    </div>
+                  <td className="px-4 py-3 border border-slate-200 text-center font-semibold text-slate-600">
+                    {idx + 1}
                   </td>
 
-                  {/* Producto */}
-                  <td style={{
-                    padding: '20px 24px'
-                  }}>
-                    <div style={{
-                      fontWeight: '700',
-                      fontSize: '16px',
-                      color: '#1f2937'
-                    }}>
-                      {p.nombre}
-                    </div>
+                  <td className="px-4 py-3 border border-slate-200 font-medium text-slate-800">
+                    {p.nombre}
+                  </td>
+
+                  <td className="px-4 py-3 border border-slate-200 text-right font-semibold">
+                    {p.vendidos.toLocaleString()}
+                  </td>
+
+                  <td className="px-4 py-3 border border-slate-200 text-right">
+                    ${p.ingresos.toLocaleString("es-MX")}
+                  </td>
+
+                  <td className="px-4 py-3 border border-slate-200 text-right font-semibold text-slate-700">
+                    {percent.toFixed(1)}%
                   </td>
                 </tr>
               );
@@ -190,27 +100,38 @@ export default function TopProductsTable() {
       </div>
 
       {/* FOOTER */}
-      <div style={{
-        backgroundColor: '#f9fafb',
-        padding: '16px 24px',
-        borderTop: '2px solid #d1d5db'
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontSize: '14px'
-        }}>
-          <span style={{ color: '#4b5563', fontWeight: '600' }}>
-            Total de productos destacados: <span style={{ color: '#111827', fontWeight: '700' }}>{products.length}</span>
-          </span>
-          <span style={{ color: '#4b5563', fontWeight: '600' }}>
-            Total unidades vendidas: <span style={{ color: '#0a1a2f', fontWeight: '700' }}>
-              {products.reduce((sum, p) => sum + p.vendidos, 0)} unidades
-            </span>
-          </span>
-        </div>
+      <div className="px-6 py-3 border-t border-slate-300 bg-slate-50 text-sm text-slate-600">
+        Total vendidos:{" "}
+        <span className="font-semibold text-slate-800">
+          {totalVendidos.toLocaleString()}
+        </span>
       </div>
+    </div>
+  );
+}
+
+/* STATES */
+
+function LoadingState() {
+  return (
+    <div className="h-64 flex items-center justify-center bg-white border border-slate-300 rounded-2xl">
+      <p className="text-slate-500">Cargando productos…</p>
+    </div>
+  );
+}
+
+function ErrorState({ message }) {
+  return (
+    <div className="h-64 flex items-center justify-center bg-white border border-red-300 rounded-2xl">
+      <p className="text-red-600 font-semibold">{message}</p>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="h-64 flex items-center justify-center bg-white border border-slate-300 rounded-2xl">
+      <p className="text-slate-500">Sin productos</p>
     </div>
   );
 }

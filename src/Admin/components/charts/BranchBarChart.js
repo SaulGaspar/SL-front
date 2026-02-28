@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  Cell,
+} from "recharts";
 
 const API = "https://sl-back.vercel.app";
 
@@ -17,10 +26,12 @@ export default function BranchBarChart() {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        const mapped = (data.branchRanking || []).map(b => ({
+
+        const mapped = (data.branchRanking || []).map((b) => ({
           branch: `Sucursal ${b.sucursal}`,
           total: parseFloat(b.ingresos),
         }));
+
         setBranches(mapped);
       } catch (err) {
         console.error(err);
@@ -29,15 +40,16 @@ export default function BranchBarChart() {
         setLoading(false);
       }
     };
+
     fetchBranchData();
   }, []);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-80 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-purple-600 font-semibold">Cargando sucursales...</p>
+      <div className="flex items-center justify-center h-80">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-3 border-slate-300 border-t-slate-700 rounded-full animate-spin" />
+          <p className="text-slate-500 font-medium">Cargando sucursales…</p>
         </div>
       </div>
     );
@@ -45,12 +57,12 @@ export default function BranchBarChart() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-80 bg-gradient-to-br from-red-50 to-pink-50 rounded-xl border-2 border-red-200">
-        <div className="text-center p-6">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">⚠️</span>
+      <div className="flex items-center justify-center h-80">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-red-100 text-red-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+            ⚠️
           </div>
-          <p className="text-red-600 font-bold text-lg">{error}</p>
+          <p className="font-semibold text-red-600">{error}</p>
         </div>
       </div>
     );
@@ -58,24 +70,42 @@ export default function BranchBarChart() {
 
   if (!branches.length) {
     return (
-      <div className="flex items-center justify-center h-80 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-gray-200">
-        <div className="text-center p-6">
-          <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">🏪</span>
+      <div className="flex items-center justify-center h-80">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center mx-auto mb-3">
+            🏪
           </div>
-          <p className="text-gray-600 font-semibold text-lg">No hay ventas registradas aún</p>
+          <p className="text-slate-500 font-medium">
+            No hay ventas registradas aún
+          </p>
         </div>
       </div>
     );
   }
 
+  const totalSales = branches.reduce((sum, b) => sum + b.total, 0);
+  const topBranch = branches.reduce((max, b) =>
+    b.total > max.total ? b : max
+  , branches[0]);
+
+  const colors = [
+    "#6366f1",
+    "#8b5cf6",
+    "#ec4899",
+    "#f59e0b",
+    "#10b981",
+    "#3b82f6",
+  ];
+
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white rounded-xl shadow-2xl border-2 border-purple-200 p-4">
-          <p className="text-gray-600 text-sm font-semibold mb-1">{payload[0].payload.branch}</p>
-          <p className="text-2xl font-black text-purple-600">
-            ${payload[0].value.toLocaleString('es-MX')}
+        <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-4 py-3">
+          <p className="text-xs text-slate-500 font-semibold mb-1">
+            {payload[0].payload.branch}
+          </p>
+          <p className="text-lg font-bold text-slate-900">
+            ${payload[0].value.toLocaleString("es-MX")}
           </p>
         </div>
       );
@@ -83,90 +113,93 @@ export default function BranchBarChart() {
     return null;
   };
 
-  // Colores gradientes para cada barra
-  const colors = [
-    ['#8b5cf6', '#7c3aed'], // Púrpura
-    ['#ec4899', '#db2777'], // Rosa
-    ['#f59e0b', '#d97706'], // Ámbar
-    ['#10b981', '#059669'], // Verde
-    ['#3b82f6', '#2563eb'], // Azul
-    ['#ef4444', '#dc2626'], // Rojo
-  ];
-
-  const totalSales = branches.reduce((sum, b) => sum + b.total, 0);
-  const topBranch = branches.reduce((max, b) => b.total > max.total ? b : max, branches[0]);
-
   return (
     <div className="space-y-6">
-      {/* Estadísticas Resumen */}
+      {/* KPIs */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border-2 border-purple-200">
-          <p className="text-xs font-bold text-purple-600 uppercase tracking-wide mb-1">Total General</p>
-          <p className="text-2xl font-black text-purple-700">${totalSales.toLocaleString('es-MX')}</p>
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+            Ingresos totales
+          </p>
+          <p className="text-2xl font-bold text-slate-900">
+            ${totalSales.toLocaleString("es-MX")}
+          </p>
         </div>
-        <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl p-4 border-2 border-pink-200">
-          <p className="text-xs font-bold text-pink-600 uppercase tracking-wide mb-1">Líder</p>
-          <p className="text-2xl font-black text-pink-700">{topBranch.branch}</p>
+
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+            Sucursal líder
+          </p>
+          <p className="text-2xl font-bold text-slate-900">
+            {topBranch.branch}
+          </p>
         </div>
       </div>
 
-      {/* Gráfico */}
-      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-200">
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={branches} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-            <defs>
-              {colors.map((color, idx) => (
-                <linearGradient key={idx} id={`barGradient${idx}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={color[0]} stopOpacity={1}/>
-                  <stop offset="100%" stopColor={color[1]} stopOpacity={0.7}/>
-                </linearGradient>
-              ))}
-            </defs>
+      {/* Chart */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6">
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart
+            data={branches}
+            margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#e5e7eb"
+              vertical={false}
+            />
 
-            <CartesianGrid strokeDasharray="3 3" stroke="#c084fc" opacity={0.3} />
-            <XAxis 
-              dataKey="branch" 
-              tick={{ fontSize: 13, fill: "#6b21a8", fontWeight: 600 }}
-              tickLine={{ stroke: "#a855f7" }}
-              stroke="#a855f7"
+            <XAxis
+              dataKey="branch"
+              tick={{ fontSize: 12, fill: "#64748b", fontWeight: 500 }}
+              axisLine={false}
+              tickLine={false}
             />
-            <YAxis 
-              tick={{ fontSize: 13, fill: "#6b21a8", fontWeight: 600 }}
-              tickLine={{ stroke: "#a855f7" }}
-              stroke="#a855f7"
-              tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+
+            <YAxis
+              tick={{ fontSize: 12, fill: "#64748b", fontWeight: 500 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
             />
+
             <Tooltip content={<CustomTooltip />} />
-            <Bar
-              dataKey="total"
-              radius={[12, 12, 0, 0]}
-              animationDuration={800}
-            >
-              {branches.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={`url(#barGradient${index % colors.length})`} />
+
+            <Bar dataKey="total" radius={[8, 8, 0, 0]}>
+              {branches.map((_, i) => (
+                <Cell
+                  key={i}
+                  fill={colors[i % colors.length]}
+                />
               ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Lista de Sucursales */}
+      {/* Branch list */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {branches.map((branch, idx) => (
-          <div 
-            key={idx}
-            className="bg-white rounded-xl p-3 border-2 border-purple-200 hover:border-purple-400 transition-all hover:shadow-lg"
+        {branches.map((b, i) => (
+          <div
+            key={i}
+            className="bg-white border border-slate-200 rounded-xl p-3 hover:shadow-md transition"
           >
             <div className="flex items-center gap-2 mb-1">
-              <div 
-                className="w-3 h-3 rounded-full"
-                style={{ background: `linear-gradient(135deg, ${colors[idx % colors.length][0]}, ${colors[idx % colors.length][1]})` }}
-              ></div>
-              <p className="text-xs font-bold text-gray-700">{branch.branch}</p>
+              <div
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ background: colors[i % colors.length] }}
+              />
+              <p className="text-xs font-semibold text-slate-600">
+                {b.branch}
+              </p>
             </div>
-            <p className="text-lg font-black text-gray-900">${branch.total.toLocaleString('es-MX')}</p>
-            <p className="text-xs text-gray-500 font-semibold">
-              {((branch.total / totalSales) * 100).toFixed(1)}% del total
+
+            <p className="text-lg font-bold text-slate-900">
+              ${b.total.toLocaleString("es-MX")}
+            </p>
+
+            <p className="text-xs text-slate-400">
+              {((b.total / totalSales) * 100).toFixed(1)}% del total
             </p>
           </div>
         ))}

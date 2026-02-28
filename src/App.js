@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
 import axios from "axios";
 
-import Dashboard from "./Admin/pages/Dashboard/Dashboard";
+import AdminLayout from "./Admin/AdminLayout"; // ← CAMBIADO: antes era Dashboard
 
 import { CartProvider } from "./context/CartContext";
 import CartFloatingButton from "./components/CartFloatingButton";
@@ -35,18 +35,16 @@ import Error400 from "./pages/errors/Error400";
 import Error404 from "./pages/errors/Error404";
 import Error500 from "./pages/errors/Error500";
 
-/* 👉 nuevas páginas menú hamburguesa */
 import Ayuda from "./pages/menu/Ayuda";
 import Configuracion from "./pages/menu/Configuracion";
 import Contacto from "./pages/menu/Contacto";
 import Tiendas from "./pages/menu/Tiendas";
 
-const storedUser = JSON.parse(localStorage.getItem("user"));
 const API_URL = "https://sl-back.vercel.app";
-
 
 export default function App() {
   const [user, setUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true); // ← NUEVO: evita flash de redirect
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -56,111 +54,135 @@ export default function App() {
     navigate("/");
   }
 
-  // Sincroniza usuario con localStorage
-useEffect(() => {
-  async function cargarUsuario() {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+  useEffect(() => {
+    async function cargarUsuario() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setLoadingUser(false);
+        return;
+      }
 
-    try {
-      const res = await axios.get(`${API_URL}/api/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      setUser(res.data);
-
-    } catch {
-      localStorage.clear();
-      setUser(null);
+      try {
+        const res = await axios.get(`${API_URL}/api/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        setUser(res.data);
+      } catch {
+        localStorage.clear();
+        setUser(null);
+      } finally {
+        setLoadingUser(false);
+      }
     }
+
+    cargarUsuario();
+  }, []);
+
+  // Mientras carga el usuario no redirigimos todavía
+  // (evita que /admin redirija a / antes de saber si es admin)
+  if (loadingUser) {
+    return (
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        fontSize: "1.2rem",
+        color: "#718096"
+      }}>
+        Cargando...
+      </div>
+    );
   }
-
-  cargarUsuario();
-}, []);
-
 
   return (
     <CartProvider>
-      <div className="d-flex flex-column" style={{ minHeight: "100vh" }}>
-        <Navbar user={user} onLogout={handleLogout} />
-        <CartFloatingButton />
-        <MiniCart />
+      {/* Las rutas /admin NO deben tener Navbar ni Footer */}
+      <Routes>
 
-        <div className="container-fluid flex-grow-1 px-4 py-4">
-          <Routes>
+        {/* ===== RUTAS ADMIN (sin Navbar/Footer) ===== */}
+        <Route
+          path="/admin/*"
+          element={
+            user?.rol === "admin"
+              ? <AdminLayout user={user} onLogout={handleLogout} />
+              : <Navigate to="/login" replace />
+          }
+        />
 
-            {/* PRINCIPALES */}
-            <Route path="/" element={<Home />} />
-            <Route path="/catalogo" element={<Catalogo />} />
-            <Route path="/producto/:id" element={<ProductoDetalle />} />
-            <Route path="/promociones" element={<Promociones />} />
-            <Route path="/carrito" element={<Carrito />} />
+        {/* ===== RUTAS PÚBLICAS (con Navbar/Footer) ===== */}
+        <Route
+          path="/*"
+          element={
+            <div className="d-flex flex-column" style={{ minHeight: "100vh" }}>
+              <Navbar user={user} onLogout={handleLogout} />
+              <CartFloatingButton />
+              <MiniCart />
 
-            {/* FOOTER */}
-            <Route path="/aviso-privacidad" element={<AvisoPrivacidad />} />
-            <Route path="/terminos" element={<Terminos />} />
+              <div className="container-fluid flex-grow-1 px-4 py-4">
+                <Routes>
+                  {/* PRINCIPALES */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/catalogo" element={<Catalogo />} />
+                  <Route path="/producto/:id" element={<ProductoDetalle />} />
+                  <Route path="/promociones" element={<Promociones />} />
+                  <Route path="/carrito" element={<Carrito />} />
 
-            {/* MENU HAMBURGUESA */}
-            <Route path="/ayuda" element={<Ayuda />} />
-            <Route path="/configuracion" element={<Configuracion />} />
-            <Route path="/contacto" element={<Contacto />} />
-            <Route path="/tiendas" element={<Tiendas />} />
+                  {/* FOOTER */}
+                  <Route path="/aviso-privacidad" element={<AvisoPrivacidad />} />
+                  <Route path="/terminos" element={<Terminos />} />
 
-            {/* PAGO protegido */}
-            <Route
-              path="/pago"
-              element={
-                localStorage.getItem("token") ? (
-                  <Pago />
-                ) : (
-                  <Navigate to="/login" />
-                )
-              }
-            />
+                  {/* MENU HAMBURGUESA */}
+                  <Route path="/ayuda" element={<Ayuda />} />
+                  <Route path="/configuracion" element={<Configuracion />} />
+                  <Route path="/contacto" element={<Contacto />} />
+                  <Route path="/tiendas" element={<Tiendas />} />
 
-            {/* AUTH */}
-            <Route path="/login" element={<Login onLogin={setUser} />} />
-            <Route path="/register" element={<Register />} />
+                  {/* PAGO protegido */}
+                  <Route
+                    path="/pago"
+                    element={
+                      localStorage.getItem("token")
+                        ? <Pago />
+                        : <Navigate to="/login" />
+                    }
+                  />
 
-            <Route
-              path="/profile"
-              element={
-                localStorage.getItem("token") ? (
-                  <Profile user={user} setUser={setUser} />
-                ) : (
-                  <Navigate to="/login" />
-                )
-              }
-            />
+                  {/* AUTH */}
+                  <Route path="/login" element={<Login onLogin={setUser} />} />
+                  <Route path="/register" element={<Register />} />
 
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/google-callback" element={<GoogleCallback onLogin={setUser} />} />
+                  <Route
+                    path="/profile"
+                    element={
+                      localStorage.getItem("token")
+                        ? <Profile user={user} setUser={setUser} />
+                        : <Navigate to="/login" />
+                    }
+                  />
 
-            {/* ERRORES */}
-            <Route path="/400" element={<Error400 />} />
-            <Route path="/500" element={<Error500 />} />
+                  <Route path="/verify-email" element={<VerifyEmail />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/google-callback" element={<GoogleCallback onLogin={setUser} />} />
 
-            {/* 404 SIEMPRE AL FINAL */}
-            <Route path="*" element={<Error404 />} />
+                  {/* ERRORES */}
+                  <Route path="/400" element={<Error400 />} />
+                  <Route path="/500" element={<Error500 />} />
 
-            <Route
-               path="/admin"
-               element={
-                user?.rol === "admin"
-                 ? <Dashboard />
-                  : <Navigate to="/" />
-             }
-            />
+                  {/* 404 SIEMPRE AL FINAL */}
+                  <Route path="*" element={<Error404 />} />
+                </Routes>
+              </div>
 
-          </Routes>
-        </div>
+              <Footer />
+            </div>
+          }
+        />
 
-        <Footer />
-      </div>
+      </Routes>
     </CartProvider>
   );
 }
