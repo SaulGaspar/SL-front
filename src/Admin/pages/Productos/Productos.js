@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   MdAdd, MdEdit, MdDelete, MdSearch, MdRefresh,
   MdClose, MdCheckCircle, MdInventory,
+  MdFileDownload, MdFileUpload, MdWarning,
 } from "react-icons/md";
 
 const API_URL = "https://sl-back.vercel.app";
@@ -9,6 +10,9 @@ const token   = () => localStorage.getItem("token");
 const hdrs    = () => ({ Authorization: `Bearer ${token()}`, "Content-Type": "application/json" });
 const fmt     = (v) => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(v || 0);
 const EMPTY   = { nombre: "", marca: "", descripcion: "", precio: "", categoria: "", imagen: "", talla: "", colores: "", activo: 1 };
+
+// Columnas del CSV de productos
+const CSV_HEADERS = ["nombre","marca","descripcion","precio","categoria","imagen","talla","colores","activo"];
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
@@ -33,6 +37,10 @@ const CSS = `
 .pro-btn-primary:hover { background:#2c5282; transform:translateY(-1px); box-shadow:0 6px 16px rgba(30,58,95,.3); }
 .pro-btn-ghost { background:#f7fafc; color:#2d3748; border:1.5px solid #e2e8f0; }
 .pro-btn-ghost:hover { background:#edf2f7; }
+.pro-btn-export { background:#ebf8ff; color:#2b6cb0; border:1.5px solid #bee3f8; }
+.pro-btn-export:hover { background:#bee3f8; }
+.pro-btn-import { background:#f0fff4; color:#276749; border:1.5px solid #c6f6d5; }
+.pro-btn-import:hover { background:#c6f6d5; }
 .pro-btn:disabled { opacity:.5; cursor:not-allowed; transform:none !important; }
 .pro-table-wrap { background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.05); overflow:hidden; }
 .pro-table { width:100%; border-collapse:collapse; }
@@ -63,6 +71,7 @@ const CSS = `
 .pro-foot { padding:10px 16px; font-size:.8rem; color:#718096; border-top:1px solid #f0f4f8; }
 .pro-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:4000; display:flex; align-items:center; justify-content:center; padding:16px; }
 .pro-modal { background:white; border-radius:16px; width:100%; max-width:580px; max-height:92vh; overflow-y:auto; box-shadow:0 24px 64px rgba(0,0,0,.28); animation:proIn .22s ease; }
+.pro-modal-sm { max-width:460px; }
 @keyframes proIn { from{transform:translateY(18px);opacity:0} to{transform:translateY(0);opacity:1} }
 .pro-mhead { padding:18px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:white; z-index:1; border-radius:16px 16px 0 0; }
 .pro-mhead h3 { margin:0; color:#1e3a5f; font-size:1.1rem; font-weight:700; }
@@ -87,6 +96,26 @@ const CSS = `
 .pro-chip-preview { background:#ebf8ff; color:#2b6cb0; padding:3px 10px; border-radius:12px; font-size:.76rem; font-weight:600; }
 .pro-mfoot { padding:16px 24px; border-top:1px solid #e2e8f0; display:flex; gap:10px; justify-content:flex-end; position:sticky; bottom:0; background:white; border-radius:0 0 16px 16px; }
 .pro-err { background:#fff5f5; border:1px solid #fc8181; color:#9b2c2c; padding:10px 14px; border-radius:8px; font-size:.86rem; }
+.pro-info-box { background:#ebf8ff; border:1px solid #bee3f8; color:#2c5282; padding:12px 14px; border-radius:8px; font-size:.84rem; line-height:1.5; }
+.pro-warn-box { background:#fffbeb; border:1px solid #f6e05e; color:#744210; padding:12px 14px; border-radius:8px; font-size:.84rem; line-height:1.6; }
+.pro-import-drop {
+  border:2px dashed #bee3f8; border-radius:10px; padding:28px; text-align:center;
+  background:#f7fbff; cursor:pointer; transition:all .2s;
+}
+.pro-import-drop:hover, .pro-import-drop.drag { border-color:#3182ce; background:#ebf8ff; }
+.pro-import-drop input { display:none; }
+.pro-import-drop-icon { font-size:2.2rem; margin-bottom:8px; color:#3182ce; }
+.pro-import-drop p { margin:0; font-size:.9rem; color:#4a5568; }
+.pro-import-drop span { font-size:.8rem; color:#a0aec0; }
+.pro-import-preview { max-height:200px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; }
+.pro-import-preview table { width:100%; border-collapse:collapse; font-size:.78rem; }
+.pro-import-preview th { background:#f7fafc; padding:7px 10px; text-align:left; color:#4a5568; font-weight:700; position:sticky; top:0; }
+.pro-import-preview td { padding:6px 10px; border-top:1px solid #f0f4f8; color:#2d3748; }
+.pro-import-summary { display:flex; gap:10px; flex-wrap:wrap; }
+.pro-import-badge { padding:5px 12px; border-radius:20px; font-size:.8rem; font-weight:700; }
+.pro-import-badge.new { background:#c6f6d5; color:#276749; }
+.pro-import-badge.dup { background:#fef5e7; color:#975a16; }
+.pro-import-badge.err { background:#fed7d7; color:#9b2c2c; }
 .pro-toast { position:fixed; bottom:24px; right:24px; z-index:9999; padding:12px 20px; border-radius:10px; color:white; font-family:'DM Sans',sans-serif; font-size:.88rem; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.2); animation:proIn .3s ease; }
 .pro-toast.ok  { background:#276749; }
 .pro-toast.err { background:#9b2c2c; }
@@ -129,6 +158,50 @@ function TallaChips({ value }) {
   );
 }
 
+// ── CSV helpers ──────────────────────────────────────────────────────────────
+
+function toCSV(rows) {
+  const escape = v => {
+    const s = String(v ?? "");
+    return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g,'""')}"` : s;
+  };
+  const lines = [CSV_HEADERS.join(",")];
+  rows.forEach(p => lines.push(CSV_HEADERS.map(h => escape(p[h])).join(",")));
+  return lines.join("\n");
+}
+
+function downloadCSV(content, filename) {
+  const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split("\n").map(l => l.replace(/\r/,""));
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
+
+  return lines.slice(1).map(line => {
+    const vals = [];
+    let cur = "", inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === '"' && !inQ) { inQ = true; continue; }
+      if (line[i] === '"' && inQ && line[i+1] === '"') { cur += '"'; i++; continue; }
+      if (line[i] === '"' && inQ) { inQ = false; continue; }
+      if (line[i] === ',' && !inQ) { vals.push(cur); cur = ""; continue; }
+      cur += line[i];
+    }
+    vals.push(cur);
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = vals[i]?.trim() ?? "");
+    return obj;
+  });
+}
+
+// ── Component ────────────────────────────────────────────────────────────────
+
 export default function Productos() {
   const [products, setProducts]       = useState([]);
   const [filtered, setFiltered]       = useState([]);
@@ -144,6 +217,15 @@ export default function Productos() {
   const [statusFilter, setStatus]     = useState("all");
   const [toast,    setToast]          = useState(null);
 
+  // Import state
+  const [showImport, setShowImport]   = useState(false);
+  const [importRows, setImportRows]   = useState([]);   // parsed CSV rows
+  const [importDups, setImportDups]   = useState([]);   // rows that already exist
+  const [dupAction,  setDupAction]    = useState(null); // null | "update" | "skip"
+  const [importing,  setImporting]    = useState(false);
+  const [dragOver,   setDragOver]     = useState(false);
+  const fileRef = useRef();
+
   useEffect(() => { fetchProducts(); }, []);
 
   useEffect(() => {
@@ -156,7 +238,7 @@ export default function Productos() {
     setFiltered(f);
   }, [products, search, catFilter, brandFilter, statusFilter]);
 
-  const showToast = (msg, type = "ok") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3000); };
+  const showToast = (msg, type = "ok") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3500); };
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -167,18 +249,98 @@ export default function Productos() {
     finally { setLoading(false); }
   };
 
-  const openCreate = () => { setEditing(null); setForm(EMPTY); setFormErr(""); setShowModal(true); };
+  // ── EXPORT ──────────────────────────────────────────────────────────────────
 
-  const openEdit = (p) => {
-    setEditing(p);
-    setForm({
-      nombre: p.nombre||"", marca: p.marca||"", descripcion: p.descripcion||"",
-      precio: p.precio||"", categoria: p.categoria||"", imagen: p.imagen||"",
-      talla: p.talla||"", colores: p.colores||"", activo: p.activo??1
-    });
-    setFormErr(""); setShowModal(true);
+  const handleExport = () => {
+    const data = filtered.length && filtered.length < products.length ? filtered : products;
+    downloadCSV(toCSV(data), `productos_${new Date().toISOString().slice(0,10)}.csv`);
+    showToast(`${data.length} productos exportados`);
   };
 
+  const handleExportTemplate = () => {
+    const example = [{ nombre:"Ejemplo Producto", marca:"Marca", descripcion:"Descripción", precio:"299.00", categoria:"Calzado", imagen:"https://...", talla:"S,M,L", colores:"Negro,Blanco", activo:1 }];
+    downloadCSV(toCSV(example), "plantilla_productos.csv");
+  };
+
+  // ── IMPORT ──────────────────────────────────────────────────────────────────
+
+  const handleFileRead = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const rows = parseCSV(e.target.result);
+      const valid = rows.filter(r => r.nombre && r.nombre.trim());
+      if (valid.length === 0) { showToast("El CSV no tiene filas válidas", "err"); return; }
+
+      // Detectar duplicados por nombre
+      const existingNames = new Set(products.map(p => p.nombre.toLowerCase().trim()));
+      const dups = valid.filter(r => existingNames.has(r.nombre.toLowerCase().trim()));
+
+      setImportRows(valid);
+      setImportDups(dups);
+      setDupAction(dups.length > 0 ? null : "skip"); // si no hay dups, skip (no importa)
+      setShowImport(true);
+    };
+    reader.readAsText(file, "UTF-8");
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault(); setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file?.name.endsWith(".csv")) handleFileRead(file);
+    else showToast("Solo se aceptan archivos .csv", "err");
+  };
+
+  const handleImportConfirm = async () => {
+    if (importDups.length > 0 && !dupAction) return;
+    setImporting(true);
+
+    const existingNames = new Map(products.map(p => [p.nombre.toLowerCase().trim(), p.id]));
+    let created = 0, updated = 0, errors = 0;
+
+    for (const row of importRows) {
+      const isDup = existingNames.has(row.nombre.toLowerCase().trim());
+      try {
+        if (isDup && dupAction === "skip") continue;
+
+        const payload = {
+          nombre:      row.nombre,
+          marca:       row.marca       || "",
+          descripcion: row.descripcion || "",
+          precio:      parseFloat(row.precio) || 0,
+          categoria:   row.categoria   || "",
+          imagen:      row.imagen      || "",
+          talla:       row.talla       || "",
+          colores:     row.colores     || "",
+          activo:      parseInt(row.activo) === 0 ? 0 : 1,
+        };
+
+        if (isDup && dupAction === "update") {
+          const id = existingNames.get(row.nombre.toLowerCase().trim());
+          const res = await fetch(`${API_URL}/api/admin/products/${id}`, { method:"PUT", headers: hdrs(), body: JSON.stringify(payload) });
+          if (res.ok) updated++; else errors++;
+        } else {
+          const res = await fetch(`${API_URL}/api/admin/products`, { method:"POST", headers: hdrs(), body: JSON.stringify(payload) });
+          if (res.ok) created++; else errors++;
+        }
+      } catch { errors++; }
+    }
+
+    setImporting(false);
+    setShowImport(false);
+    setImportRows([]);
+    fetchProducts();
+    showToast(`Importación completa: ${created} creados, ${updated} actualizados${errors > 0 ? `, ${errors} errores` : ""}`, errors > 0 ? "err" : "ok");
+  };
+
+  // ── Modal helpers ────────────────────────────────────────────────────────────
+
+  const openCreate = () => { setEditing(null); setForm(EMPTY); setFormErr(""); setShowModal(true); };
+  const openEdit   = (p)  => {
+    setEditing(p);
+    setForm({ nombre:p.nombre||"", marca:p.marca||"", descripcion:p.descripcion||"", precio:p.precio||"", categoria:p.categoria||"", imagen:p.imagen||"", talla:p.talla||"", colores:p.colores||"", activo:p.activo??1 });
+    setFormErr(""); setShowModal(true);
+  };
   const closeModal = () => { setShowModal(false); setEditing(null); setFormErr(""); };
   const set = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.value }));
 
@@ -189,8 +351,7 @@ export default function Productos() {
     try {
       const url    = editing ? `${API_URL}/api/admin/products/${editing.id}` : `${API_URL}/api/admin/products`;
       const method = editing ? "PUT" : "POST";
-      const payload = { ...form, precio: Number(form.precio) };
-      const res    = await fetch(url, { method, headers: hdrs(), body: JSON.stringify(payload) });
+      const res    = await fetch(url, { method, headers: hdrs(), body: JSON.stringify({ ...form, precio: Number(form.precio) }) });
       const data   = await res.json();
       if (res.ok) { showToast(editing ? "Producto actualizado" : "Producto creado"); closeModal(); fetchProducts(); }
       else { setFormErr(data.error || "Error al guardar el producto"); }
@@ -201,7 +362,7 @@ export default function Productos() {
   const handleDelete = async (id, nombre) => {
     if (!confirm(`¿Desactivar "${nombre}"?`)) return;
     try {
-      const res = await fetch(`${API_URL}/api/admin/products/${id}`, { method: "DELETE", headers: hdrs() });
+      const res = await fetch(`${API_URL}/api/admin/products/${id}`, { method:"DELETE", headers: hdrs() });
       if (res.ok) { showToast("Producto desactivado"); fetchProducts(); }
       else { const d = await res.json(); showToast(d.error || "Error", "err"); }
     } catch { showToast("Error de conexión", "err"); }
@@ -209,10 +370,10 @@ export default function Productos() {
 
   const categories = [...new Set(products.map(p => p.categoria).filter(Boolean))];
   const brands     = [...new Set(products.map(p => p.marca).filter(Boolean))];
-
-  // Preview de tallas y colores en el modal
-  const tallasPreview = form.talla ? form.talla.split(",").map(s=>s.trim()).filter(Boolean) : [];
+  const tallasPreview  = form.talla   ? form.talla.split(",").map(s=>s.trim()).filter(Boolean)   : [];
   const coloresPreview = form.colores ? form.colores.split(",").map(s=>s.trim()).filter(Boolean) : [];
+
+  // ── RENDER ───────────────────────────────────────────────────────────────────
 
   return (
     <div className="pro">
@@ -223,6 +384,7 @@ export default function Productos() {
         <p>Gestiona tu catálogo de productos</p>
       </div>
 
+      {/* Toolbar */}
       <div className="pro-toolbar">
         <div className="pro-left">
           <div className="pro-search">
@@ -243,16 +405,27 @@ export default function Productos() {
             <option value="inactive">Inactivos</option>
           </select>
         </div>
-        <div style={{ display:"flex", gap:10 }}>
-          <button className="pro-btn pro-btn-ghost" onClick={fetchProducts}>
+
+        {/* Botones de acción */}
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+          <button className="pro-btn pro-btn-ghost" onClick={fetchProducts} title="Actualizar">
             <MdRefresh size={18} className={loading ? "spinning" : ""} />
           </button>
+          <button className="pro-btn pro-btn-export" onClick={handleExport} title="Exportar CSV">
+            <MdFileDownload size={18} /> Exportar
+          </button>
+          <button className="pro-btn pro-btn-import" onClick={() => fileRef.current?.click()} title="Importar CSV">
+            <MdFileUpload size={18} /> Importar
+          </button>
+          {/* Input oculto para seleccionar archivo */}
+          <input ref={fileRef} type="file" accept=".csv" style={{ display:"none" }} onChange={e => { handleFileRead(e.target.files[0]); e.target.value=""; }} />
           <button className="pro-btn pro-btn-primary" onClick={openCreate}>
             <MdAdd size={18} /> Nuevo producto
           </button>
         </div>
       </div>
 
+      {/* Tabla */}
       <div className="pro-table-wrap">
         {loading ? (
           <div className="pro-empty">Cargando productos…</div>
@@ -266,181 +439,181 @@ export default function Productos() {
             <table className="pro-table">
               <thead>
                 <tr>
-                  <th>Imagen</th>
-                  <th>Nombre / Marca</th>
-                  <th>Categoría</th>
-                  <th>Tallas</th>
-                  <th>Colores</th>
-                  <th>Precio</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
+                  <th>Imagen</th><th>Nombre / Marca</th><th>Categoría</th>
+                  <th>Tallas</th><th>Colores</th><th>Precio</th><th>Estado</th><th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(p => (
                   <tr key={p.id}>
                     <td>
-                      <img
-                        src={p.imagen || "https://placehold.co/46x46/edf2f7/a0aec0?text=📦"}
-                        alt={p.nombre} className="pro-img"
-                        onError={e => { e.target.src = "https://placehold.co/46x46/edf2f7/a0aec0?text=📦"; }}
-                      />
+                      <img src={p.imagen || "https://placehold.co/46x46/edf2f7/a0aec0?text=📦"} alt={p.nombre} className="pro-img"
+                        onError={e => { e.target.src="https://placehold.co/46x46/edf2f7/a0aec0?text=📦"; }} />
                     </td>
                     <td>
                       <div className="pro-name">{p.nombre}</div>
                       {p.marca && <div className="pro-brand">{p.marca}</div>}
-                      {p.descripcion && <div className="pro-desc">{p.descripcion.substring(0,55)}{p.descripcion.length > 55 ? "…" : ""}</div>}
+                      {p.descripcion && <div className="pro-desc">{p.descripcion.substring(0,55)}{p.descripcion.length>55?"…":""}</div>}
                     </td>
-                    <td><span className="pro-tag">{p.categoria || "—"}</span></td>
+                    <td><span className="pro-tag">{p.categoria||"—"}</span></td>
                     <td><TallaChips value={p.talla} /></td>
                     <td><ColorDots value={p.colores} /></td>
                     <td><span className="pro-price">{fmt(p.precio)}</span></td>
-                    <td>
-                      <span className={`pro-status ${p.activo ? "pro-status-on" : "pro-status-off"}`}>
-                        {p.activo ? "Activo" : "Inactivo"}
-                      </span>
-                    </td>
+                    <td><span className={`pro-status ${p.activo?"pro-status-on":"pro-status-off"}`}>{p.activo?"Activo":"Inactivo"}</span></td>
                     <td>
                       <div className="pro-actions">
-                        <button className="pro-act pro-act-edit" onClick={() => openEdit(p)}>
-                          <MdEdit size={14} /> Editar
-                        </button>
-                        <button className="pro-act pro-act-delete" onClick={() => handleDelete(p.id, p.nombre)}>
-                          <MdDelete size={14} /> {p.activo ? "Desactivar" : "Eliminar"}
-                        </button>
+                        <button className="pro-act pro-act-edit" onClick={() => openEdit(p)}><MdEdit size={14}/> Editar</button>
+                        <button className="pro-act pro-act-delete" onClick={() => handleDelete(p.id,p.nombre)}><MdDelete size={14}/> {p.activo?"Desactivar":"Eliminar"}</button>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div className="pro-foot">{filtered.length} producto{filtered.length !== 1 ? "s" : ""}</div>
+            <div className="pro-foot">{filtered.length} producto{filtered.length!==1?"s":""}</div>
           </>
         )}
       </div>
 
-      {/* ── Modal ── */}
+      {/* ── Modal editar/crear ── */}
       {showModal && (
-        <div className="pro-overlay" onClick={e => { if (e.target.classList.contains("pro-overlay")) closeModal(); }}>
+        <div className="pro-overlay" onClick={e => { if(e.target.classList.contains("pro-overlay")) closeModal(); }}>
           <div className="pro-modal">
             <div className="pro-mhead">
               <h3>{editing ? `Editar: ${editing.nombre}` : "Nuevo producto"}</h3>
               <button className="pro-mclose" onClick={closeModal}><MdClose /></button>
             </div>
-
             <div className="pro-mbody">
               {formErr && <div className="pro-err">⚠ {formErr}</div>}
-
-              {/* Preview imagen */}
               <div className="pro-img-preview">
-                {form.imagen
-                  ? <img src={form.imagen} alt="preview" onError={e => { e.target.style.display="none"; }} />
-                  : <span style={{ fontSize:"2rem" }}>🖼</span>}
+                {form.imagen ? <img src={form.imagen} alt="preview" onError={e=>{e.target.style.display="none";}} /> : <span style={{fontSize:"2rem"}}>🖼</span>}
               </div>
-
-              {/* Sección: Info básica */}
               <div className="pro-section-divider">Información básica</div>
-
               <div className="pro-row">
-                <div className="pro-field">
-                  <label>Nombre *</label>
-                  <input placeholder="Ej. Air Max 270" value={form.nombre} onChange={set("nombre")} />
-                </div>
-                <div className="pro-field">
-                  <label>Marca</label>
-                  <input placeholder="Ej. Nike" value={form.marca} onChange={set("marca")} list="brand-list" />
-                  <datalist id="brand-list">{brands.map(b => <option key={b} value={b} />)}</datalist>
-                </div>
+                <div className="pro-field"><label>Nombre *</label><input placeholder="Ej. Air Max 270" value={form.nombre} onChange={set("nombre")} /></div>
+                <div className="pro-field"><label>Marca</label><input placeholder="Ej. Nike" value={form.marca} onChange={set("marca")} list="brand-list" /><datalist id="brand-list">{brands.map(b=><option key={b} value={b}/>)}</datalist></div>
               </div>
-
-              <div className="pro-field">
-                <label>Descripción</label>
-                <textarea placeholder="Descripción del producto…" value={form.descripcion} onChange={set("descripcion")} />
-              </div>
-
+              <div className="pro-field"><label>Descripción</label><textarea placeholder="Descripción del producto…" value={form.descripcion} onChange={set("descripcion")} /></div>
               <div className="pro-row">
-                <div className="pro-field">
-                  <label>Precio (MXN) *</label>
-                  <input type="number" min="0" step="0.01" placeholder="0.00" value={form.precio} onChange={set("precio")} />
-                </div>
-                <div className="pro-field">
-                  <label>Categoría</label>
-                  <input placeholder="Ej. Calzado" value={form.categoria} onChange={set("categoria")} list="cat-list" />
-                  <datalist id="cat-list">{categories.map(c => <option key={c} value={c} />)}</datalist>
-                </div>
+                <div className="pro-field"><label>Precio (MXN) *</label><input type="number" min="0" step="0.01" placeholder="0.00" value={form.precio} onChange={set("precio")} /></div>
+                <div className="pro-field"><label>Categoría</label><input placeholder="Ej. Calzado" value={form.categoria} onChange={set("categoria")} list="cat-list" /><datalist id="cat-list">{categories.map(c=><option key={c} value={c}/>)}</datalist></div>
               </div>
-
-              <div className="pro-field">
-                <label>URL de imagen</label>
-                <input placeholder="https://…" value={form.imagen} onChange={set("imagen")} />
-              </div>
-
-              {/* Sección: Variantes */}
+              <div className="pro-field"><label>URL de imagen</label><input placeholder="https://…" value={form.imagen} onChange={set("imagen")} /></div>
               <div className="pro-section-divider">Variantes del producto</div>
-
               <div className="pro-field">
                 <label>Tallas</label>
-                <input
-                  placeholder="Ej. XS, S, M, L, XL  o  38, 39, 40, 41"
-                  value={form.talla}
-                  onChange={set("talla")}
-                />
-                <span className="pro-field-hint">Separa con comas. Ej: S, M, L, XL</span>
-                {tallasPreview.length > 0 && (
-                  <div className="pro-chips-preview">
-                    {tallasPreview.map(t => <span key={t} className="pro-chip-preview">{t}</span>)}
-                  </div>
-                )}
+                <input placeholder="Ej. XS, S, M, L, XL  o  38, 39, 40" value={form.talla} onChange={set("talla")} />
+                <span className="pro-field-hint">Separa con comas</span>
+                {tallasPreview.length > 0 && <div className="pro-chips-preview">{tallasPreview.map(t=><span key={t} className="pro-chip-preview">{t}</span>)}</div>}
               </div>
-
               <div className="pro-field">
                 <label>Colores</label>
-                <input
-                  placeholder="Ej. Negro, Blanco, Rojo, Azul"
-                  value={form.colores}
-                  onChange={set("colores")}
-                />
+                <input placeholder="Ej. Negro, Blanco, Rojo, Azul" value={form.colores} onChange={set("colores")} />
                 <span className="pro-field-hint">Separa con comas. Usa nombres en español para ver puntos de color</span>
                 {coloresPreview.length > 0 && (
-                  <div className="pro-chips-preview" style={{ alignItems:"center" }}>
+                  <div className="pro-chips-preview" style={{alignItems:"center"}}>
                     {coloresPreview.map(c => {
                       const hex = COLOR_MAP[c.toLowerCase()];
-                      return hex ? (
-                        <span key={c} className="pro-color-dot" style={{ background: hex, width:18, height:18 }} title={c} />
-                      ) : (
-                        <span key={c} className="pro-chip-preview">{c}</span>
-                      );
+                      return hex ? <span key={c} className="pro-color-dot" style={{background:hex,width:18,height:18}} title={c}/> : <span key={c} className="pro-chip-preview">{c}</span>;
                     })}
                   </div>
                 )}
               </div>
-
-              {/* Estado */}
               <div className="pro-section-divider">Estado</div>
-
               <div className="pro-field">
                 <div className="pro-toggle-row">
-                  <button className={`pro-toggle ${form.activo === 1 ? "on" : ""}`} onClick={() => setForm(f => ({ ...f, activo: 1 }))}>
-                    <MdCheckCircle size={16} /> Activo
-                  </button>
-                  <button className={`pro-toggle ${form.activo === 0 ? "off" : ""}`} onClick={() => setForm(f => ({ ...f, activo: 0 }))}>
-                    <MdClose size={16} /> Inactivo
-                  </button>
+                  <button className={`pro-toggle ${form.activo===1?"on":""}`} onClick={()=>setForm(f=>({...f,activo:1}))}><MdCheckCircle size={16}/> Activo</button>
+                  <button className={`pro-toggle ${form.activo===0?"off":""}`} onClick={()=>setForm(f=>({...f,activo:0}))}><MdClose size={16}/> Inactivo</button>
                 </div>
               </div>
             </div>
-
             <div className="pro-mfoot">
               <button className="pro-btn pro-btn-ghost" onClick={closeModal} disabled={saving}>Cancelar</button>
               <button className="pro-btn pro-btn-primary" onClick={handleSave} disabled={saving}>
-                {saving
-                  ? <><MdRefresh size={16} className="spinning" /> Guardando…</>
-                  : <><MdCheckCircle size={16} /> {editing ? "Guardar cambios" : "Crear producto"}</>}
+                {saving ? <><MdRefresh size={16} className="spinning"/> Guardando…</> : <><MdCheckCircle size={16}/> {editing?"Guardar cambios":"Crear producto"}</>}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* ── Modal importar CSV ── */}
+      {showImport && (
+        <div className="pro-overlay" onClick={e => { if(e.target.classList.contains("pro-overlay")) { setShowImport(false); setImportRows([]); } }}>
+          <div className="pro-modal pro-modal-sm">
+            <div className="pro-mhead">
+              <h3>Importar productos desde CSV</h3>
+              <button className="pro-mclose" onClick={()=>{setShowImport(false);setImportRows([]);}}><MdClose/></button>
+            </div>
+            <div className="pro-mbody">
+
+              {/* Resumen */}
+              <div className="pro-import-summary">
+                <span className="pro-import-badge new">✓ {importRows.length - importDups.length} nuevos</span>
+                {importDups.length > 0 && <span className="pro-import-badge dup">⚠ {importDups.length} duplicados</span>}
+              </div>
+
+              {/* Aviso de duplicados */}
+              {importDups.length > 0 && (
+                <div className="pro-warn-box">
+                  <div style={{fontWeight:700,marginBottom:6,display:"flex",gap:6,alignItems:"center"}}><MdWarning/> {importDups.length} producto(s) ya existen</div>
+                  <div style={{marginBottom:10,fontSize:".82rem"}}>
+                    {importDups.slice(0,3).map(d => <span key={d.nombre} style={{display:"block"}}>• {d.nombre}</span>)}
+                    {importDups.length > 3 && <span>…y {importDups.length-3} más</span>}
+                  </div>
+                  <div style={{display:"flex",gap:8}}>
+                    <button className="pro-btn pro-btn-ghost" style={{flex:1,fontSize:".82rem",padding:"8px 10px",borderColor: dupAction==="skip"?"#1e3a5f":"#e2e8f0", background: dupAction==="skip"?"#ebf8ff":"#f7fafc"}} onClick={()=>setDupAction("skip")}>
+                      Ignorar duplicados
+                    </button>
+                    <button className="pro-btn pro-btn-ghost" style={{flex:1,fontSize:".82rem",padding:"8px 10px",borderColor: dupAction==="update"?"#1e3a5f":"#e2e8f0", background: dupAction==="update"?"#ebf8ff":"#f7fafc"}} onClick={()=>setDupAction("update")}>
+                      Actualizar existentes
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Preview tabla */}
+              <div className="pro-import-preview">
+                <table>
+                  <thead><tr><th>Nombre</th><th>Marca</th><th>Precio</th><th>Categoría</th></tr></thead>
+                  <tbody>
+                    {importRows.slice(0,8).map((r,i) => (
+                      <tr key={i} style={importDups.find(d=>d.nombre===r.nombre)?{background:"#fffbeb"}:{}}>
+                        <td>{r.nombre}</td><td>{r.marca||"—"}</td><td>{r.precio||"—"}</td><td>{r.categoria||"—"}</td>
+                      </tr>
+                    ))}
+                    {importRows.length > 8 && <tr><td colSpan={4} style={{color:"#a0aec0",textAlign:"center"}}>…y {importRows.length-8} filas más</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="pro-info-box">
+                <strong>💡 Tip:</strong> Descarga la <button onClick={handleExportTemplate} style={{background:"none",border:"none",color:"#2b6cb0",fontWeight:700,cursor:"pointer",padding:0,textDecoration:"underline"}}>plantilla CSV</button> para ver el formato correcto de columnas.
+              </div>
+            </div>
+            <div className="pro-mfoot">
+              <button className="pro-btn pro-btn-ghost" onClick={()=>{setShowImport(false);setImportRows([]);}}>Cancelar</button>
+              <button className="pro-btn pro-btn-primary" onClick={handleImportConfirm} disabled={importing || (importDups.length > 0 && !dupAction)}>
+                {importing ? <><MdRefresh size={16} className="spinning"/> Importando…</> : <><MdCheckCircle size={16}/> Confirmar importación</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Drag & drop zone invisible sobre toda la página cuando se arrastra */}
+      <div
+        onDragOver={e=>{e.preventDefault();setDragOver(true);}}
+        onDragLeave={()=>setDragOver(false)}
+        onDrop={handleDrop}
+        style={{
+          position:"fixed", inset:0, zIndex:dragOver?3999:-1, background:dragOver?"rgba(49,130,206,.12)":"transparent",
+          border:dragOver?"3px dashed #3182ce":"none", pointerEvents:dragOver?"all":"none",
+          display:"flex", alignItems:"center", justifyContent:"center", transition:"all .2s"
+        }}
+      >
+        {dragOver && <div style={{background:"white",padding:"24px 40px",borderRadius:16,boxShadow:"0 20px 60px rgba(0,0,0,.2)",fontSize:"1.1rem",fontWeight:700,color:"#2b6cb0"}}>📂 Suelta el CSV aquí</div>}
+      </div>
 
       {toast && <div className={`pro-toast ${toast.type}`}>{toast.msg}</div>}
     </div>

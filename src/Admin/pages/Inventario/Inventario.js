@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { MdSearch, MdRefresh, MdEdit, MdWarning, MdCheckCircle, MdCancel } from "react-icons/md";
+import React, { useState, useEffect, useRef } from "react";
+import { MdSearch, MdRefresh, MdEdit, MdWarning, MdCheckCircle, MdCancel, MdFileDownload, MdFileUpload, MdClose } from "react-icons/md";
 
 const API_URL = "https://sl-back.vercel.app";
+
+// Columnas del CSV de inventario
+const CSV_HEADERS = ["producto","sucursal","branch_id","stock","min_stock","estado"];
 
 const S = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
@@ -22,11 +25,16 @@ const S = `
     padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px;
     font-size: 0.9rem; font-family: inherit; min-width: 160px; background: white;
   }
-  .inv-btn-refresh {
-    background: #f7fafc; color: #2d3748; border: 1px solid #e2e8f0;
-    padding: 10px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: inherit;
-  }
+  .inv-btn { padding: 10px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: inherit; font-size: .88rem; font-weight: 600; border: 1.5px solid transparent; transition: all .2s; }
+  .inv-btn-refresh { background: #f7fafc; color: #2d3748; border-color: #e2e8f0; }
   .inv-btn-refresh:hover { background: #edf2f7; }
+  .inv-btn-export { background: #ebf8ff; color: #2b6cb0; border-color: #bee3f8; }
+  .inv-btn-export:hover { background: #bee3f8; }
+  .inv-btn-import { background: #f0fff4; color: #276749; border-color: #c6f6d5; }
+  .inv-btn-import:hover { background: #c6f6d5; }
+  .inv-btn-primary { background: #1e3a5f; color: white; border-color: #1e3a5f; }
+  .inv-btn-primary:hover { background: #2c5282; }
+  .inv-btn:disabled { opacity: .5; cursor: not-allowed; }
   .inv-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
   .inv-stat-card {
     background: white; border-radius: 12px; padding: 20px;
@@ -62,10 +70,14 @@ const S = `
   .inv-modal {
     background: white; border-radius: 16px; width: 100%; max-width: 420px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3); font-family: 'DM Sans', sans-serif;
+    animation: invIn .22s ease;
   }
-  .inv-modal-header { padding: 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-  .inv-modal-header h3 { margin: 0; color: #1e3a5f; font-size: 1.3rem; }
-  .inv-modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #718096; }
+  .inv-modal-lg { max-width: 540px; max-height: 90vh; overflow-y: auto; }
+  @keyframes invIn { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .inv-modal-header { padding: 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white; border-radius: 16px 16px 0 0; }
+  .inv-modal-header h3 { margin: 0; color: #1e3a5f; font-size: 1.1rem; font-weight: 700; }
+  .inv-modal-close { background: #f7fafc; border: none; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #718096; }
+  .inv-modal-close:hover { background: #fed7d7; color: #9b2c2c; }
   .inv-modal-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
   .inv-form-group { display: flex; flex-direction: column; gap: 6px; }
   .inv-form-group label { font-weight: 600; font-size: 0.9rem; color: #2d3748; }
@@ -74,27 +86,89 @@ const S = `
     font-size: 0.95rem; font-family: inherit;
   }
   .inv-form-group input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
-  .inv-modal-footer { padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end; }
+  .inv-modal-footer { padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end; position: sticky; bottom: 0; background: white; border-radius: 0 0 16px 16px; }
   .inv-btn-cancel { padding: 10px 20px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: 600; }
   .inv-btn-save {
-    padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: 600;
+    padding: 10px 20px; background: #1e3a5f;
+    color: white; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: 600; display: flex; align-items: center; gap: 6px;
   }
-  .inv-btn-save:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(102,126,234,0.3); }
+  .inv-btn-save:hover { background: #2c5282; }
+  .inv-btn-save:disabled { opacity: .5; cursor: not-allowed; }
   .inv-empty { padding: 48px; text-align: center; color: #718096; }
+  .inv-info-box { background: #ebf8ff; border: 1px solid #bee3f8; color: #2c5282; padding: 12px 14px; border-radius: 8px; font-size: .84rem; line-height: 1.5; }
+  .inv-warn-box { background: #fffbeb; border: 1px solid #f6e05e; color: #744210; padding: 12px 14px; border-radius: 8px; font-size: .84rem; line-height: 1.6; }
+  .inv-summary { display: flex; gap: 10px; flex-wrap: wrap; }
+  .inv-summary-badge { padding: 5px 12px; border-radius: 20px; font-size: .8rem; font-weight: 700; }
+  .inv-summary-badge.new { background: #c6f6d5; color: #276749; }
+  .inv-summary-badge.dup { background: #fef5e7; color: #975a16; }
+  .inv-import-preview { max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
+  .inv-import-preview table { width: 100%; border-collapse: collapse; font-size: .78rem; }
+  .inv-import-preview th { background: #f7fafc; padding: 7px 10px; text-align: left; color: #4a5568; font-weight: 700; position: sticky; top: 0; }
+  .inv-import-preview td { padding: 6px 10px; border-top: 1px solid #f0f4f8; color: #2d3748; }
+  .inv-toast { position: fixed; bottom: 24px; right: 24px; z-index: 9999; padding: 12px 20px; border-radius: 10px; color: white; font-family: 'DM Sans', sans-serif; font-size: .88rem; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.2); animation: invIn .3s ease; }
+  .inv-toast.ok  { background: #276749; }
+  .inv-toast.err { background: #9b2c2c; }
+  .spinning { animation: spin .9s linear infinite; }
+  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 `;
 
+// ── CSV helpers ──────────────────────────────────────────────────────────────
+
+function toCSV(rows) {
+  const escape = v => { const s = String(v ?? ""); return s.includes(",") || s.includes('"') ? `"${s.replace(/"/g,'""')}"` : s; };
+  const lines = [CSV_HEADERS.join(",")];
+  rows.forEach(r => lines.push(CSV_HEADERS.map(h => escape(r[h])).join(",")));
+  return lines.join("\n");
+}
+
+function downloadCSV(content, filename) {
+  const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split("\n").map(l => l.replace(/\r/, ""));
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
+  return lines.slice(1).map(line => {
+    const vals = []; let cur = "", inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === '"' && !inQ) { inQ = true; continue; }
+      if (line[i] === '"' && inQ && line[i+1] === '"') { cur += '"'; i++; continue; }
+      if (line[i] === '"' && inQ) { inQ = false; continue; }
+      if (line[i] === ',' && !inQ) { vals.push(cur); cur = ""; continue; }
+      cur += line[i];
+    }
+    vals.push(cur);
+    const obj = {}; headers.forEach((h,i) => obj[h] = vals[i]?.trim() ?? "");
+    return obj;
+  });
+}
+
+// ── Component ────────────────────────────────────────────────────────────────
+
 export default function Inventario() {
-  const [inventory, setInventory] = useState([]);
-  const [filtered, setFiltered] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [inventory, setInventory]     = useState([]);
+  const [filtered, setFiltered]       = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [stats, setStats]             = useState(null);
+  const [searchTerm, setSearchTerm]   = useState("");
   const [filterBranch, setFilterBranch] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [editing, setEditing] = useState(null);
-  const [editStock, setEditStock] = useState("");
-  const [editMin, setEditMin] = useState("");
+  const [editing, setEditing]         = useState(null);
+  const [editStock, setEditStock]     = useState("");
+  const [editMin, setEditMin]         = useState("");
+  const [toast, setToast]             = useState(null);
+
+  // Import state
+  const [showImport, setShowImport]   = useState(false);
+  const [importRows, setImportRows]   = useState([]);
+  const [importDups, setImportDups]   = useState([]);
+  const [dupAction,  setDupAction]    = useState(null);
+  const [importing,  setImporting]    = useState(false);
+  const fileRef = useRef();
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -108,6 +182,8 @@ export default function Inventario() {
     setFiltered(f);
   }, [inventory, searchTerm, filterBranch, filterStatus]);
 
+  const showToast = (msg, type = "ok") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3500); };
+
   const fetchAll = async () => {
     setLoading(true);
     try {
@@ -119,12 +195,81 @@ export default function Inventario() {
       ]);
       if (invRes.ok) setInventory(await invRes.json());
       if (statsRes.ok) setStats(await statsRes.json());
-    } catch (err) {
-      console.error("Error cargando inventario:", err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error("Error cargando inventario:", err); }
+    finally { setLoading(false); }
   };
+
+  // ── EXPORT ──────────────────────────────────────────────────────────────────
+
+  const handleExport = () => {
+    const data = filtered.length && filtered.length < inventory.length ? filtered : inventory;
+    downloadCSV(toCSV(data), `inventario_${new Date().toISOString().slice(0,10)}.csv`);
+    showToast(`${data.length} registros exportados`);
+  };
+
+  // ── IMPORT ──────────────────────────────────────────────────────────────────
+
+  const handleFileRead = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const rows = parseCSV(e.target.result);
+      // Inventario necesita: producto (o product_id), branch_id, stock
+      const valid = rows.filter(r => (r.producto || r.product_id) && r.branch_id && r.stock !== "");
+      if (valid.length === 0) { showToast("No se encontraron filas válidas. Revisa el formato.", "err"); return; }
+
+      // Duplicados: mismo product_id + branch_id
+      const existingKeys = new Set(inventory.map(i => `${i.product_id}-${i.branch_id}`));
+      const dups = valid.filter(r => existingKeys.has(`${r.product_id}-${r.branch_id}`));
+
+      setImportRows(valid);
+      setImportDups(dups);
+      setDupAction(dups.length > 0 ? null : "skip");
+      setShowImport(true);
+    };
+    reader.readAsText(file, "UTF-8");
+  };
+
+  const handleImportConfirm = async () => {
+    if (importDups.length > 0 && !dupAction) return;
+    setImporting(true);
+
+    const existingMap = new Map(inventory.map(i => [`${i.product_id}-${i.branch_id}`, i.id]));
+    let updated = 0, created = 0, errors = 0;
+
+    for (const row of importRows) {
+      const key   = `${row.product_id}-${row.branch_id}`;
+      const isDup = existingMap.has(key);
+      try {
+        if (isDup && dupAction === "skip") continue;
+
+        if (isDup && dupAction === "update") {
+          const id = existingMap.get(key);
+          const res = await fetch(`${API_URL}/api/admin/inventory/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
+            body: JSON.stringify({ stock: parseInt(row.stock), min_stock: parseInt(row.min_stock) || 10 }),
+          });
+          if (res.ok) updated++; else errors++;
+        } else if (!isDup && row.product_id && row.branch_id) {
+          const res = await fetch(`${API_URL}/api/admin/inventory`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
+            body: JSON.stringify({ product_id: parseInt(row.product_id), branch_id: parseInt(row.branch_id), stock: parseInt(row.stock), min_stock: parseInt(row.min_stock) || 10 }),
+          });
+          if (res.ok) created++; else errors++;
+        }
+      } catch { errors++; }
+    }
+
+    setImporting(false);
+    setShowImport(false);
+    setImportRows([]);
+    fetchAll();
+    showToast(`Importación completa: ${created} creados, ${updated} actualizados${errors > 0 ? `, ${errors} errores` : ""}`, errors > 0 ? "err" : "ok");
+  };
+
+  // ── Edit stock ───────────────────────────────────────────────────────────────
 
   const handleSave = async () => {
     try {
@@ -134,8 +279,8 @@ export default function Inventario() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ stock: Number(editStock), min_stock: Number(editMin) }),
       });
-      if (res.ok) { setEditing(null); fetchAll(); }
-      else alert("Error al actualizar");
+      if (res.ok) { setEditing(null); fetchAll(); showToast("Inventario actualizado"); }
+      else showToast("Error al actualizar", "err");
     } catch (err) { console.error(err); }
   };
 
@@ -147,16 +292,10 @@ export default function Inventario() {
     return { cls: "ok", icon: <MdCheckCircle />, label: "Disponible" };
   };
 
-  const getBarColor = (item) => {
-    if (item.stock === 0) return "#fc8181";
-    if (item.stock <= item.min_stock) return "#f6ad55";
-    return "#68d391";
-  };
+  const getBarColor  = (item) => item.stock === 0 ? "#fc8181" : item.stock <= item.min_stock ? "#f6ad55" : "#68d391";
+  const getBarWidth  = (item) => { const max = Math.max(item.min_stock * 3, item.stock, 1); return Math.min((item.stock / max) * 100, 100); };
 
-  const getBarWidth = (item) => {
-    const max = Math.max(item.min_stock * 3, item.stock, 1);
-    return Math.min((item.stock / max) * 100, 100);
-  };
+  // ── RENDER ───────────────────────────────────────────────────────────────────
 
   return (
     <div className="inv-wrap">
@@ -182,17 +321,17 @@ export default function Inventario() {
           </div>
           <div className="inv-stat-card">
             <span className="inv-stat-label">Sin stock</span>
-            <span className="inv-stat-value" style={{ color: "#e53e3e" }}>{stats.general.productos_sin_stock || 0}</span>
+            <span className="inv-stat-value" style={{ color:"#e53e3e" }}>{stats.general.productos_sin_stock || 0}</span>
             <span className="inv-stat-sub">requieren atención</span>
           </div>
           <div className="inv-stat-card">
             <span className="inv-stat-label">Stock bajo</span>
-            <span className="inv-stat-value" style={{ color: "#d69e2e" }}>{stats.general.productos_bajo_stock || 0}</span>
+            <span className="inv-stat-value" style={{ color:"#d69e2e" }}>{stats.general.productos_bajo_stock || 0}</span>
             <span className="inv-stat-sub">por reponer</span>
           </div>
           <div className="inv-stat-card">
             <span className="inv-stat-label">Valor inventario</span>
-            <span className="inv-stat-value" style={{ fontSize: "1.4rem" }}>${Number(stats.general.valor_inventario || 0).toLocaleString("es-MX", { minimumFractionDigits: 0 })}</span>
+            <span className="inv-stat-value" style={{ fontSize:"1.4rem" }}>${Number(stats.general.valor_inventario || 0).toLocaleString("es-MX",{minimumFractionDigits:0})}</span>
             <span className="inv-stat-sub">MXN estimado</span>
           </div>
         </div>
@@ -200,7 +339,7 @@ export default function Inventario() {
 
       {/* Toolbar */}
       <div className="inv-toolbar">
-        <div style={{ display: "flex", gap: 12, flex: 1, flexWrap: "wrap" }}>
+        <div style={{ display:"flex", gap:12, flex:1, flexWrap:"wrap" }}>
           <div className="inv-search-box">
             <MdSearch className="inv-search-icon" />
             <input placeholder="Buscar producto o sucursal..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
@@ -216,10 +355,23 @@ export default function Inventario() {
             <option value="out">Sin stock</option>
           </select>
         </div>
-        <button className="inv-btn-refresh" onClick={fetchAll}><MdRefresh size={18} /> Actualizar</button>
+
+        {/* Botones de acción */}
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+          <button className="inv-btn inv-btn-refresh" onClick={fetchAll}>
+            <MdRefresh size={18} className={loading ? "spinning" : ""} /> Actualizar
+          </button>
+          <button className="inv-btn inv-btn-export" onClick={handleExport}>
+            <MdFileDownload size={18} /> Exportar
+          </button>
+          <button className="inv-btn inv-btn-import" onClick={() => fileRef.current?.click()}>
+            <MdFileUpload size={18} /> Importar
+          </button>
+          <input ref={fileRef} type="file" accept=".csv" style={{ display:"none" }} onChange={e => { handleFileRead(e.target.files[0]); e.target.value=""; }} />
+        </div>
       </div>
 
-      {/* Table */}
+      {/* Tabla */}
       <div className="inv-table-wrap">
         {loading ? (
           <div className="inv-empty">Cargando inventario...</div>
@@ -227,13 +379,8 @@ export default function Inventario() {
           <table className="inv-table">
             <thead>
               <tr>
-                <th>Producto</th>
-                <th>Sucursal</th>
-                <th>Categoría</th>
-                <th>Stock actual</th>
-                <th>Mín. requerido</th>
-                <th>Estado</th>
-                <th>Acciones</th>
+                <th>Producto</th><th>Sucursal</th><th>Categoría</th>
+                <th>Stock actual</th><th>Mín. requerido</th><th>Estado</th><th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -243,25 +390,19 @@ export default function Inventario() {
                 const status = getStockStatus(item);
                 return (
                   <tr key={item.id}>
-                    <td style={{ fontWeight: 600, color: "#1e3a5f" }}>{item.producto}</td>
-                    <td style={{ color: "#4a5568" }}>{item.sucursal}</td>
+                    <td style={{ fontWeight:600, color:"#1e3a5f" }}>{item.producto}</td>
+                    <td style={{ color:"#4a5568" }}>{item.sucursal}</td>
                     <td>
-                      {item.categoria && (
-                        <span style={{ background: "#edf2f7", padding: "3px 10px", borderRadius: 6, fontSize: "0.8rem", color: "#4a5568" }}>
-                          {item.categoria}
-                        </span>
-                      )}
+                      {item.categoria && <span style={{ background:"#edf2f7", padding:"3px 10px", borderRadius:6, fontSize:"0.8rem", color:"#4a5568" }}>{item.categoria}</span>}
                     </td>
                     <td>
-                      <div style={{ fontWeight: 700, fontSize: "1.05rem" }}>{item.stock}</div>
+                      <div style={{ fontWeight:700, fontSize:"1.05rem" }}>{item.stock}</div>
                       <div className="inv-progress-bar">
-                        <div className="inv-progress-fill" style={{ width: `${getBarWidth(item)}%`, background: getBarColor(item) }} />
+                        <div className="inv-progress-fill" style={{ width:`${getBarWidth(item)}%`, background:getBarColor(item) }} />
                       </div>
                     </td>
-                    <td style={{ color: "#718096" }}>{item.min_stock}</td>
-                    <td>
-                      <span className={`inv-badge ${status.cls}`}>{status.icon} {status.label}</span>
-                    </td>
+                    <td style={{ color:"#718096" }}>{item.min_stock}</td>
+                    <td><span className={`inv-badge ${status.cls}`}>{status.icon} {status.label}</span></td>
                     <td>
                       <button className="inv-edit-btn" onClick={() => { setEditing(item); setEditStock(item.stock); setEditMin(item.min_stock); }}>
                         <MdEdit size={15} /> Editar
@@ -275,34 +416,90 @@ export default function Inventario() {
         )}
       </div>
 
-      {/* Modal editar */}
+      {/* ── Modal editar stock ── */}
       {editing && (
         <div className="inv-modal-overlay" onClick={() => setEditing(null)}>
           <div className="inv-modal" onClick={e => e.stopPropagation()}>
             <div className="inv-modal-header">
               <h3>Editar Stock</h3>
-              <button className="inv-modal-close" onClick={() => setEditing(null)}>✕</button>
+              <button className="inv-modal-close" onClick={() => setEditing(null)}><MdClose /></button>
             </div>
             <div className="inv-modal-body">
-              <div style={{ background: "#f7fafc", borderRadius: 8, padding: 12, fontSize: "0.9rem", color: "#4a5568" }}>
+              <div style={{ background:"#f7fafc", borderRadius:8, padding:12, fontSize:"0.9rem", color:"#4a5568" }}>
                 <strong>{editing.producto}</strong> — {editing.sucursal}
               </div>
-              <div className="inv-form-group">
-                <label>Stock actual</label>
-                <input type="number" min="0" value={editStock} onChange={e => setEditStock(e.target.value)} />
-              </div>
-              <div className="inv-form-group">
-                <label>Stock mínimo</label>
-                <input type="number" min="0" value={editMin} onChange={e => setEditMin(e.target.value)} />
-              </div>
+              <div className="inv-form-group"><label>Stock actual</label><input type="number" min="0" value={editStock} onChange={e => setEditStock(e.target.value)} /></div>
+              <div className="inv-form-group"><label>Stock mínimo</label><input type="number" min="0" value={editMin} onChange={e => setEditMin(e.target.value)} /></div>
             </div>
             <div className="inv-modal-footer">
               <button className="inv-btn-cancel" onClick={() => setEditing(null)}>Cancelar</button>
-              <button className="inv-btn-save" onClick={handleSave}>Guardar cambios</button>
+              <button className="inv-btn-save" onClick={handleSave}><MdCheckCircle size={16}/> Guardar cambios</button>
             </div>
           </div>
         </div>
       )}
+
+      {/* ── Modal importar CSV ── */}
+      {showImport && (
+        <div className="inv-modal-overlay" onClick={() => { setShowImport(false); setImportRows([]); }}>
+          <div className="inv-modal inv-modal-lg" onClick={e => e.stopPropagation()}>
+            <div className="inv-modal-header">
+              <h3>Importar inventario desde CSV</h3>
+              <button className="inv-modal-close" onClick={() => { setShowImport(false); setImportRows([]); }}><MdClose /></button>
+            </div>
+            <div className="inv-modal-body">
+
+              {/* Resumen */}
+              <div className="inv-summary">
+                <span className="inv-summary-badge new">✓ {importRows.length - importDups.length} nuevos</span>
+                {importDups.length > 0 && <span className="inv-summary-badge dup">⚠ {importDups.length} duplicados</span>}
+              </div>
+
+              {/* Aviso duplicados */}
+              {importDups.length > 0 && (
+                <div className="inv-warn-box">
+                  <div style={{ fontWeight:700, marginBottom:6, display:"flex", gap:6, alignItems:"center" }}><MdWarning/> {importDups.length} registro(s) ya existen en ese producto + sucursal</div>
+                  <div style={{ display:"flex", gap:8, marginTop:8 }}>
+                    <button className="inv-btn-cancel" style={{ flex:1, fontSize:".82rem", borderColor: dupAction==="skip"?"#1e3a5f":"#e2e8f0", background: dupAction==="skip"?"#ebf8ff":"white" }} onClick={() => setDupAction("skip")}>
+                      Ignorar duplicados
+                    </button>
+                    <button className="inv-btn-cancel" style={{ flex:1, fontSize:".82rem", borderColor: dupAction==="update"?"#1e3a5f":"#e2e8f0", background: dupAction==="update"?"#ebf8ff":"white" }} onClick={() => setDupAction("update")}>
+                      Actualizar existentes
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Preview */}
+              <div className="inv-import-preview">
+                <table>
+                  <thead><tr><th>Producto</th><th>Branch ID</th><th>Stock</th><th>Mín.</th></tr></thead>
+                  <tbody>
+                    {importRows.slice(0,8).map((r,i) => (
+                      <tr key={i} style={importDups.find(d => d.product_id===r.product_id && d.branch_id===r.branch_id) ? {background:"#fffbeb"} : {}}>
+                        <td>{r.producto || r.product_id}</td><td>{r.branch_id}</td><td>{r.stock}</td><td>{r.min_stock||10}</td>
+                      </tr>
+                    ))}
+                    {importRows.length > 8 && <tr><td colSpan={4} style={{ color:"#a0aec0", textAlign:"center" }}>…y {importRows.length-8} filas más</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="inv-info-box">
+                <strong>💡 Tip:</strong> El CSV debe tener las columnas: <code>product_id, branch_id, stock, min_stock</code>. Exporta primero para ver el formato exacto.
+              </div>
+            </div>
+            <div className="inv-modal-footer">
+              <button className="inv-btn-cancel" onClick={() => { setShowImport(false); setImportRows([]); }}>Cancelar</button>
+              <button className="inv-btn-save" onClick={handleImportConfirm} disabled={importing || (importDups.length > 0 && !dupAction)}>
+                {importing ? <><MdRefresh size={16} className="spinning"/> Importando…</> : <><MdCheckCircle size={16}/> Confirmar importación</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && <div className={`inv-toast ${toast.type}`}>{toast.msg}</div>}
     </div>
   );
 }
