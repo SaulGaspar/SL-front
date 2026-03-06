@@ -14,6 +14,7 @@ import {
   MdPerson,
   MdAdminPanelSettings,
   MdLogout,
+  MdBackup,
 } from "react-icons/md";
 
 import Dashboard from "./pages/Dashboard/Dashboard";
@@ -24,6 +25,7 @@ import Usuarios from "./pages/Usuarios/Usuarios";
 import Promociones from "./pages/Promociones/Promociones";
 import Reportes from "./pages/Reportes/Reportes";
 import Sucursales from "./pages/Sucursales/Sucursales";
+import Respaldos from "./Respaldos/Respaldos";
 
 export default function AdminLayout({ user, onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -35,7 +37,6 @@ export default function AdminLayout({ user, onLogout }) {
     return <Navigate to="/" replace />;
   }
 
-  // Cierra el dropdown al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
@@ -53,6 +54,7 @@ export default function AdminLayout({ user, onLogout }) {
     { path: "/admin/pedidos", icon: MdShoppingCart, label: "Pedidos" },
     { path: "/admin/usuarios", icon: MdPeople, label: "Usuarios" },
     { path: "/admin/sucursales", icon: MdStore, label: "Sucursales" },
+    { path: "/admin/respaldos", icon: MdBackup, label: "Respaldos" },
     { path: "/admin/promociones", icon: MdLocalOffer, label: "Promociones" },
     { path: "/admin/reportes", icon: MdAssessment, label: "Reportes" },
   ];
@@ -224,7 +226,6 @@ export default function AdminLayout({ user, onLogout }) {
           gap: 16px;
         }
 
-        /* ── Avatar + Dropdown ── */
         .admin-profile-wrapper {
           position: relative;
         }
@@ -275,7 +276,6 @@ export default function AdminLayout({ user, onLogout }) {
           color: #718096;
         }
 
-        /* Dropdown panel */
         .admin-profile-dropdown {
           position: absolute;
           top: calc(100% + 10px);
@@ -479,7 +479,7 @@ export default function AdminLayout({ user, onLogout }) {
 
           <div className="menu-section">
             <div className="menu-section-title">Gestión</div>
-            {menuItems.slice(1, 6).map((item) => (
+            {menuItems.slice(1, 7).map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -494,7 +494,7 @@ export default function AdminLayout({ user, onLogout }) {
 
           <div className="menu-section">
             <div className="menu-section-title">Marketing & Análisis</div>
-            {menuItems.slice(6).map((item) => (
+            {menuItems.slice(7).map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -525,7 +525,6 @@ export default function AdminLayout({ user, onLogout }) {
           </div>
 
           <div className="topbar-right">
-            {/* Avatar clickeable con dropdown */}
             <div className="admin-profile-wrapper" ref={profileRef}>
               <div
                 className={`admin-user-info ${profileOpen ? "open" : ""}`}
@@ -540,10 +539,8 @@ export default function AdminLayout({ user, onLogout }) {
                 </div>
               </div>
 
-              {/* Dropdown */}
               {profileOpen && (
                 <div className="admin-profile-dropdown">
-                  {/* Header con nombre y badge */}
                   <div className="dropdown-header">
                     <div className="dropdown-avatar-lg">
                       {user.nombre.charAt(0).toUpperCase()}
@@ -557,7 +554,6 @@ export default function AdminLayout({ user, onLogout }) {
                     </div>
                   </div>
 
-                  {/* Correo y usuario */}
                   <div className="dropdown-body">
                     <div className="dropdown-info-row">
                       <MdEmail />
@@ -576,7 +572,6 @@ export default function AdminLayout({ user, onLogout }) {
                     </div>
                   </div>
 
-                  {/* Botón cerrar sesión */}
                   <div className="dropdown-footer">
                     <button
                       className="btn-logout"
@@ -603,6 +598,7 @@ export default function AdminLayout({ user, onLogout }) {
             <Route path="/pedidos" element={<Pedidos />} />
             <Route path="/usuarios" element={<Usuarios />} />
             <Route path="/sucursales" element={<Sucursales />} />
+            <Route path="/respaldos" element={<Respaldos />} />
             <Route path="/promociones" element={<Promociones />} />
             <Route path="/reportes" element={<Reportes />} />
           </Routes>
