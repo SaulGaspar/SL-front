@@ -25,6 +25,7 @@ import Pago from "./pages/User/Pago";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/User/Profile";
+import ChangePassword from "./pages/User/ChangePassword";
 
 import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/User/ForgotPassword";
@@ -39,6 +40,7 @@ import Ayuda from "./pages/menu/Ayuda";
 import Configuracion from "./pages/menu/Configuracion";
 import Contacto from "./pages/menu/Contacto";
 import Tiendas from "./pages/menu/Tiendas";
+
 
 const API_URL = "https://sl-back.vercel.app";
 
@@ -149,7 +151,7 @@ export default function App() {
                     path="/profile"
                     element={localStorage.getItem("token") ? <Profile user={user} setUser={setUser} /> : <Navigate to="/login" />}
                   />
-
+                  <Route path="/change-password" element={<ChangePassword />} />
                   <Route path="/verify-email" element={<VerifyEmail />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
