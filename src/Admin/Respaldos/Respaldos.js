@@ -263,7 +263,6 @@ export default function Respaldos() {
                 <tr>
                   <th>Archivo</th>
                   <th>Tamaño</th>
-                  <th>Tablas</th>
                   <th>Generado por</th>
                   <th>Fecha</th>
                   <th>Acciones</th>
@@ -280,13 +279,6 @@ export default function Respaldos() {
                         <MdStorage size={13} />
                         {fmtBytes(b.tamanio_bytes)}
                       </span>
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, maxWidth: 260 }}>
-                        {(b.tablas_incluidas || "").split(",").map(t => (
-                          <span key={t} className="bk-tag">{t.trim()}</span>
-                        ))}
-                      </div>
                     </td>
                     <td style={{ color: "#4a5568", fontSize: ".88rem" }}>
                       {b.creado_por || "—"}
