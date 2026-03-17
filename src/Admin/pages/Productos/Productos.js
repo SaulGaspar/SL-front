@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   MdAdd, MdEdit, MdDelete, MdSearch, MdRefresh,
   MdClose, MdCheckCircle, MdInventory,
-  MdFileDownload, MdFileUpload, MdWarning,
+  MdFileDownload, MdFileUpload, MdWarning, MdVisibility,
+  MdDateRange,
 } from "react-icons/md";
 
 const API_URL = "https://sl-back.vercel.app";
@@ -11,8 +12,10 @@ const hdrs    = () => ({ Authorization: `Bearer ${token()}`, "Content-Type": "ap
 const fmt     = (v) => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(v || 0);
 const EMPTY   = { nombre: "", marca: "", descripcion: "", precio: "", categoria: "", imagen: "", talla: "", colores: "", activo: 1 };
 
-// Columnas del CSV de productos
 const CSV_HEADERS = ["nombre","marca","descripcion","precio","categoria","imagen","talla","colores","activo"];
+
+// Campos considerados "importantes" para alerta de vacíos
+const IMPORTANT_FIELDS = { nombre:"Nombre", marca:"Marca", descripcion:"Descripción", precio:"Precio", categoria:"Categoría", imagen:"Imagen", talla:"Tallas", colores:"Colores" };
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
@@ -32,6 +35,10 @@ const CSS = `
 .pro-search-ico { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#a0aec0; pointer-events:none; }
 .pro-sel { padding:10px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:.88rem; font-family:inherit; background:#f8fafc; min-width:140px; }
 .pro-sel:focus { outline:none; border-color:#1e3a5f; }
+.pro-date-input { padding:9px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:.88rem; font-family:inherit; background:#f8fafc; min-width:130px; color:#2d3748; }
+.pro-date-input:focus { outline:none; border-color:#1e3a5f; }
+.pro-date-label { font-size:.75rem; font-weight:700; color:#718096; text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; }
+.pro-date-group { display:flex; align-items:center; gap:6px; }
 .pro-btn { padding:10px 16px; border-radius:8px; border:none; cursor:pointer; font-family:inherit; font-size:.88rem; font-weight:600; display:flex; align-items:center; gap:6px; transition:all .2s; }
 .pro-btn-primary { background:#1e3a5f; color:white; }
 .pro-btn-primary:hover { background:#2c5282; transform:translateY(-1px); box-shadow:0 6px 16px rgba(30,58,95,.3); }
@@ -72,6 +79,7 @@ const CSS = `
 .pro-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:4000; display:flex; align-items:center; justify-content:center; padding:16px; }
 .pro-modal { background:white; border-radius:16px; width:100%; max-width:580px; max-height:92vh; overflow-y:auto; box-shadow:0 24px 64px rgba(0,0,0,.28); animation:proIn .22s ease; }
 .pro-modal-sm { max-width:460px; }
+.pro-modal-lg { max-width:720px; }
 @keyframes proIn { from{transform:translateY(18px);opacity:0} to{transform:translateY(0);opacity:1} }
 .pro-mhead { padding:18px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:white; z-index:1; border-radius:16px 16px 0 0; }
 .pro-mhead h3 { margin:0; color:#1e3a5f; font-size:1.1rem; font-weight:700; }
@@ -98,15 +106,13 @@ const CSS = `
 .pro-err { background:#fff5f5; border:1px solid #fc8181; color:#9b2c2c; padding:10px 14px; border-radius:8px; font-size:.86rem; }
 .pro-info-box { background:#ebf8ff; border:1px solid #bee3f8; color:#2c5282; padding:12px 14px; border-radius:8px; font-size:.84rem; line-height:1.5; }
 .pro-warn-box { background:#fffbeb; border:1px solid #f6e05e; color:#744210; padding:12px 14px; border-radius:8px; font-size:.84rem; line-height:1.6; }
+.pro-success-box { background:#f0fff4; border:1px solid #9ae6b4; color:#276749; padding:14px 16px; border-radius:10px; font-size:.88rem; line-height:1.7; }
 .pro-import-drop {
   border:2px dashed #bee3f8; border-radius:10px; padding:28px; text-align:center;
   background:#f7fbff; cursor:pointer; transition:all .2s;
 }
 .pro-import-drop:hover, .pro-import-drop.drag { border-color:#3182ce; background:#ebf8ff; }
 .pro-import-drop input { display:none; }
-.pro-import-drop-icon { font-size:2.2rem; margin-bottom:8px; color:#3182ce; }
-.pro-import-drop p { margin:0; font-size:.9rem; color:#4a5568; }
-.pro-import-drop span { font-size:.8rem; color:#a0aec0; }
 .pro-import-preview { max-height:200px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; }
 .pro-import-preview table { width:100%; border-collapse:collapse; font-size:.78rem; }
 .pro-import-preview th { background:#f7fafc; padding:7px 10px; text-align:left; color:#4a5568; font-weight:700; position:sticky; top:0; }
@@ -116,6 +122,38 @@ const CSS = `
 .pro-import-badge.new { background:#c6f6d5; color:#276749; }
 .pro-import-badge.dup { background:#fef5e7; color:#975a16; }
 .pro-import-badge.err { background:#fed7d7; color:#9b2c2c; }
+/* Export preview table */
+.pro-export-table-wrap { max-height:340px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:10px; }
+.pro-export-table { width:100%; border-collapse:collapse; font-size:.78rem; }
+.pro-export-table thead { position:sticky; top:0; background:#f7fafc; z-index:1; }
+.pro-export-table th { padding:9px 12px; text-align:left; color:#4a5568; font-weight:700; border-bottom:2px solid #e2e8f0; white-space:nowrap; }
+.pro-export-table td { padding:8px 12px; border-bottom:1px solid #f0f4f8; vertical-align:middle; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pro-export-table tr:hover td { background:#f8fafc; }
+.pro-cell-empty { color:#cbd5e0; font-style:italic; font-size:.73rem; }
+.pro-cell-warn { background:#fffbeb !important; }
+.pro-export-stats { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:4px; }
+.pro-export-stat { padding:5px 14px; border-radius:20px; font-size:.8rem; font-weight:700; }
+.pro-export-stat.total { background:#ebf8ff; color:#2b6cb0; }
+.pro-export-stat.warn  { background:#fffbeb; color:#975a16; }
+.pro-export-stat.ok    { background:#c6f6d5; color:#276749; }
+/* Summary modal */
+.pro-summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.pro-summary-card { border-radius:10px; padding:16px 20px; display:flex; flex-direction:column; gap:4px; }
+.pro-summary-card.created { background:#f0fff4; border:1px solid #9ae6b4; }
+.pro-summary-card.updated { background:#ebf8ff; border:1px solid #90cdf4; }
+.pro-summary-card.skipped { background:#f7fafc; border:1px solid #e2e8f0; }
+.pro-summary-card.errors  { background:#fff5f5; border:1px solid #fc8181; }
+.pro-summary-num { font-size:2rem; font-weight:700; line-height:1; }
+.pro-summary-num.created { color:#276749; }
+.pro-summary-num.updated { color:#2b6cb0; }
+.pro-summary-num.skipped { color:#718096; }
+.pro-summary-num.errors  { color:#9b2c2c; }
+.pro-summary-label { font-size:.8rem; font-weight:600; color:#718096; }
+/* Date range row */
+.pro-date-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:8px; padding:8px 12px; }
+.pro-date-sep { color:#a0aec0; font-size:.85rem; }
+.pro-date-clear { background:none; border:none; color:#a0aec0; cursor:pointer; font-size:.8rem; padding:2px 6px; border-radius:4px; font-family:inherit; }
+.pro-date-clear:hover { color:#e53e3e; background:#fff5f5; }
 .pro-toast { position:fixed; bottom:24px; right:24px; z-index:9999; padding:12px 20px; border-radius:10px; color:white; font-family:'DM Sans',sans-serif; font-size:.88rem; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.2); animation:proIn .3s ease; }
 .pro-toast.ok  { background:#276749; }
 .pro-toast.err { background:#9b2c2c; }
@@ -182,7 +220,6 @@ function parseCSV(text) {
   const lines = text.trim().split("\n").map(l => l.replace(/\r/,""));
   if (lines.length < 2) return [];
   const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
-
   return lines.slice(1).map(line => {
     const vals = [];
     let cur = "", inQ = false;
@@ -200,6 +237,18 @@ function parseCSV(text) {
   });
 }
 
+// Analiza qué campos están vacíos en la lista de productos
+function analyzeEmptyFields(rows) {
+  const counts = {};
+  Object.keys(IMPORTANT_FIELDS).forEach(f => { counts[f] = 0; });
+  rows.forEach(p => {
+    Object.keys(IMPORTANT_FIELDS).forEach(f => {
+      if (!p[f] && p[f] !== 0) counts[f]++;
+    });
+  });
+  return counts; // { campo: cuántos productos lo tienen vacío }
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function Productos() {
@@ -215,28 +264,55 @@ export default function Productos() {
   const [catFilter,   setCat]         = useState("all");
   const [brandFilter, setBrand]       = useState("all");
   const [statusFilter, setStatus]     = useState("all");
+  const [dateFrom, setDateFrom]       = useState("");
+  const [dateTo,   setDateTo]         = useState("");
   const [toast,    setToast]          = useState(null);
+
+  // Export preview state
+  const [showExport, setShowExport]   = useState(false);
+  const [exportData, setExportData]   = useState([]);
+  const [emptyFields, setEmptyFields] = useState({});
 
   // Import state
   const [showImport, setShowImport]   = useState(false);
-  const [importRows, setImportRows]   = useState([]);   // parsed CSV rows
-  const [importDups, setImportDups]   = useState([]);   // rows that already exist
-  const [dupAction,  setDupAction]    = useState(null); // null | "update" | "skip"
+  const [importRows, setImportRows]   = useState([]);
+  const [importDups, setImportDups]   = useState([]);
+  const [dupAction,  setDupAction]    = useState(null);
   const [importing,  setImporting]    = useState(false);
   const [dragOver,   setDragOver]     = useState(false);
+
+  // Import result summary
+  const [showSummary, setShowSummary] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+
   const fileRef = useRef();
 
   useEffect(() => { fetchProducts(); }, []);
 
   useEffect(() => {
     let f = [...products];
-    if (search)                f = f.filter(p => `${p.nombre} ${p.marca} ${p.descripcion}`.toLowerCase().includes(search.toLowerCase()));
-    if (catFilter !== "all")   f = f.filter(p => p.categoria === catFilter);
-    if (brandFilter !== "all") f = f.filter(p => p.marca === brandFilter);
+    if (search) f = f.filter(p => `${p.nombre} ${p.marca} ${p.descripcion}`.toLowerCase().includes(search.toLowerCase()));
+    if (catFilter !== "all")    f = f.filter(p => p.categoria === catFilter);
+    if (brandFilter !== "all")  f = f.filter(p => p.marca === brandFilter);
     if (statusFilter === "active")   f = f.filter(p => p.activo === 1);
     if (statusFilter === "inactive") f = f.filter(p => p.activo === 0);
+    // Date filter using created_at or updated_at if available
+    if (dateFrom) {
+      const from = new Date(dateFrom + "T00:00:00");
+      f = f.filter(p => {
+        const d = p.created_at || p.updated_at;
+        return d ? new Date(d) >= from : true;
+      });
+    }
+    if (dateTo) {
+      const to = new Date(dateTo + "T23:59:59");
+      f = f.filter(p => {
+        const d = p.created_at || p.updated_at;
+        return d ? new Date(d) <= to : true;
+      });
+    }
     setFiltered(f);
-  }, [products, search, catFilter, brandFilter, statusFilter]);
+  }, [products, search, catFilter, brandFilter, statusFilter, dateFrom, dateTo]);
 
   const showToast = (msg, type = "ok") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3500); };
 
@@ -249,12 +325,20 @@ export default function Productos() {
     finally { setLoading(false); }
   };
 
-  // ── EXPORT ──────────────────────────────────────────────────────────────────
+  // ── EXPORT PREVIEW ──────────────────────────────────────────────────────────
 
-  const handleExport = () => {
+  const handleExportPreview = () => {
     const data = filtered.length && filtered.length < products.length ? filtered : products;
-    downloadCSV(toCSV(data), `productos_${new Date().toISOString().slice(0,10)}.csv`);
-    showToast(`${data.length} productos exportados`);
+    const empties = analyzeEmptyFields(data);
+    setExportData(data);
+    setEmptyFields(empties);
+    setShowExport(true);
+  };
+
+  const handleExportConfirm = () => {
+    downloadCSV(toCSV(exportData), `productos_${new Date().toISOString().slice(0,10)}.csv`);
+    setShowExport(false);
+    showToast(`✅ ${exportData.length} productos exportados correctamente`);
   };
 
   const handleExportTemplate = () => {
@@ -271,14 +355,11 @@ export default function Productos() {
       const rows = parseCSV(e.target.result);
       const valid = rows.filter(r => r.nombre && r.nombre.trim());
       if (valid.length === 0) { showToast("El CSV no tiene filas válidas", "err"); return; }
-
-      // Detectar duplicados por nombre
       const existingNames = new Set(products.map(p => p.nombre.toLowerCase().trim()));
       const dups = valid.filter(r => existingNames.has(r.nombre.toLowerCase().trim()));
-
       setImportRows(valid);
       setImportDups(dups);
-      setDupAction(dups.length > 0 ? null : "skip"); // si no hay dups, skip (no importa)
+      setDupAction(dups.length > 0 ? null : "skip");
       setShowImport(true);
     };
     reader.readAsText(file, "UTF-8");
@@ -296,12 +377,12 @@ export default function Productos() {
     setImporting(true);
 
     const existingNames = new Map(products.map(p => [p.nombre.toLowerCase().trim(), p.id]));
-    let created = 0, updated = 0, errors = 0;
+    let created = 0, updated = 0, skipped = 0, errors = 0;
 
     for (const row of importRows) {
       const isDup = existingNames.has(row.nombre.toLowerCase().trim());
       try {
-        if (isDup && dupAction === "skip") continue;
+        if (isDup && dupAction === "skip") { skipped++; continue; }
 
         const payload = {
           nombre:      row.nombre,
@@ -330,7 +411,10 @@ export default function Productos() {
     setShowImport(false);
     setImportRows([]);
     fetchProducts();
-    showToast(`Importación completa: ${created} creados, ${updated} actualizados${errors > 0 ? `, ${errors} errores` : ""}`, errors > 0 ? "err" : "ok");
+
+    // Show detailed summary modal
+    setImportResult({ created, updated, skipped, errors, total: importRows.length });
+    setShowSummary(true);
   };
 
   // ── Modal helpers ────────────────────────────────────────────────────────────
@@ -368,10 +452,16 @@ export default function Productos() {
     } catch { showToast("Error de conexión", "err"); }
   };
 
+  const hasDateFilter = dateFrom || dateTo;
   const categories = [...new Set(products.map(p => p.categoria).filter(Boolean))];
   const brands     = [...new Set(products.map(p => p.marca).filter(Boolean))];
   const tallasPreview  = form.talla   ? form.talla.split(",").map(s=>s.trim()).filter(Boolean)   : [];
   const coloresPreview = form.colores ? form.colores.split(",").map(s=>s.trim()).filter(Boolean) : [];
+
+  // Warn fields: fields empty in >20% of export data
+  const warnFields = exportData.length > 0
+    ? Object.entries(emptyFields).filter(([,count]) => count > 0).map(([f]) => f)
+    : [];
 
   // ── RENDER ───────────────────────────────────────────────────────────────────
 
@@ -404,20 +494,31 @@ export default function Productos() {
             <option value="active">Activos</option>
             <option value="inactive">Inactivos</option>
           </select>
+          {/* Date range filter */}
+          <div className="pro-date-row">
+            <MdDateRange size={16} style={{ color:"#718096", flexShrink:0 }} />
+            <span className="pro-date-label">Desde</span>
+            <input type="date" className="pro-date-input" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+            <span className="pro-date-sep">→</span>
+            <span className="pro-date-label">Hasta</span>
+            <input type="date" className="pro-date-input" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+            {hasDateFilter && (
+              <button className="pro-date-clear" onClick={() => { setDateFrom(""); setDateTo(""); }} title="Limpiar fechas">✕ Limpiar</button>
+            )}
+          </div>
         </div>
 
-        {/* Botones de acción */}
+        {/* Action buttons */}
         <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
           <button className="pro-btn pro-btn-ghost" onClick={fetchProducts} title="Actualizar">
             <MdRefresh size={18} className={loading ? "spinning" : ""} />
           </button>
-          <button className="pro-btn pro-btn-export" onClick={handleExport} title="Exportar CSV">
+          <button className="pro-btn pro-btn-export" onClick={handleExportPreview} title="Exportar CSV">
             <MdFileDownload size={18} /> Exportar
           </button>
           <button className="pro-btn pro-btn-import" onClick={() => fileRef.current?.click()} title="Importar CSV">
             <MdFileUpload size={18} /> Importar
           </button>
-          {/* Input oculto para seleccionar archivo */}
           <input ref={fileRef} type="file" accept=".csv" style={{ display:"none" }} onChange={e => { handleFileRead(e.target.files[0]); e.target.value=""; }} />
           <button className="pro-btn pro-btn-primary" onClick={openCreate}>
             <MdAdd size={18} /> Nuevo producto
@@ -425,7 +526,20 @@ export default function Productos() {
         </div>
       </div>
 
-      {/* Tabla */}
+      {/* Date filter active badge */}
+      {hasDateFilter && (
+        <div style={{ marginBottom:12, display:"flex", alignItems:"center", gap:8, fontSize:".82rem", color:"#2b6cb0" }}>
+          <MdDateRange size={15} />
+          Filtrando por fecha:{" "}
+          {dateFrom && <strong>{dateFrom}</strong>}
+          {dateFrom && dateTo && " → "}
+          {dateTo && <strong>{dateTo}</strong>}
+          {" — "}
+          <strong>{filtered.length}</strong> producto{filtered.length !== 1 ? "s" : ""} en este rango
+        </div>
+      )}
+
+      {/* Table */}
       <div className="pro-table-wrap">
         {loading ? (
           <div className="pro-empty">Cargando productos…</div>
@@ -475,7 +589,94 @@ export default function Productos() {
         )}
       </div>
 
-      {/* ── Modal editar/crear ── */}
+      {/* ── Modal: Export Preview ── */}
+      {showExport && (
+        <div className="pro-overlay" onClick={e => { if(e.target.classList.contains("pro-overlay")) setShowExport(false); }}>
+          <div className="pro-modal pro-modal-lg">
+            <div className="pro-mhead">
+              <h3><MdVisibility style={{ verticalAlign:"middle", marginRight:6 }}/>Previsualizar exportación</h3>
+              <button className="pro-mclose" onClick={() => setShowExport(false)}><MdClose /></button>
+            </div>
+            <div className="pro-mbody">
+
+              {/* Stats summary */}
+              <div className="pro-export-stats">
+                <span className="pro-export-stat total">📦 {exportData.length} productos a exportar</span>
+                {warnFields.length === 0
+                  ? <span className="pro-export-stat ok">✅ Sin campos vacíos críticos</span>
+                  : <span className="pro-export-stat warn">⚠ {warnFields.length} campo{warnFields.length>1?"s":""} con valores vacíos</span>
+                }
+              </div>
+
+              {/* Empty fields alert */}
+              {warnFields.length > 0 && (
+                <div className="pro-warn-box">
+                  <div style={{ fontWeight:700, marginBottom:6, display:"flex", gap:6, alignItems:"center" }}>
+                    <MdWarning /> Campos con valores vacíos detectados
+                  </div>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:4 }}>
+                    {warnFields.map(f => (
+                      <span key={f} style={{ background:"#fef5e7", border:"1px solid #f6e05e", borderRadius:6, padding:"2px 10px", fontSize:".8rem", fontWeight:700, color:"#975a16" }}>
+                        {IMPORTANT_FIELDS[f]}: {emptyFields[f]} vacío{emptyFields[f]>1?"s":""}
+                      </span>
+                    ))}
+                  </div>
+                  <div style={{ marginTop:8, fontSize:".8rem", color:"#92400e" }}>
+                    Las filas resaltadas en amarillo tienen al menos un campo vacío. Puedes exportar de todas formas.
+                  </div>
+                </div>
+              )}
+
+              {/* Preview table */}
+              <div className="pro-export-table-wrap">
+                <table className="pro-export-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Nombre</th>
+                      <th>Marca</th>
+                      <th>Categoría</th>
+                      <th>Precio</th>
+                      <th>Tallas</th>
+                      <th>Colores</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {exportData.map((p, idx) => {
+                      const hasEmpty = warnFields.some(f => !p[f] && p[f] !== 0);
+                      return (
+                        <tr key={p.id} className={hasEmpty ? "pro-cell-warn" : ""}>
+                          <td style={{ color:"#a0aec0", fontSize:".75rem" }}>{idx + 1}</td>
+                          <td style={{ fontWeight:600, color:"#1e3a5f" }}>{p.nombre || <span className="pro-cell-empty">vacío</span>}</td>
+                          <td>{p.marca || <span className="pro-cell-empty">—</span>}</td>
+                          <td>{p.categoria ? <span className="pro-tag">{p.categoria}</span> : <span className="pro-cell-empty">—</span>}</td>
+                          <td style={{ color:"#38a169", fontWeight:700 }}>{p.precio ? fmt(p.precio) : <span className="pro-cell-empty">—</span>}</td>
+                          <td>{p.talla || <span className="pro-cell-empty">—</span>}</td>
+                          <td>{p.colores || <span className="pro-cell-empty">—</span>}</td>
+                          <td><span className={`pro-status ${p.activo?"pro-status-on":"pro-status-off"}`}>{p.activo?"Activo":"Inactivo"}</span></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="pro-info-box">
+                💡 El archivo CSV incluirá todos los campos: nombre, marca, descripción, precio, categoría, imagen, talla, colores y estado.
+              </div>
+            </div>
+            <div className="pro-mfoot">
+              <button className="pro-btn pro-btn-ghost" onClick={() => setShowExport(false)}>Cancelar</button>
+              <button className="pro-btn pro-btn-export" onClick={handleExportConfirm}>
+                <MdFileDownload size={16} /> Descargar CSV ({exportData.length} productos)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Edit/Create ── */}
       {showModal && (
         <div className="pro-overlay" onClick={e => { if(e.target.classList.contains("pro-overlay")) closeModal(); }}>
           <div className="pro-modal">
@@ -537,7 +738,7 @@ export default function Productos() {
         </div>
       )}
 
-      {/* ── Modal importar CSV ── */}
+      {/* ── Modal: Import CSV ── */}
       {showImport && (
         <div className="pro-overlay" onClick={e => { if(e.target.classList.contains("pro-overlay")) { setShowImport(false); setImportRows([]); } }}>
           <div className="pro-modal pro-modal-sm">
@@ -546,14 +747,10 @@ export default function Productos() {
               <button className="pro-mclose" onClick={()=>{setShowImport(false);setImportRows([]);}}><MdClose/></button>
             </div>
             <div className="pro-mbody">
-
-              {/* Resumen */}
               <div className="pro-import-summary">
                 <span className="pro-import-badge new">✓ {importRows.length - importDups.length} nuevos</span>
                 {importDups.length > 0 && <span className="pro-import-badge dup">⚠ {importDups.length} duplicados</span>}
               </div>
-
-              {/* Aviso de duplicados */}
               {importDups.length > 0 && (
                 <div className="pro-warn-box">
                   <div style={{fontWeight:700,marginBottom:6,display:"flex",gap:6,alignItems:"center"}}><MdWarning/> {importDups.length} producto(s) ya existen</div>
@@ -571,8 +768,6 @@ export default function Productos() {
                   </div>
                 </div>
               )}
-
-              {/* Preview tabla */}
               <div className="pro-import-preview">
                 <table>
                   <thead><tr><th>Nombre</th><th>Marca</th><th>Precio</th><th>Categoría</th></tr></thead>
@@ -586,9 +781,8 @@ export default function Productos() {
                   </tbody>
                 </table>
               </div>
-
               <div className="pro-info-box">
-                <strong>💡 Tip:</strong> Descarga la <button onClick={handleExportTemplate} style={{background:"none",border:"none",color:"#2b6cb0",fontWeight:700,cursor:"pointer",padding:0,textDecoration:"underline"}}>plantilla CSV</button> para ver el formato correcto de columnas.
+                <strong>💡 Tip:</strong> Descarga la <button onClick={handleExportTemplate} style={{background:"none",border:"none",color:"#2b6cb0",fontWeight:700,cursor:"pointer",padding:0,textDecoration:"underline"}}>plantilla CSV</button> para ver el formato correcto.
               </div>
             </div>
             <div className="pro-mfoot">
@@ -601,7 +795,52 @@ export default function Productos() {
         </div>
       )}
 
-      {/* Drag & drop zone invisible sobre toda la página cuando se arrastra */}
+      {/* ── Modal: Import Summary ── */}
+      {showSummary && importResult && (
+        <div className="pro-overlay" onClick={e => { if(e.target.classList.contains("pro-overlay")) setShowSummary(false); }}>
+          <div className="pro-modal pro-modal-sm">
+            <div className="pro-mhead">
+              <h3>✅ Importación completada</h3>
+              <button className="pro-mclose" onClick={() => setShowSummary(false)}><MdClose /></button>
+            </div>
+            <div className="pro-mbody">
+              <div className="pro-success-box">
+                Se procesaron <strong>{importResult.total}</strong> fila{importResult.total !== 1 ? "s" : ""} del CSV correctamente.
+              </div>
+              <div className="pro-summary-grid">
+                <div className="pro-summary-card created">
+                  <span className="pro-summary-num created">{importResult.created}</span>
+                  <span className="pro-summary-label">🆕 Productos creados</span>
+                </div>
+                <div className="pro-summary-card updated">
+                  <span className="pro-summary-num updated">{importResult.updated}</span>
+                  <span className="pro-summary-label">✏️ Productos actualizados</span>
+                </div>
+                <div className="pro-summary-card skipped">
+                  <span className="pro-summary-num skipped">{importResult.skipped}</span>
+                  <span className="pro-summary-label">⏭ Duplicados omitidos</span>
+                </div>
+                <div className="pro-summary-card errors">
+                  <span className="pro-summary-num errors">{importResult.errors}</span>
+                  <span className="pro-summary-label">❌ Errores</span>
+                </div>
+              </div>
+              {importResult.errors > 0 && (
+                <div className="pro-warn-box">
+                  <strong>⚠ {importResult.errors} fila(s) no se pudieron importar.</strong> Verifica que los datos sean correctos y vuelve a intentarlo.
+                </div>
+              )}
+            </div>
+            <div className="pro-mfoot">
+              <button className="pro-btn pro-btn-primary" onClick={() => setShowSummary(false)}>
+                <MdCheckCircle size={16} /> Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Drag & drop overlay */}
       <div
         onDragOver={e=>{e.preventDefault();setDragOver(true);}}
         onDragLeave={()=>setDragOver(false)}

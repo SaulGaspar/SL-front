@@ -15,17 +15,19 @@ import {
   MdAdminPanelSettings,
   MdLogout,
   MdBackup,
+  MdMonitor,
 } from "react-icons/md";
 
-import Dashboard from "./pages/Dashboard/Dashboard";
-import Productos from "./pages/Productos/Productos";
+import Dashboard  from "./pages/Dashboard/Dashboard";
+import Productos  from "./pages/Productos/Productos";
 import Inventario from "./pages/Inventario/Inventario";
-import Pedidos from "./pages/Pedidos/Pedidos";
-import Usuarios from "./pages/Usuarios/Usuarios";
+import Pedidos    from "./pages/Pedidos/Pedidos";
+import Usuarios   from "./pages/Usuarios/Usuarios";
 import Promociones from "./pages/Promociones/Promociones";
-import Reportes from "./pages/Reportes/Reportes";
+import Reportes   from "./pages/Reportes/Reportes";
 import Sucursales from "./pages/Sucursales/Sucursales";
-import Respaldos from "./Respaldos/Respaldos";
+import Respaldos  from "./Respaldos/Respaldos";
+import MonitorBD  from "./pages/Monitor/MonitorDB";
 
 export default function AdminLayout({ user, onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -48,15 +50,16 @@ export default function AdminLayout({ user, onLogout }) {
   }, []);
 
   const menuItems = [
-    { path: "/admin", icon: MdDashboard, label: "Dashboard", exact: true },
-    { path: "/admin/productos", icon: MdInventory, label: "Productos" },
-    { path: "/admin/inventario", icon: MdStore, label: "Inventario" },
-    { path: "/admin/pedidos", icon: MdShoppingCart, label: "Pedidos" },
-    { path: "/admin/usuarios", icon: MdPeople, label: "Usuarios" },
-    { path: "/admin/sucursales", icon: MdStore, label: "Sucursales" },
-    { path: "/admin/respaldos", icon: MdBackup, label: "Respaldos" },
-    { path: "/admin/promociones", icon: MdLocalOffer, label: "Promociones" },
-    { path: "/admin/reportes", icon: MdAssessment, label: "Reportes" },
+    { path: "/admin",            icon: MdDashboard,  label: "Dashboard",  exact: true },
+    { path: "/admin/productos",  icon: MdInventory,  label: "Productos"               },
+    { path: "/admin/inventario", icon: MdStore,      label: "Inventario"              },
+    { path: "/admin/pedidos",    icon: MdShoppingCart,label: "Pedidos"                },
+    { path: "/admin/usuarios",   icon: MdPeople,     label: "Usuarios"                },
+    { path: "/admin/sucursales", icon: MdStore,      label: "Sucursales"              },
+    { path: "/admin/respaldos",  icon: MdBackup,     label: "Respaldos"               },
+    { path: "/admin/promociones",icon: MdLocalOffer, label: "Promociones"             },
+    { path: "/admin/reportes",   icon: MdAssessment, label: "Reportes"                },
+    { path: "/admin/monitor",    icon: MdMonitor,    label: "Monitor BD"              },
   ];
 
   const isActive = (path, exact) => {
@@ -173,6 +176,23 @@ export default function AdminLayout({ user, onLogout }) {
 
         .menu-item.active::before { transform: scaleY(1); }
         .menu-item svg { font-size: 1.3rem; }
+
+        /* Monitor BD — badge especial */
+        .menu-item.monitor-item {
+          border-top: 1px solid rgba(255,255,255,0.08);
+          margin-top: 4px;
+        }
+        .menu-item.monitor-item .monitor-dot {
+          width: 7px; height: 7px; border-radius: 50%;
+          background: #39d353;
+          box-shadow: 0 0 6px #39d353;
+          animation: monPulse 2s ease-in-out infinite;
+          flex-shrink: 0;
+        }
+        @keyframes monPulse {
+          0%,100% { opacity:1; box-shadow: 0 0 6px #39d353; }
+          50%      { opacity:.5; box-shadow: 0 0 12px #39d353; }
+        }
 
         .admin-main {
           flex: 1;
@@ -408,6 +428,9 @@ export default function AdminLayout({ user, onLogout }) {
 
         .admin-content { padding: 24px; }
 
+        /* Monitor BD — sin padding extra (tiene su propio layout oscuro) */
+        .admin-content.is-monitor { padding: 0; }
+
         @media (max-width: 768px) {
           .admin-sidebar { transform: translateX(-260px); }
           .admin-sidebar.open { transform: translateX(0); }
@@ -494,7 +517,7 @@ export default function AdminLayout({ user, onLogout }) {
 
           <div className="menu-section">
             <div className="menu-section-title">Marketing & Análisis</div>
-            {menuItems.slice(7).map((item) => (
+            {menuItems.slice(7, 9).map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -505,6 +528,19 @@ export default function AdminLayout({ user, onLogout }) {
                 <span>{item.label}</span>
               </Link>
             ))}
+          </div>
+
+          <div className="menu-section">
+            <div className="menu-section-title">Sistema</div>
+            <Link
+              to="/admin/monitor"
+              className={`menu-item monitor-item ${isActive("/admin/monitor") ? "active" : ""}`}
+              onClick={() => window.innerWidth <= 768 && setSidebarOpen(false)}
+            >
+              <MdMonitor />
+              <span>Monitor BD</span>
+              <span className="monitor-dot" style={{ marginLeft:"auto" }} />
+            </Link>
           </div>
         </nav>
       </aside>
@@ -562,7 +598,6 @@ export default function AdminLayout({ user, onLogout }) {
                         <div className="info-value">{user.correo || user.email || "—"}</div>
                       </div>
                     </div>
-
                     <div className="dropdown-info-row">
                       <MdPerson />
                       <div>
@@ -590,17 +625,19 @@ export default function AdminLayout({ user, onLogout }) {
           </div>
         </div>
 
-        <div className="admin-content">
+        {/* El Monitor BD tiene su propio fondo oscuro, sin padding */}
+        <div className={`admin-content ${location.pathname === "/admin/monitor" ? "is-monitor" : ""}`}>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/productos" element={<Productos />} />
-            <Route path="/inventario" element={<Inventario />} />
-            <Route path="/pedidos" element={<Pedidos />} />
-            <Route path="/usuarios" element={<Usuarios />} />
-            <Route path="/sucursales" element={<Sucursales />} />
-            <Route path="/respaldos" element={<Respaldos />} />
-            <Route path="/promociones" element={<Promociones />} />
-            <Route path="/reportes" element={<Reportes />} />
+            <Route path="/"           element={<Dashboard />}   />
+            <Route path="/productos"  element={<Productos />}   />
+            <Route path="/inventario" element={<Inventario />}  />
+            <Route path="/pedidos"    element={<Pedidos />}     />
+            <Route path="/usuarios"   element={<Usuarios />}    />
+            <Route path="/sucursales" element={<Sucursales />}  />
+            <Route path="/respaldos"  element={<Respaldos />}   />
+            <Route path="/promociones"element={<Promociones />} />
+            <Route path="/reportes"   element={<Reportes />}    />
+            <Route path="/monitor"    element={<MonitorBD />}   />
           </Routes>
         </div>
       </main>
