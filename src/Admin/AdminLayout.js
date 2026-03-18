@@ -12,7 +12,7 @@ import Reportes    from "./pages/Reportes/Reportes";
 import Sucursales  from "./pages/Sucursales/Sucursales";
 import Respaldos   from "./Respaldos/Respaldos";
 import MonitorBD   from "./pages/Monitor/MonitorDB";
-import NotificacionesBell from "./NotificacionesBell";
+import NotificacionesBell from "./Notificacionesbell";
 
 export default function AdminLayout({ user, onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
