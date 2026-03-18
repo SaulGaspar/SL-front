@@ -195,11 +195,9 @@ export default function ProductoDetalle() {
         if (!prod) throw new Error("Producto no encontrado");
         setProduct(prod);
 
-        // Cargar imágenes de product_images
+        // Cargar imágenes de product_images — endpoint público sin auth
         try {
-          const imgRes = await fetch(`${API_URL}/api/admin/products/${prod.id}/images`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-          });
+          const imgRes = await fetch(`${API_URL}/api/products/${prod.id}/images`);
           if (imgRes.ok) {
             const imgs = await imgRes.json();
             if (imgs.length > 0) {
