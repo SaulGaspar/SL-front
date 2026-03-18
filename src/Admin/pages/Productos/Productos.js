@@ -2,43 +2,35 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   MdAdd, MdEdit, MdDelete, MdSearch, MdRefresh,
   MdClose, MdCheckCircle, MdInventory,
-  MdFileDownload, MdFileUpload, MdWarning, MdVisibility,
-  MdDateRange,
+  MdFileDownload, MdFileUpload, MdWarning,
+  MdDateRange, MdCloudUpload,
 } from "react-icons/md";
 
-const API_URL = "https://sl-back.vercel.app";
+const API_URL          = "https://sl-back.vercel.app";
+const CLOUDINARY_CLOUD = "dt1vnxvjq";
+const CLOUDINARY_PRESET= "Sportlike";
+const CLOUDINARY_URL   = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`;
+
 const token   = () => localStorage.getItem("token");
 const hdrs    = () => ({ Authorization: `Bearer ${token()}`, "Content-Type": "application/json" });
 const fmt     = (v) => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(v || 0);
 const EMPTY   = { nombre: "", marca: "", descripcion: "", precio: "", categoria: "", imagen: "", talla: "", colores: "", activo: 1 };
-
 const CSV_HEADERS = ["nombre","marca","descripcion","precio","categoria","imagen","talla","colores","activo"];
-
-// Campos considerados "importantes" para alerta de vacíos
 const IMPORTANT_FIELDS = { nombre:"Nombre", marca:"Marca", descripcion:"Descripción", precio:"Precio", categoria:"Categoría", imagen:"Imagen", talla:"Tallas", colores:"Colores" };
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 .pro * { font-family:'DM Sans',sans-serif; box-sizing:border-box; }
-.pro-toolbar {
-  background:white; padding:16px 20px; border-radius:12px; margin-bottom:20px;
-  box-shadow:0 2px 8px rgba(0,0,0,.05); display:flex; gap:12px; flex-wrap:wrap;
-  align-items:center; justify-content:space-between;
-}
+.pro-toolbar { background:white; padding:16px 20px; border-radius:12px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,.05); display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
 .pro-left { display:flex; gap:10px; flex:1; flex-wrap:wrap; }
 .pro-search { position:relative; flex:1; min-width:200px; max-width:320px; }
-.pro-search input {
-  width:100%; padding:10px 10px 10px 36px; border:1.5px solid #e2e8f0;
-  border-radius:8px; font-size:.9rem; font-family:inherit; background:#f8fafc;
-}
+.pro-search input { width:100%; padding:10px 10px 10px 36px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:.9rem; font-family:inherit; background:#f8fafc; }
 .pro-search input:focus { outline:none; border-color:#1e3a5f; background:white; }
 .pro-search-ico { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#a0aec0; pointer-events:none; }
 .pro-sel { padding:10px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:.88rem; font-family:inherit; background:#f8fafc; min-width:140px; }
 .pro-sel:focus { outline:none; border-color:#1e3a5f; }
 .pro-date-input { padding:9px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:.88rem; font-family:inherit; background:#f8fafc; min-width:130px; color:#2d3748; }
-.pro-date-input:focus { outline:none; border-color:#1e3a5f; }
 .pro-date-label { font-size:.75rem; font-weight:700; color:#718096; text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; }
-.pro-date-group { display:flex; align-items:center; gap:6px; }
 .pro-btn { padding:10px 16px; border-radius:8px; border:none; cursor:pointer; font-family:inherit; font-size:.88rem; font-weight:600; display:flex; align-items:center; gap:6px; transition:all .2s; }
 .pro-btn-primary { background:#1e3a5f; color:white; }
 .pro-btn-primary:hover { background:#2c5282; transform:translateY(-1px); box-shadow:0 6px 16px rgba(30,58,95,.3); }
@@ -56,7 +48,7 @@ const CSS = `
 .pro-table td { padding:13px 16px; border-bottom:1px solid #f0f4f8; vertical-align:middle; }
 .pro-table tbody tr:hover { background:#f8fafc; }
 .pro-table tbody tr:last-child td { border-bottom:none; }
-.pro-img { width:46px; height:46px; border-radius:8px; object-fit:cover; background:#edf2f7; border:1px solid #e2e8f0; }
+.pro-img { width:46px; height:46px; border-radius:8px; object-fit:contain; background:#f8f8f8; border:1px solid #e2e8f0; padding:2px; }
 .pro-name { font-weight:700; color:#1e3a5f; font-size:.9rem; }
 .pro-brand { font-size:.76rem; color:#2c5282; font-weight:600; margin-top:2px; }
 .pro-desc { font-size:.76rem; color:#a0aec0; margin-top:2px; max-width:220px; }
@@ -70,8 +62,8 @@ const CSS = `
 .pro-color-dot { width:14px; height:14px; border-radius:50%; display:inline-block; border:2px solid white; box-shadow:0 0 0 1px #e2e8f0; }
 .pro-actions { display:flex; gap:7px; }
 .pro-act { padding:7px 11px; border:none; border-radius:7px; cursor:pointer; font-size:.8rem; font-family:inherit; font-weight:600; display:flex; align-items:center; gap:4px; transition:all .15s; }
-.pro-act-edit   { background:#bee3f8; color:#2c5282; }
-.pro-act-edit:hover   { background:#90cdf4; }
+.pro-act-edit { background:#bee3f8; color:#2c5282; }
+.pro-act-edit:hover { background:#90cdf4; }
 .pro-act-delete { background:#fed7d7; color:#9b2c2c; }
 .pro-act-delete:hover { background:#fc8181; color:white; }
 .pro-empty { padding:56px; text-align:center; color:#a0aec0; }
@@ -88,13 +80,11 @@ const CSS = `
 .pro-mbody { padding:22px 24px; display:flex; flex-direction:column; gap:16px; }
 .pro-field { display:flex; flex-direction:column; gap:5px; }
 .pro-field label { font-size:.75rem; font-weight:700; color:#4a5568; text-transform:uppercase; letter-spacing:.5px; }
-.pro-field input, .pro-field textarea, .pro-field select { padding:10px 13px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:.92rem; font-family:inherit; background:#f8fafc; transition:border-color .15s; }
+.pro-field input, .pro-field textarea { padding:10px 13px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:.92rem; font-family:inherit; background:#f8fafc; transition:border-color .15s; }
 .pro-field input:focus, .pro-field textarea:focus { outline:none; border-color:#1e3a5f; background:white; box-shadow:0 0 0 3px rgba(30,58,95,.08); }
 .pro-field textarea { resize:vertical; min-height:80px; }
 .pro-field-hint { font-size:.75rem; color:#a0aec0; margin-top:3px; }
 .pro-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-.pro-img-preview { width:100%; height:120px; border-radius:10px; border:1.5px dashed #e2e8f0; background:#f8fafc; display:flex; align-items:center; justify-content:center; color:#a0aec0; overflow:hidden; }
-.pro-img-preview img { width:100%; height:100%; object-fit:cover; }
 .pro-toggle-row { display:flex; gap:8px; }
 .pro-toggle { flex:1; padding:10px; border:2px solid #e2e8f0; border-radius:8px; cursor:pointer; font-family:inherit; font-size:.86rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:5px; background:#f8fafc; transition:all .2s; }
 .pro-toggle.on  { border-color:#38a169; background:#c6f6d5; color:#276749; }
@@ -107,12 +97,6 @@ const CSS = `
 .pro-info-box { background:#ebf8ff; border:1px solid #bee3f8; color:#2c5282; padding:12px 14px; border-radius:8px; font-size:.84rem; line-height:1.5; }
 .pro-warn-box { background:#fffbeb; border:1px solid #f6e05e; color:#744210; padding:12px 14px; border-radius:8px; font-size:.84rem; line-height:1.6; }
 .pro-success-box { background:#f0fff4; border:1px solid #9ae6b4; color:#276749; padding:14px 16px; border-radius:10px; font-size:.88rem; line-height:1.7; }
-.pro-import-drop {
-  border:2px dashed #bee3f8; border-radius:10px; padding:28px; text-align:center;
-  background:#f7fbff; cursor:pointer; transition:all .2s;
-}
-.pro-import-drop:hover, .pro-import-drop.drag { border-color:#3182ce; background:#ebf8ff; }
-.pro-import-drop input { display:none; }
 .pro-import-preview { max-height:200px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; }
 .pro-import-preview table { width:100%; border-collapse:collapse; font-size:.78rem; }
 .pro-import-preview th { background:#f7fafc; padding:7px 10px; text-align:left; color:#4a5568; font-weight:700; position:sticky; top:0; }
@@ -121,14 +105,11 @@ const CSS = `
 .pro-import-badge { padding:5px 12px; border-radius:20px; font-size:.8rem; font-weight:700; }
 .pro-import-badge.new { background:#c6f6d5; color:#276749; }
 .pro-import-badge.dup { background:#fef5e7; color:#975a16; }
-.pro-import-badge.err { background:#fed7d7; color:#9b2c2c; }
-/* Export preview table */
 .pro-export-table-wrap { max-height:340px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:10px; }
 .pro-export-table { width:100%; border-collapse:collapse; font-size:.78rem; }
 .pro-export-table thead { position:sticky; top:0; background:#f7fafc; z-index:1; }
 .pro-export-table th { padding:9px 12px; text-align:left; color:#4a5568; font-weight:700; border-bottom:2px solid #e2e8f0; white-space:nowrap; }
 .pro-export-table td { padding:8px 12px; border-bottom:1px solid #f0f4f8; vertical-align:middle; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.pro-export-table tr:hover td { background:#f8fafc; }
 .pro-cell-empty { color:#cbd5e0; font-style:italic; font-size:.73rem; }
 .pro-cell-warn { background:#fffbeb !important; }
 .pro-export-stats { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:4px; }
@@ -136,7 +117,6 @@ const CSS = `
 .pro-export-stat.total { background:#ebf8ff; color:#2b6cb0; }
 .pro-export-stat.warn  { background:#fffbeb; color:#975a16; }
 .pro-export-stat.ok    { background:#c6f6d5; color:#276749; }
-/* Summary modal */
 .pro-summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .pro-summary-card { border-radius:10px; padding:16px 20px; display:flex; flex-direction:column; gap:4px; }
 .pro-summary-card.created { background:#f0fff4; border:1px solid #9ae6b4; }
@@ -149,7 +129,6 @@ const CSS = `
 .pro-summary-num.skipped { color:#718096; }
 .pro-summary-num.errors  { color:#9b2c2c; }
 .pro-summary-label { font-size:.8rem; font-weight:600; color:#718096; }
-/* Date range row */
 .pro-date-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:8px; padding:8px 12px; }
 .pro-date-sep { color:#a0aec0; font-size:.85rem; }
 .pro-date-clear { background:none; border:none; color:#a0aec0; cursor:pointer; font-size:.8rem; padding:2px 6px; border-radius:4px; font-family:inherit; }
@@ -159,6 +138,44 @@ const CSS = `
 .pro-toast.err { background:#9b2c2c; }
 .spinning { animation:spin .9s linear infinite; }
 @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+/* ── Image uploader single ── */
+.img-drop-zone { border:2px dashed #bee3f8; border-radius:12px; background:#f7fbff; cursor:pointer; transition:all .2s; overflow:hidden; position:relative; min-height:140px; display:flex; align-items:center; justify-content:center; }
+.img-drop-zone:hover, .img-drop-zone.drag { border-color:#3182ce; background:#ebf8ff; }
+.img-drop-zone.has-img { border-style:solid; border-color:#bee3f8; }
+.img-drop-zone input[type=file] { display:none; }
+.img-drop-placeholder { display:flex; flex-direction:column; align-items:center; gap:8px; padding:24px; color:#718096; }
+.img-drop-placeholder svg { color:#90cdf4; }
+.img-drop-placeholder span { font-size:.84rem; font-weight:600; }
+.img-drop-placeholder small { font-size:.74rem; color:#a0aec0; }
+.img-preview-wrap { width:100%; height:160px; position:relative; }
+.img-preview-wrap img { width:100%; height:100%; object-fit:contain; background:#f8f8f8; display:block; }
+.img-preview-overlay { position:absolute; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; gap:10px; opacity:0; transition:opacity .2s; }
+.img-preview-wrap:hover .img-preview-overlay { opacity:1; }
+.img-overlay-btn { padding:7px 14px; border-radius:8px; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:.8rem; font-weight:700; display:flex; align-items:center; gap:5px; }
+.img-overlay-btn.change { background:white; color:#1e3a5f; }
+.img-overlay-btn.remove { background:#fed7d7; color:#9b2c2c; }
+.img-uploading { position:absolute; inset:0; background:rgba(255,255,255,.88); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; }
+.img-upload-bar { width:80%; height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden; }
+.img-upload-bar-fill { height:100%; background:#3182ce; border-radius:3px; transition:width .2s; }
+.img-url-toggle { font-size:.75rem; color:#2b6cb0; cursor:pointer; text-decoration:underline; background:none; border:none; font-family:inherit; padding:0; margin-top:4px; }
+
+/* ── Multi gallery ── */
+.mg-wrap { display:flex; flex-direction:column; gap:10px; }
+.mg-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.mg-item { position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; border:2px solid #e2e8f0; background:#f8f8f8; }
+.mg-item.is-main { border-color:#1e3a5f; border-width:2.5px; }
+.mg-item img { width:100%; height:100%; object-fit:contain; padding:4px; }
+.mg-item-actions { position:absolute; inset:0; background:rgba(0,0,0,.5); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; opacity:0; transition:opacity .2s; }
+.mg-item:hover .mg-item-actions { opacity:1; }
+.mg-item-btn { padding:5px 10px; border-radius:6px; border:none; cursor:pointer; font-size:.74rem; font-weight:700; font-family:'DM Sans',sans-serif; display:flex; align-items:center; gap:4px; }
+.mg-item-btn.main { background:#c8f03c; color:#0a1a2f; }
+.mg-item-btn.del  { background:#fed7d7; color:#9b2c2c; }
+.mg-main-badge { position:absolute; top:5px; left:5px; background:#1e3a5f; color:white; font-size:.6rem; font-weight:700; padding:2px 6px; border-radius:4px; letter-spacing:.5px; pointer-events:none; }
+.mg-add-btn { aspect-ratio:1; border-radius:10px; border:2px dashed #bee3f8; background:#f7fbff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all .2s; color:#718096; font-size:.78rem; font-weight:600; position:relative; }
+.mg-add-btn:hover { border-color:#3182ce; background:#ebf8ff; color:#2b6cb0; }
+.mg-add-btn input { display:none; }
+.mg-info { font-size:.74rem; color:#718096; background:#f7fafc; border:1px solid #e2e8f0; padding:8px 12px; border-radius:8px; }
 `;
 
 const COLOR_MAP = {
@@ -168,418 +185,418 @@ const COLOR_MAP = {
 };
 
 function ColorDots({ value }) {
-  if (!value) return <span style={{ color: "#a0aec0", fontSize: ".75rem" }}>—</span>;
-  const colores = value.split(",").map(s => s.trim()).filter(Boolean);
+  if (!value) return <span style={{color:"#a0aec0",fontSize:".75rem"}}>—</span>;
+  const colores = value.split(",").map(s=>s.trim()).filter(Boolean);
   return (
-    <div style={{ display:"flex", flexWrap:"wrap", gap:"4px", alignItems:"center" }}>
-      {colores.slice(0,6).map(c => {
-        const hex = COLOR_MAP[c.toLowerCase()];
-        return hex ? (
-          <span key={c} className="pro-color-dot" style={{ background: hex }} title={c} />
-        ) : (
-          <span key={c} className="pro-chip">{c}</span>
-        );
+    <div style={{display:"flex",flexWrap:"wrap",gap:"4px",alignItems:"center"}}>
+      {colores.slice(0,6).map(c=>{
+        const hex=COLOR_MAP[c.toLowerCase()];
+        return hex?<span key={c} className="pro-color-dot" style={{background:hex}} title={c}/>:<span key={c} className="pro-chip">{c}</span>;
       })}
-      {colores.length > 6 && <span className="pro-chip">+{colores.length-6}</span>}
+      {colores.length>6&&<span className="pro-chip">+{colores.length-6}</span>}
     </div>
   );
 }
 
 function TallaChips({ value }) {
-  if (!value) return <span style={{ color:"#a0aec0", fontSize:".75rem" }}>—</span>;
-  const tallas = value.split(",").map(s => s.trim()).filter(Boolean);
+  if (!value) return <span style={{color:"#a0aec0",fontSize:".75rem"}}>—</span>;
+  const tallas=value.split(",").map(s=>s.trim()).filter(Boolean);
   return (
     <div className="pro-chips">
-      {tallas.slice(0,4).map(t => <span key={t} className="pro-chip">{t}</span>)}
-      {tallas.length > 4 && <span className="pro-chip">+{tallas.length-4}</span>}
+      {tallas.slice(0,4).map(t=><span key={t} className="pro-chip">{t}</span>)}
+      {tallas.length>4&&<span className="pro-chip">+{tallas.length-4}</span>}
     </div>
   );
 }
 
-// ── CSV helpers ──────────────────────────────────────────────────────────────
+async function uploadToCloudinary(file) {
+  if (!file.type.startsWith("image/")) throw new Error("Solo se permiten imágenes");
+  if (file.size > 10*1024*1024) throw new Error("Máximo 10 MB");
+  const fd=new FormData();
+  fd.append("file",file);
+  fd.append("upload_preset",CLOUDINARY_PRESET);
+  const res=await fetch(CLOUDINARY_URL,{method:"POST",body:fd});
+  if (!res.ok) throw new Error("Error al subir imagen");
+  const data=await res.json();
+  return data.secure_url;
+}
 
-function toCSV(rows) {
-  const escape = v => {
-    const s = String(v ?? "");
-    return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g,'""')}"` : s;
+function ImageUploader({ value, onChange }) {
+  const [uploading,setUploading]=useState(false);
+  const [progress,setProgress]=useState(0);
+  const [drag,setDrag]=useState(false);
+  const [showUrl,setShowUrl]=useState(false);
+  const fileRef=useRef();
+
+  const handleUpload=async(file)=>{
+    setUploading(true);setProgress(10);
+    const timer=setInterval(()=>setProgress(p=>Math.min(p+15,85)),300);
+    try{const url=await uploadToCloudinary(file);clearInterval(timer);setProgress(100);onChange(url);}
+    catch(e){clearInterval(timer);alert(e.message);}
+    finally{setTimeout(()=>{setUploading(false);setProgress(0);},400);}
   };
-  const lines = [CSV_HEADERS.join(",")];
-  rows.forEach(p => lines.push(CSV_HEADERS.map(h => escape(p[h])).join(",")));
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:6}}>
+      <div
+        className={`img-drop-zone ${drag?"drag":""} ${value&&!uploading?"has-img":""}`}
+        onDragOver={e=>{e.preventDefault();setDrag(true);}}
+        onDragLeave={()=>setDrag(false)}
+        onDrop={e=>{e.preventDefault();setDrag(false);const f=e.dataTransfer.files[0];if(f)handleUpload(f);}}
+        onClick={()=>!value&&!uploading&&fileRef.current?.click()}
+      >
+        <input ref={fileRef} type="file" accept="image/*" onChange={e=>{const f=e.target.files[0];if(f)handleUpload(f);e.target.value="";}}/>
+        {uploading&&(
+          <div className="img-uploading">
+            <MdCloudUpload size={28} style={{color:"#3182ce"}}/>
+            <span style={{fontSize:".84rem",fontWeight:700,color:"#2b6cb0"}}>Subiendo imagen…</span>
+            <div className="img-upload-bar"><div className="img-upload-bar-fill" style={{width:`${progress}%`}}/></div>
+          </div>
+        )}
+        {!uploading&&value&&(
+          <div className="img-preview-wrap">
+            <img src={value} alt="preview"/>
+            <div className="img-preview-overlay">
+              <button className="img-overlay-btn change" onClick={e=>{e.stopPropagation();fileRef.current?.click();}}><MdCloudUpload size={14}/> Cambiar</button>
+              <button className="img-overlay-btn remove" onClick={e=>{e.stopPropagation();onChange("");}}><MdClose size={14}/> Quitar</button>
+            </div>
+          </div>
+        )}
+        {!uploading&&!value&&(
+          <div className="img-drop-placeholder">
+            <MdCloudUpload size={32}/>
+            <span>Arrastra una imagen aquí</span>
+            <small>o haz clic · JPG, PNG, WEBP · máx 10 MB</small>
+          </div>
+        )}
+      </div>
+      <button className="img-url-toggle" onClick={()=>setShowUrl(v=>!v)}>
+        {showUrl?"▲ Ocultar URL":"▼ O pega una URL de imagen"}
+      </button>
+      {showUrl&&(
+        <input style={{padding:"9px 12px",border:"1.5px solid #e2e8f0",borderRadius:8,fontSize:".88rem",fontFamily:"inherit",background:"#f8fafc"}}
+          placeholder="https://res.cloudinary.com/…" value={value} onChange={e=>onChange(e.target.value)}/>
+      )}
+    </div>
+  );
+}
+
+function ImageGallery({ productId, onMainChange }) {
+  const [images,setImages]=useState([]);
+  const [loading,setLoading]=useState(false);
+  const [uploading,setUploading]=useState(false);
+  const fileRef=useRef();
+
+  const fetchImages=async()=>{
+    if(!productId)return;
+    setLoading(true);
+    try{
+      const res=await fetch(`${API_URL}/api/admin/products/${productId}/images`,{headers:hdrs()});
+      if(res.ok)setImages(await res.json());
+    }catch(e){console.error(e);}
+    finally{setLoading(false);}
+  };
+
+  useEffect(()=>{fetchImages();},[productId]);
+
+  const handleAdd=async(file)=>{
+    setUploading(true);
+    try{
+      const url=await uploadToCloudinary(file);
+      const res=await fetch(`${API_URL}/api/admin/products/${productId}/images`,{
+        method:"POST",headers:hdrs(),body:JSON.stringify({url})
+      });
+      if(res.ok){
+        await fetchImages();
+        if(images.length===0)onMainChange?.(url);
+      }
+    }catch(e){alert(e.message);}
+    finally{setUploading(false);}
+  };
+
+  const handleDelete=async(imgId)=>{
+    if(!confirm("¿Eliminar esta imagen?"))return;
+    const res=await fetch(`${API_URL}/api/admin/products/images/${imgId}`,{method:"DELETE",headers:hdrs()});
+    if(res.ok){
+      const updated=images.filter(i=>i.id!==imgId);
+      setImages(updated);
+      onMainChange?.(updated[0]?.url||"");
+    }
+  };
+
+  const handleSetMain=async(img)=>{
+    const reordered=[img,...images.filter(i=>i.id!==img.id)].map((i,idx)=>({...i,orden:idx}));
+    await fetch(`${API_URL}/api/admin/products/images/reorder`,{
+      method:"PATCH",headers:hdrs(),
+      body:JSON.stringify({product_id:productId,images:reordered.map(i=>({id:i.id,orden:i.orden}))})
+    });
+    setImages(reordered);
+    onMainChange?.(img.url);
+  };
+
+  if(!productId)return(
+    <div className="mg-info">💡 Guarda el producto primero para agregar más imágenes.</div>
+  );
+
+  return(
+    <div className="mg-wrap">
+      {loading?(
+        <div style={{textAlign:"center",color:"#a0aec0",padding:"20px",fontSize:".84rem"}}>Cargando imágenes…</div>
+      ):(
+        <div className="mg-grid">
+          {images.map((img,idx)=>(
+            <div key={img.id} className={`mg-item ${idx===0?"is-main":""}`}>
+              {idx===0&&<span className="mg-main-badge">PRINCIPAL</span>}
+              <img src={img.url} alt={`img-${idx}`}/>
+              <div className="mg-item-actions">
+                {idx!==0&&<button className="mg-item-btn main" onClick={()=>handleSetMain(img)}>⭐ Principal</button>}
+                <button className="mg-item-btn del" onClick={()=>handleDelete(img.id)}><MdDelete size={12}/> Eliminar</button>
+              </div>
+            </div>
+          ))}
+          <div className="mg-add-btn" onClick={()=>!uploading&&fileRef.current?.click()}>
+            <input ref={fileRef} type="file" accept="image/*" onChange={e=>{const f=e.target.files[0];if(f)handleAdd(f);e.target.value="";}}/>
+            {uploading?(
+              <MdRefresh size={22} className="spinning" style={{color:"#3182ce"}}/>
+            ):(
+              <><MdCloudUpload size={22} style={{color:"#90cdf4"}}/><span>Agregar foto</span></>
+            )}
+          </div>
+        </div>
+      )}
+      <div className="mg-info">
+        La imagen <strong>PRINCIPAL</strong> aparece en catálogo y detalle. Haz clic en "⭐ Principal" para cambiarla.
+      </div>
+    </div>
+  );
+}
+
+// CSV helpers
+function toCSV(rows){
+  const escape=v=>{const s=String(v??"");return s.includes(",")||s.includes('"')||s.includes("\n")?`"${s.replace(/"/g,'""')}"`  :s;};
+  const lines=[CSV_HEADERS.join(",")];
+  rows.forEach(p=>lines.push(CSV_HEADERS.map(h=>escape(p[h])).join(",")));
   return lines.join("\n");
 }
-
-function downloadCSV(content, filename) {
-  const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8;" });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
+function downloadCSV(content,filename){
+  const blob=new Blob(["\uFEFF"+content],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
 }
-
-function parseCSV(text) {
-  const lines = text.trim().split("\n").map(l => l.replace(/\r/,""));
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
-  return lines.slice(1).map(line => {
-    const vals = [];
-    let cur = "", inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      if (line[i] === '"' && !inQ) { inQ = true; continue; }
-      if (line[i] === '"' && inQ && line[i+1] === '"') { cur += '"'; i++; continue; }
-      if (line[i] === '"' && inQ) { inQ = false; continue; }
-      if (line[i] === ',' && !inQ) { vals.push(cur); cur = ""; continue; }
-      cur += line[i];
+function parseCSV(text){
+  const lines=text.trim().split("\n").map(l=>l.replace(/\r/,""));
+  if(lines.length<2)return[];
+  const headers=lines[0].split(",").map(h=>h.trim().toLowerCase());
+  return lines.slice(1).map(line=>{
+    const vals=[];let cur="",inQ=false;
+    for(let i=0;i<line.length;i++){
+      if(line[i]==='"'&&!inQ){inQ=true;continue;}
+      if(line[i]==='"'&&inQ&&line[i+1]==='"'){cur+='"';i++;continue;}
+      if(line[i]==='"'&&inQ){inQ=false;continue;}
+      if(line[i]===','&&!inQ){vals.push(cur);cur="";continue;}
+      cur+=line[i];
     }
     vals.push(cur);
-    const obj = {};
-    headers.forEach((h, i) => obj[h] = vals[i]?.trim() ?? "");
+    const obj={};
+    headers.forEach((h,i)=>obj[h]=vals[i]?.trim()??"");
     return obj;
   });
 }
-
-// Analiza qué campos están vacíos en la lista de productos
-function analyzeEmptyFields(rows) {
-  const counts = {};
-  Object.keys(IMPORTANT_FIELDS).forEach(f => { counts[f] = 0; });
-  rows.forEach(p => {
-    Object.keys(IMPORTANT_FIELDS).forEach(f => {
-      if (!p[f] && p[f] !== 0) counts[f]++;
-    });
-  });
-  return counts; // { campo: cuántos productos lo tienen vacío }
+function analyzeEmptyFields(rows){
+  const counts={};
+  Object.keys(IMPORTANT_FIELDS).forEach(f=>{counts[f]=0;});
+  rows.forEach(p=>{Object.keys(IMPORTANT_FIELDS).forEach(f=>{if(!p[f]&&p[f]!==0)counts[f]++;});});
+  return counts;
 }
 
-// ── Component ────────────────────────────────────────────────────────────────
-
 export default function Productos() {
-  const [products, setProducts]       = useState([]);
-  const [filtered, setFiltered]       = useState([]);
-  const [loading,  setLoading]        = useState(true);
-  const [saving,   setSaving]         = useState(false);
-  const [showModal, setShowModal]     = useState(false);
-  const [editing,  setEditing]        = useState(null);
-  const [form,     setForm]           = useState(EMPTY);
-  const [formErr,  setFormErr]        = useState("");
-  const [search,   setSearch]         = useState("");
-  const [catFilter,   setCat]         = useState("all");
-  const [brandFilter, setBrand]       = useState("all");
-  const [statusFilter, setStatus]     = useState("all");
-  const [dateFrom, setDateFrom]       = useState("");
-  const [dateTo,   setDateTo]         = useState("");
-  const [toast,    setToast]          = useState(null);
+  const [products,setProducts]=useState([]);
+  const [filtered,setFiltered]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
+  const [showModal,setShowModal]=useState(false);
+  const [editing,setEditing]=useState(null);
+  const [savedId,setSavedId]=useState(null);
+  const [form,setForm]=useState(EMPTY);
+  const [formErr,setFormErr]=useState("");
+  const [search,setSearch]=useState("");
+  const [catFilter,setCat]=useState("all");
+  const [brandFilter,setBrand]=useState("all");
+  const [statusFilter,setStatus]=useState("all");
+  const [dateFrom,setDateFrom]=useState("");
+  const [dateTo,setDateTo]=useState("");
+  const [toast,setToast]=useState(null);
+  const [showExport,setShowExport]=useState(false);
+  const [exportData,setExportData]=useState([]);
+  const [emptyFields,setEmptyFields]=useState({});
+  const [showImport,setShowImport]=useState(false);
+  const [importRows,setImportRows]=useState([]);
+  const [importDups,setImportDups]=useState([]);
+  const [dupAction,setDupAction]=useState(null);
+  const [importing,setImporting]=useState(false);
+  const [dragOver,setDragOver]=useState(false);
+  const [showSummary,setShowSummary]=useState(false);
+  const [importResult,setImportResult]=useState(null);
+  const fileRef=useRef();
 
-  // Export preview state
-  const [showExport, setShowExport]   = useState(false);
-  const [exportData, setExportData]   = useState([]);
-  const [emptyFields, setEmptyFields] = useState({});
-
-  // Import state
-  const [showImport, setShowImport]   = useState(false);
-  const [importRows, setImportRows]   = useState([]);
-  const [importDups, setImportDups]   = useState([]);
-  const [dupAction,  setDupAction]    = useState(null);
-  const [importing,  setImporting]    = useState(false);
-  const [dragOver,   setDragOver]     = useState(false);
-
-  // Import result summary
-  const [showSummary, setShowSummary] = useState(false);
-  const [importResult, setImportResult] = useState(null);
-
-  const fileRef = useRef();
-
-  useEffect(() => { fetchProducts(); }, []);
-
-  useEffect(() => {
-    let f = [...products];
-    if (search) f = f.filter(p => `${p.nombre} ${p.marca} ${p.descripcion}`.toLowerCase().includes(search.toLowerCase()));
-    if (catFilter !== "all")    f = f.filter(p => p.categoria === catFilter);
-    if (brandFilter !== "all")  f = f.filter(p => p.marca === brandFilter);
-    if (statusFilter === "active")   f = f.filter(p => p.activo === 1);
-    if (statusFilter === "inactive") f = f.filter(p => p.activo === 0);
-    // Date filter using created_at or updated_at if available
-    if (dateFrom) {
-      const from = new Date(dateFrom + "T00:00:00");
-      f = f.filter(p => {
-        const d = p.created_at || p.updated_at;
-        return d ? new Date(d) >= from : true;
-      });
-    }
-    if (dateTo) {
-      const to = new Date(dateTo + "T23:59:59");
-      f = f.filter(p => {
-        const d = p.created_at || p.updated_at;
-        return d ? new Date(d) <= to : true;
-      });
-    }
+  useEffect(()=>{fetchProducts();},[]);
+  useEffect(()=>{
+    let f=[...products];
+    if(search)f=f.filter(p=>`${p.nombre} ${p.marca} ${p.descripcion}`.toLowerCase().includes(search.toLowerCase()));
+    if(catFilter!=="all")f=f.filter(p=>p.categoria===catFilter);
+    if(brandFilter!=="all")f=f.filter(p=>p.marca===brandFilter);
+    if(statusFilter==="active")f=f.filter(p=>p.activo===1);
+    if(statusFilter==="inactive")f=f.filter(p=>p.activo===0);
+    if(dateFrom){const from=new Date(dateFrom+"T00:00:00");f=f.filter(p=>{const d=p.created_at||p.updated_at;return d?new Date(d)>=from:true;});}
+    if(dateTo){const to=new Date(dateTo+"T23:59:59");f=f.filter(p=>{const d=p.created_at||p.updated_at;return d?new Date(d)<=to:true;});}
     setFiltered(f);
-  }, [products, search, catFilter, brandFilter, statusFilter, dateFrom, dateTo]);
+  },[products,search,catFilter,brandFilter,statusFilter,dateFrom,dateTo]);
 
-  const showToast = (msg, type = "ok") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3500); };
-
-  const fetchProducts = async () => {
+  const showToast=(msg,type="ok")=>{setToast({msg,type});setTimeout(()=>setToast(null),3500);};
+  const fetchProducts=async()=>{
     setLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/api/admin/products`, { headers: hdrs() });
-      if (res.ok) setProducts(await res.json());
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+    try{const res=await fetch(`${API_URL}/api/admin/products`,{headers:hdrs()});if(res.ok)setProducts(await res.json());}
+    catch(e){console.error(e);}finally{setLoading(false);}
   };
 
-  // ── EXPORT PREVIEW ──────────────────────────────────────────────────────────
+  const handleExportPreview=()=>{const data=filtered.length&&filtered.length<products.length?filtered:products;setExportData(data);setEmptyFields(analyzeEmptyFields(data));setShowExport(true);};
+  const handleExportConfirm=()=>{downloadCSV(toCSV(exportData),`productos_${new Date().toISOString().slice(0,10)}.csv`);setShowExport(false);showToast(`✅ ${exportData.length} productos exportados`);};
+  const handleExportTemplate=()=>{const ex=[{nombre:"Ejemplo",marca:"Marca",descripcion:"Desc",precio:"299.00",categoria:"Calzado",imagen:"https://...",talla:"S,M,L",colores:"Negro,Blanco",activo:1}];downloadCSV(toCSV(ex),"plantilla_productos.csv");};
 
-  const handleExportPreview = () => {
-    const data = filtered.length && filtered.length < products.length ? filtered : products;
-    const empties = analyzeEmptyFields(data);
-    setExportData(data);
-    setEmptyFields(empties);
-    setShowExport(true);
-  };
-
-  const handleExportConfirm = () => {
-    downloadCSV(toCSV(exportData), `productos_${new Date().toISOString().slice(0,10)}.csv`);
-    setShowExport(false);
-    showToast(`✅ ${exportData.length} productos exportados correctamente`);
-  };
-
-  const handleExportTemplate = () => {
-    const example = [{ nombre:"Ejemplo Producto", marca:"Marca", descripcion:"Descripción", precio:"299.00", categoria:"Calzado", imagen:"https://...", talla:"S,M,L", colores:"Negro,Blanco", activo:1 }];
-    downloadCSV(toCSV(example), "plantilla_productos.csv");
-  };
-
-  // ── IMPORT ──────────────────────────────────────────────────────────────────
-
-  const handleFileRead = (file) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const rows = parseCSV(e.target.result);
-      const valid = rows.filter(r => r.nombre && r.nombre.trim());
-      if (valid.length === 0) { showToast("El CSV no tiene filas válidas", "err"); return; }
-      const existingNames = new Set(products.map(p => p.nombre.toLowerCase().trim()));
-      const dups = valid.filter(r => existingNames.has(r.nombre.toLowerCase().trim()));
-      setImportRows(valid);
-      setImportDups(dups);
-      setDupAction(dups.length > 0 ? null : "skip");
-      setShowImport(true);
+  const handleFileRead=(file)=>{
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+      const rows=parseCSV(e.target.result);
+      const valid=rows.filter(r=>r.nombre&&r.nombre.trim());
+      if(valid.length===0){showToast("El CSV no tiene filas válidas","err");return;}
+      const existingNames=new Set(products.map(p=>p.nombre.toLowerCase().trim()));
+      const dups=valid.filter(r=>existingNames.has(r.nombre.toLowerCase().trim()));
+      setImportRows(valid);setImportDups(dups);setDupAction(dups.length>0?null:"skip");setShowImport(true);
     };
-    reader.readAsText(file, "UTF-8");
+    reader.readAsText(file,"UTF-8");
   };
-
-  const handleDrop = (e) => {
-    e.preventDefault(); setDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file?.name.endsWith(".csv")) handleFileRead(file);
-    else showToast("Solo se aceptan archivos .csv", "err");
-  };
-
-  const handleImportConfirm = async () => {
-    if (importDups.length > 0 && !dupAction) return;
+  const handleDrop=(e)=>{e.preventDefault();setDragOver(false);const file=e.dataTransfer.files[0];if(file?.name.endsWith(".csv"))handleFileRead(file);else showToast("Solo se aceptan .csv","err");};
+  const handleImportConfirm=async()=>{
+    if(importDups.length>0&&!dupAction)return;
     setImporting(true);
-
-    const existingNames = new Map(products.map(p => [p.nombre.toLowerCase().trim(), p.id]));
-    let created = 0, updated = 0, skipped = 0, errors = 0;
-
-    for (const row of importRows) {
-      const isDup = existingNames.has(row.nombre.toLowerCase().trim());
-      try {
-        if (isDup && dupAction === "skip") { skipped++; continue; }
-
-        const payload = {
-          nombre:      row.nombre,
-          marca:       row.marca       || "",
-          descripcion: row.descripcion || "",
-          precio:      parseFloat(row.precio) || 0,
-          categoria:   row.categoria   || "",
-          imagen:      row.imagen      || "",
-          talla:       row.talla       || "",
-          colores:     row.colores     || "",
-          activo:      parseInt(row.activo) === 0 ? 0 : 1,
-        };
-
-        if (isDup && dupAction === "update") {
-          const id = existingNames.get(row.nombre.toLowerCase().trim());
-          const res = await fetch(`${API_URL}/api/admin/products/${id}`, { method:"PUT", headers: hdrs(), body: JSON.stringify(payload) });
-          if (res.ok) updated++; else errors++;
-        } else {
-          const res = await fetch(`${API_URL}/api/admin/products`, { method:"POST", headers: hdrs(), body: JSON.stringify(payload) });
-          if (res.ok) created++; else errors++;
-        }
-      } catch { errors++; }
+    const existingNames=new Map(products.map(p=>[p.nombre.toLowerCase().trim(),p.id]));
+    let created=0,updated=0,skipped=0,errors=0;
+    for(const row of importRows){
+      const isDup=existingNames.has(row.nombre.toLowerCase().trim());
+      try{
+        if(isDup&&dupAction==="skip"){skipped++;continue;}
+        const payload={nombre:row.nombre,marca:row.marca||"",descripcion:row.descripcion||"",precio:parseFloat(row.precio)||0,categoria:row.categoria||"",imagen:row.imagen||"",talla:row.talla||"",colores:row.colores||"",activo:parseInt(row.activo)===0?0:1};
+        if(isDup&&dupAction==="update"){const id=existingNames.get(row.nombre.toLowerCase().trim());const res=await fetch(`${API_URL}/api/admin/products/${id}`,{method:"PUT",headers:hdrs(),body:JSON.stringify(payload)});if(res.ok)updated++;else errors++;}
+        else{const res=await fetch(`${API_URL}/api/admin/products`,{method:"POST",headers:hdrs(),body:JSON.stringify(payload)});if(res.ok)created++;else errors++;}
+      }catch{errors++;}
     }
-
-    setImporting(false);
-    setShowImport(false);
-    setImportRows([]);
-    fetchProducts();
-
-    // Show detailed summary modal
-    setImportResult({ created, updated, skipped, errors, total: importRows.length });
-    setShowSummary(true);
+    setImporting(false);setShowImport(false);setImportRows([]);fetchProducts();
+    setImportResult({created,updated,skipped,errors,total:importRows.length});setShowSummary(true);
   };
 
-  // ── Modal helpers ────────────────────────────────────────────────────────────
-
-  const openCreate = () => { setEditing(null); setForm(EMPTY); setFormErr(""); setShowModal(true); };
-  const openEdit   = (p)  => {
-    setEditing(p);
-    setForm({ nombre:p.nombre||"", marca:p.marca||"", descripcion:p.descripcion||"", precio:p.precio||"", categoria:p.categoria||"", imagen:p.imagen||"", talla:p.talla||"", colores:p.colores||"", activo:p.activo??1 });
-    setFormErr(""); setShowModal(true);
+  const openCreate=()=>{setEditing(null);setSavedId(null);setForm(EMPTY);setFormErr("");setShowModal(true);};
+  const openEdit=(p)=>{
+    setEditing(p);setSavedId(p.id);
+    setForm({nombre:p.nombre||"",marca:p.marca||"",descripcion:p.descripcion||"",precio:p.precio||"",categoria:p.categoria||"",imagen:p.imagen||"",talla:p.talla||"",colores:p.colores||"",activo:p.activo??1});
+    setFormErr("");setShowModal(true);
   };
-  const closeModal = () => { setShowModal(false); setEditing(null); setFormErr(""); };
-  const set = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.value }));
+  const closeModal=()=>{setShowModal(false);setEditing(null);setSavedId(null);setFormErr("");fetchProducts();};
+  const set=(key)=>(e)=>setForm(f=>({...f,[key]:e.target.value}));
 
-  const handleSave = async () => {
-    if (!form.nombre.trim()) { setFormErr("El nombre es obligatorio"); return; }
-    if (!form.precio || isNaN(Number(form.precio)) || Number(form.precio) < 0) { setFormErr("Ingresa un precio válido"); return; }
-    setFormErr(""); setSaving(true);
-    try {
-      const url    = editing ? `${API_URL}/api/admin/products/${editing.id}` : `${API_URL}/api/admin/products`;
-      const method = editing ? "PUT" : "POST";
-      const res    = await fetch(url, { method, headers: hdrs(), body: JSON.stringify({ ...form, precio: Number(form.precio) }) });
-      const data   = await res.json();
-      if (res.ok) { showToast(editing ? "Producto actualizado" : "Producto creado"); closeModal(); fetchProducts(); }
-      else { setFormErr(data.error || "Error al guardar el producto"); }
-    } catch { setFormErr("Error de conexión. Intenta de nuevo."); }
-    finally { setSaving(false); }
-  };
-
-  const handleDelete = async (id, nombre) => {
-    if (!confirm(`¿Desactivar "${nombre}"?`)) return;
-    try {
-      const res = await fetch(`${API_URL}/api/admin/products/${id}`, { method:"DELETE", headers: hdrs() });
-      if (res.ok) { showToast("Producto desactivado"); fetchProducts(); }
-      else { const d = await res.json(); showToast(d.error || "Error", "err"); }
-    } catch { showToast("Error de conexión", "err"); }
+  const handleSave=async()=>{
+    if(!form.nombre.trim()){setFormErr("El nombre es obligatorio");return;}
+    if(!form.precio||isNaN(Number(form.precio))||Number(form.precio)<0){setFormErr("Ingresa un precio válido");return;}
+    setFormErr("");setSaving(true);
+    try{
+      const url=editing?`${API_URL}/api/admin/products/${editing.id}`:`${API_URL}/api/admin/products`;
+      const method=editing?"PUT":"POST";
+      const res=await fetch(url,{method,headers:hdrs(),body:JSON.stringify({...form,precio:Number(form.precio)})});
+      const data=await res.json();
+      if(res.ok){
+        const newId=editing?editing.id:data.productId;
+        setSavedId(newId);
+        if(!editing)setEditing({...form,id:newId});
+        showToast(editing?"Producto actualizado":"Producto creado — agrega más imágenes abajo");
+        fetchProducts();
+      }else{setFormErr(data.error||"Error al guardar");}
+    }catch{setFormErr("Error de conexión.");}
+    finally{setSaving(false);}
   };
 
-  const hasDateFilter = dateFrom || dateTo;
-  const categories = [...new Set(products.map(p => p.categoria).filter(Boolean))];
-  const brands     = [...new Set(products.map(p => p.marca).filter(Boolean))];
-  const tallasPreview  = form.talla   ? form.talla.split(",").map(s=>s.trim()).filter(Boolean)   : [];
-  const coloresPreview = form.colores ? form.colores.split(",").map(s=>s.trim()).filter(Boolean) : [];
+  const handleDelete=async(id,nombre)=>{
+    if(!confirm(`¿Desactivar "${nombre}"?`))return;
+    try{
+      const res=await fetch(`${API_URL}/api/admin/products/${id}`,{method:"DELETE",headers:hdrs()});
+      if(res.ok){showToast("Producto desactivado");fetchProducts();}
+      else{const d=await res.json();showToast(d.error||"Error","err");}
+    }catch{showToast("Error de conexión","err");}
+  };
 
-  // Warn fields: fields empty in >20% of export data
-  const warnFields = exportData.length > 0
-    ? Object.entries(emptyFields).filter(([,count]) => count > 0).map(([f]) => f)
-    : [];
-
-  // ── RENDER ───────────────────────────────────────────────────────────────────
+  const hasDateFilter=dateFrom||dateTo;
+  const categories=[...new Set(products.map(p=>p.categoria).filter(Boolean))];
+  const brands=[...new Set(products.map(p=>p.marca).filter(Boolean))];
+  const tallasPreview=form.talla?form.talla.split(",").map(s=>s.trim()).filter(Boolean):[];
+  const coloresPreview=form.colores?form.colores.split(",").map(s=>s.trim()).filter(Boolean):[];
+  const warnFields=exportData.length>0?Object.entries(emptyFields).filter(([,c])=>c>0).map(([f])=>f):[];
 
   return (
     <div className="pro">
       <style>{CSS}</style>
+      <div className="page-header"><h2>Productos</h2><p>Gestiona tu catálogo de productos</p></div>
 
-      <div className="page-header">
-        <h2>Productos</h2>
-        <p>Gestiona tu catálogo de productos</p>
-      </div>
-
-      {/* Toolbar */}
       <div className="pro-toolbar">
         <div className="pro-left">
-          <div className="pro-search">
-            <MdSearch className="pro-search-ico" size={18} />
-            <input placeholder="Buscar nombre, marca…" value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <select className="pro-sel" value={catFilter} onChange={e => setCat(e.target.value)}>
-            <option value="all">Todas las categorías</option>
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select className="pro-sel" value={brandFilter} onChange={e => setBrand(e.target.value)}>
-            <option value="all">Todas las marcas</option>
-            {brands.map(b => <option key={b} value={b}>{b}</option>)}
-          </select>
-          <select className="pro-sel" value={statusFilter} onChange={e => setStatus(e.target.value)}>
-            <option value="all">Todos los estados</option>
-            <option value="active">Activos</option>
-            <option value="inactive">Inactivos</option>
-          </select>
-          {/* Date range filter */}
+          <div className="pro-search"><MdSearch className="pro-search-ico" size={18}/><input placeholder="Buscar nombre, marca…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
+          <select className="pro-sel" value={catFilter} onChange={e=>setCat(e.target.value)}><option value="all">Todas las categorías</option>{categories.map(c=><option key={c} value={c}>{c}</option>)}</select>
+          <select className="pro-sel" value={brandFilter} onChange={e=>setBrand(e.target.value)}><option value="all">Todas las marcas</option>{brands.map(b=><option key={b} value={b}>{b}</option>)}</select>
+          <select className="pro-sel" value={statusFilter} onChange={e=>setStatus(e.target.value)}><option value="all">Todos los estados</option><option value="active">Activos</option><option value="inactive">Inactivos</option></select>
           <div className="pro-date-row">
-            <MdDateRange size={16} style={{ color:"#718096", flexShrink:0 }} />
+            <MdDateRange size={16} style={{color:"#718096",flexShrink:0}}/>
             <span className="pro-date-label">Desde</span>
-            <input type="date" className="pro-date-input" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+            <input type="date" className="pro-date-input" value={dateFrom} onChange={e=>setDateFrom(e.target.value)}/>
             <span className="pro-date-sep">→</span>
             <span className="pro-date-label">Hasta</span>
-            <input type="date" className="pro-date-input" value={dateTo} onChange={e => setDateTo(e.target.value)} />
-            {hasDateFilter && (
-              <button className="pro-date-clear" onClick={() => { setDateFrom(""); setDateTo(""); }} title="Limpiar fechas">✕ Limpiar</button>
-            )}
+            <input type="date" className="pro-date-input" value={dateTo} onChange={e=>setDateTo(e.target.value)}/>
+            {hasDateFilter&&<button className="pro-date-clear" onClick={()=>{setDateFrom("");setDateTo("");}}>✕ Limpiar</button>}
           </div>
         </div>
-
-        {/* Action buttons */}
-        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-          <button className="pro-btn pro-btn-ghost" onClick={fetchProducts} title="Actualizar">
-            <MdRefresh size={18} className={loading ? "spinning" : ""} />
-          </button>
-          <button className="pro-btn pro-btn-export" onClick={handleExportPreview} title="Exportar CSV">
-            <MdFileDownload size={18} /> Exportar
-          </button>
-          <button className="pro-btn pro-btn-import" onClick={() => fileRef.current?.click()} title="Importar CSV">
-            <MdFileUpload size={18} /> Importar
-          </button>
-          <input ref={fileRef} type="file" accept=".csv" style={{ display:"none" }} onChange={e => { handleFileRead(e.target.files[0]); e.target.value=""; }} />
-          <button className="pro-btn pro-btn-primary" onClick={openCreate}>
-            <MdAdd size={18} /> Nuevo producto
-          </button>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <button className="pro-btn pro-btn-ghost" onClick={fetchProducts}><MdRefresh size={18} className={loading?"spinning":""}/></button>
+          <button className="pro-btn pro-btn-export" onClick={handleExportPreview}><MdFileDownload size={18}/> Exportar</button>
+          <button className="pro-btn pro-btn-import" onClick={()=>fileRef.current?.click()}><MdFileUpload size={18}/> Importar</button>
+          <input ref={fileRef} type="file" accept=".csv" style={{display:"none"}} onChange={e=>{handleFileRead(e.target.files[0]);e.target.value="";}}/>
+          <button className="pro-btn pro-btn-primary" onClick={openCreate}><MdAdd size={18}/> Nuevo producto</button>
         </div>
       </div>
 
-      {/* Date filter active badge */}
-      {hasDateFilter && (
-        <div style={{ marginBottom:12, display:"flex", alignItems:"center", gap:8, fontSize:".82rem", color:"#2b6cb0" }}>
-          <MdDateRange size={15} />
-          Filtrando por fecha:{" "}
-          {dateFrom && <strong>{dateFrom}</strong>}
-          {dateFrom && dateTo && " → "}
-          {dateTo && <strong>{dateTo}</strong>}
-          {" — "}
-          <strong>{filtered.length}</strong> producto{filtered.length !== 1 ? "s" : ""} en este rango
+      {hasDateFilter&&(
+        <div style={{marginBottom:12,display:"flex",alignItems:"center",gap:8,fontSize:".82rem",color:"#2b6cb0"}}>
+          <MdDateRange size={15}/>
+          Filtrando: {dateFrom&&<strong>{dateFrom}</strong>}{dateFrom&&dateTo&&" → "}{dateTo&&<strong>{dateTo}</strong>}
+          {" — "}<strong>{filtered.length}</strong> producto{filtered.length!==1?"s":""}
         </div>
       )}
 
-      {/* Table */}
       <div className="pro-table-wrap">
-        {loading ? (
-          <div className="pro-empty">Cargando productos…</div>
-        ) : filtered.length === 0 ? (
-          <div className="pro-empty">
-            <MdInventory size={40} style={{ display:"block", margin:"0 auto 12px", color:"#cbd5e0" }} />
-            <p>No se encontraron productos</p>
-          </div>
-        ) : (
+        {loading?(<div className="pro-empty">Cargando productos…</div>
+        ):filtered.length===0?(<div className="pro-empty"><MdInventory size={40} style={{display:"block",margin:"0 auto 12px",color:"#cbd5e0"}}/><p>No se encontraron productos</p></div>
+        ):(
           <>
             <table className="pro-table">
-              <thead>
-                <tr>
-                  <th>Imagen</th><th>Nombre / Marca</th><th>Categoría</th>
-                  <th>Tallas</th><th>Colores</th><th>Precio</th><th>Estado</th><th>Acciones</th>
-                </tr>
-              </thead>
+              <thead><tr><th>Imagen</th><th>Nombre / Marca</th><th>Categoría</th><th>Tallas</th><th>Colores</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr></thead>
               <tbody>
-                {filtered.map(p => (
+                {filtered.map(p=>(
                   <tr key={p.id}>
-                    <td>
-                      <img src={p.imagen || "https://placehold.co/46x46/edf2f7/a0aec0?text=📦"} alt={p.nombre} className="pro-img"
-                        onError={e => { e.target.src="https://placehold.co/46x46/edf2f7/a0aec0?text=📦"; }} />
-                    </td>
-                    <td>
-                      <div className="pro-name">{p.nombre}</div>
-                      {p.marca && <div className="pro-brand">{p.marca}</div>}
-                      {p.descripcion && <div className="pro-desc">{p.descripcion.substring(0,55)}{p.descripcion.length>55?"…":""}</div>}
-                    </td>
+                    <td><img src={p.imagen||"https://placehold.co/46x46/edf2f7/a0aec0?text=📦"} alt={p.nombre} className="pro-img" onError={e=>{e.target.src="https://placehold.co/46x46/edf2f7/a0aec0?text=📦";}}/></td>
+                    <td><div className="pro-name">{p.nombre}</div>{p.marca&&<div className="pro-brand">{p.marca}</div>}{p.descripcion&&<div className="pro-desc">{p.descripcion.substring(0,55)}{p.descripcion.length>55?"…":""}</div>}</td>
                     <td><span className="pro-tag">{p.categoria||"—"}</span></td>
-                    <td><TallaChips value={p.talla} /></td>
-                    <td><ColorDots value={p.colores} /></td>
+                    <td><TallaChips value={p.talla}/></td>
+                    <td><ColorDots value={p.colores}/></td>
                     <td><span className="pro-price">{fmt(p.precio)}</span></td>
                     <td><span className={`pro-status ${p.activo?"pro-status-on":"pro-status-off"}`}>{p.activo?"Activo":"Inactivo"}</span></td>
-                    <td>
-                      <div className="pro-actions">
-                        <button className="pro-act pro-act-edit" onClick={() => openEdit(p)}><MdEdit size={14}/> Editar</button>
-                        <button className="pro-act pro-act-delete" onClick={() => handleDelete(p.id,p.nombre)}><MdDelete size={14}/> {p.activo?"Desactivar":"Eliminar"}</button>
-                      </div>
-                    </td>
+                    <td><div className="pro-actions"><button className="pro-act pro-act-edit" onClick={()=>openEdit(p)}><MdEdit size={14}/> Editar</button><button className="pro-act pro-act-delete" onClick={()=>handleDelete(p.id,p.nombre)}><MdDelete size={14}/> {p.activo?"Desactivar":"Eliminar"}</button></div></td>
                   </tr>
                 ))}
               </tbody>
@@ -589,137 +606,71 @@ export default function Productos() {
         )}
       </div>
 
-      {/* ── Modal: Export Preview ── */}
-      {showExport && (
-        <div className="pro-overlay" onClick={e => { if(e.target.classList.contains("pro-overlay")) setShowExport(false); }}>
+      {/* Export */}
+      {showExport&&(
+        <div className="pro-overlay" onClick={e=>{if(e.target.classList.contains("pro-overlay"))setShowExport(false);}}>
           <div className="pro-modal pro-modal-lg">
-            <div className="pro-mhead">
-              <h3><MdVisibility style={{ verticalAlign:"middle", marginRight:6 }}/>Previsualizar exportación</h3>
-              <button className="pro-mclose" onClick={() => setShowExport(false)}><MdClose /></button>
-            </div>
+            <div className="pro-mhead"><h3>Previsualizar exportación</h3><button className="pro-mclose" onClick={()=>setShowExport(false)}><MdClose/></button></div>
             <div className="pro-mbody">
-
-              {/* Stats summary */}
               <div className="pro-export-stats">
-                <span className="pro-export-stat total">📦 {exportData.length} productos a exportar</span>
-                {warnFields.length === 0
-                  ? <span className="pro-export-stat ok">✅ Sin campos vacíos críticos</span>
-                  : <span className="pro-export-stat warn">⚠ {warnFields.length} campo{warnFields.length>1?"s":""} con valores vacíos</span>
-                }
+                <span className="pro-export-stat total">📦 {exportData.length} productos</span>
+                {warnFields.length===0?<span className="pro-export-stat ok">✅ Sin campos vacíos</span>:<span className="pro-export-stat warn">⚠ {warnFields.length} campo(s) vacíos</span>}
               </div>
-
-              {/* Empty fields alert */}
-              {warnFields.length > 0 && (
-                <div className="pro-warn-box">
-                  <div style={{ fontWeight:700, marginBottom:6, display:"flex", gap:6, alignItems:"center" }}>
-                    <MdWarning /> Campos con valores vacíos detectados
-                  </div>
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:4 }}>
-                    {warnFields.map(f => (
-                      <span key={f} style={{ background:"#fef5e7", border:"1px solid #f6e05e", borderRadius:6, padding:"2px 10px", fontSize:".8rem", fontWeight:700, color:"#975a16" }}>
-                        {IMPORTANT_FIELDS[f]}: {emptyFields[f]} vacío{emptyFields[f]>1?"s":""}
-                      </span>
-                    ))}
-                  </div>
-                  <div style={{ marginTop:8, fontSize:".8rem", color:"#92400e" }}>
-                    Las filas resaltadas en amarillo tienen al menos un campo vacío. Puedes exportar de todas formas.
-                  </div>
-                </div>
-              )}
-
-              {/* Preview table */}
+              {warnFields.length>0&&(<div className="pro-warn-box"><div style={{fontWeight:700,marginBottom:6,display:"flex",gap:6,alignItems:"center"}}><MdWarning/> Campos vacíos</div><div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>{warnFields.map(f=><span key={f} style={{background:"#fef5e7",border:"1px solid #f6e05e",borderRadius:6,padding:"2px 10px",fontSize:".8rem",fontWeight:700,color:"#975a16"}}>{IMPORTANT_FIELDS[f]}: {emptyFields[f]}</span>)}</div></div>)}
               <div className="pro-export-table-wrap">
                 <table className="pro-export-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Nombre</th>
-                      <th>Marca</th>
-                      <th>Categoría</th>
-                      <th>Precio</th>
-                      <th>Tallas</th>
-                      <th>Colores</th>
-                      <th>Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {exportData.map((p, idx) => {
-                      const hasEmpty = warnFields.some(f => !p[f] && p[f] !== 0);
-                      return (
-                        <tr key={p.id} className={hasEmpty ? "pro-cell-warn" : ""}>
-                          <td style={{ color:"#a0aec0", fontSize:".75rem" }}>{idx + 1}</td>
-                          <td style={{ fontWeight:600, color:"#1e3a5f" }}>{p.nombre || <span className="pro-cell-empty">vacío</span>}</td>
-                          <td>{p.marca || <span className="pro-cell-empty">—</span>}</td>
-                          <td>{p.categoria ? <span className="pro-tag">{p.categoria}</span> : <span className="pro-cell-empty">—</span>}</td>
-                          <td style={{ color:"#38a169", fontWeight:700 }}>{p.precio ? fmt(p.precio) : <span className="pro-cell-empty">—</span>}</td>
-                          <td>{p.talla || <span className="pro-cell-empty">—</span>}</td>
-                          <td>{p.colores || <span className="pro-cell-empty">—</span>}</td>
-                          <td><span className={`pro-status ${p.activo?"pro-status-on":"pro-status-off"}`}>{p.activo?"Activo":"Inactivo"}</span></td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
+                  <thead><tr><th>#</th><th>Nombre</th><th>Marca</th><th>Categoría</th><th>Precio</th><th>Tallas</th><th>Colores</th><th>Estado</th></tr></thead>
+                  <tbody>{exportData.map((p,idx)=>{const hasEmpty=warnFields.some(f=>!p[f]&&p[f]!==0);return(<tr key={p.id} className={hasEmpty?"pro-cell-warn":""}><td style={{color:"#a0aec0",fontSize:".75rem"}}>{idx+1}</td><td style={{fontWeight:600,color:"#1e3a5f"}}>{p.nombre||<span className="pro-cell-empty">vacío</span>}</td><td>{p.marca||<span className="pro-cell-empty">—</span>}</td><td>{p.categoria?<span className="pro-tag">{p.categoria}</span>:<span className="pro-cell-empty">—</span>}</td><td style={{color:"#38a169",fontWeight:700}}>{p.precio?fmt(p.precio):<span className="pro-cell-empty">—</span>}</td><td>{p.talla||<span className="pro-cell-empty">—</span>}</td><td>{p.colores||<span className="pro-cell-empty">—</span>}</td><td><span className={`pro-status ${p.activo?"pro-status-on":"pro-status-off"}`}>{p.activo?"Activo":"Inactivo"}</span></td></tr>);})}</tbody>
                 </table>
               </div>
-
-              <div className="pro-info-box">
-                💡 El archivo CSV incluirá todos los campos: nombre, marca, descripción, precio, categoría, imagen, talla, colores y estado.
-              </div>
             </div>
-            <div className="pro-mfoot">
-              <button className="pro-btn pro-btn-ghost" onClick={() => setShowExport(false)}>Cancelar</button>
-              <button className="pro-btn pro-btn-export" onClick={handleExportConfirm}>
-                <MdFileDownload size={16} /> Descargar CSV ({exportData.length} productos)
-              </button>
-            </div>
+            <div className="pro-mfoot"><button className="pro-btn pro-btn-ghost" onClick={()=>setShowExport(false)}>Cancelar</button><button className="pro-btn pro-btn-export" onClick={handleExportConfirm}><MdFileDownload size={16}/> Descargar CSV ({exportData.length})</button></div>
           </div>
         </div>
       )}
 
-      {/* ── Modal: Edit/Create ── */}
-      {showModal && (
-        <div className="pro-overlay" onClick={e => { if(e.target.classList.contains("pro-overlay")) closeModal(); }}>
+      {/* Crear / Editar */}
+      {showModal&&(
+        <div className="pro-overlay" onClick={e=>{if(e.target.classList.contains("pro-overlay"))closeModal();}}>
           <div className="pro-modal">
             <div className="pro-mhead">
-              <h3>{editing ? `Editar: ${editing.nombre}` : "Nuevo producto"}</h3>
-              <button className="pro-mclose" onClick={closeModal}><MdClose /></button>
+              <h3>{editing?`Editar: ${editing.nombre}`:"Nuevo producto"}</h3>
+              <button className="pro-mclose" onClick={closeModal}><MdClose/></button>
             </div>
             <div className="pro-mbody">
-              {formErr && <div className="pro-err">⚠ {formErr}</div>}
-              <div className="pro-img-preview">
-                {form.imagen ? <img src={form.imagen} alt="preview" onError={e=>{e.target.style.display="none";}} /> : <span style={{fontSize:"2rem"}}>🖼</span>}
-              </div>
+              {formErr&&<div className="pro-err">⚠ {formErr}</div>}
+
+              <div className="pro-section-divider">Imagen principal</div>
+              <ImageUploader value={form.imagen} onChange={url=>setForm(f=>({...f,imagen:url}))}/>
+
+              <div className="pro-section-divider">Más ángulos del producto</div>
+              <ImageGallery productId={savedId} onMainChange={url=>{if(url)setForm(f=>({...f,imagen:url}));}}/>
+
               <div className="pro-section-divider">Información básica</div>
               <div className="pro-row">
-                <div className="pro-field"><label>Nombre *</label><input placeholder="Ej. Air Max 270" value={form.nombre} onChange={set("nombre")} /></div>
-                <div className="pro-field"><label>Marca</label><input placeholder="Ej. Nike" value={form.marca} onChange={set("marca")} list="brand-list" /><datalist id="brand-list">{brands.map(b=><option key={b} value={b}/>)}</datalist></div>
+                <div className="pro-field"><label>Nombre *</label><input placeholder="Ej. Air Max 270" value={form.nombre} onChange={set("nombre")}/></div>
+                <div className="pro-field"><label>Marca</label><input placeholder="Ej. Nike" value={form.marca} onChange={set("marca")} list="brand-list"/><datalist id="brand-list">{brands.map(b=><option key={b} value={b}/>)}</datalist></div>
               </div>
-              <div className="pro-field"><label>Descripción</label><textarea placeholder="Descripción del producto…" value={form.descripcion} onChange={set("descripcion")} /></div>
+              <div className="pro-field"><label>Descripción</label><textarea placeholder="Descripción del producto…" value={form.descripcion} onChange={set("descripcion")}/></div>
               <div className="pro-row">
-                <div className="pro-field"><label>Precio (MXN) *</label><input type="number" min="0" step="0.01" placeholder="0.00" value={form.precio} onChange={set("precio")} /></div>
-                <div className="pro-field"><label>Categoría</label><input placeholder="Ej. Calzado" value={form.categoria} onChange={set("categoria")} list="cat-list" /><datalist id="cat-list">{categories.map(c=><option key={c} value={c}/>)}</datalist></div>
+                <div className="pro-field"><label>Precio (MXN) *</label><input type="number" min="0" step="0.01" placeholder="0.00" value={form.precio} onChange={set("precio")}/></div>
+                <div className="pro-field"><label>Categoría</label><input placeholder="Ej. Calzado" value={form.categoria} onChange={set("categoria")} list="cat-list"/><datalist id="cat-list">{categories.map(c=><option key={c} value={c}/>)}</datalist></div>
               </div>
-              <div className="pro-field"><label>URL de imagen</label><input placeholder="https://…" value={form.imagen} onChange={set("imagen")} /></div>
-              <div className="pro-section-divider">Variantes del producto</div>
+
+              <div className="pro-section-divider">Variantes</div>
               <div className="pro-field">
                 <label>Tallas</label>
-                <input placeholder="Ej. XS, S, M, L, XL  o  38, 39, 40" value={form.talla} onChange={set("talla")} />
+                <input placeholder="Ej. XS, S, M, L, XL" value={form.talla} onChange={set("talla")}/>
                 <span className="pro-field-hint">Separa con comas</span>
-                {tallasPreview.length > 0 && <div className="pro-chips-preview">{tallasPreview.map(t=><span key={t} className="pro-chip-preview">{t}</span>)}</div>}
+                {tallasPreview.length>0&&<div className="pro-chips-preview">{tallasPreview.map(t=><span key={t} className="pro-chip-preview">{t}</span>)}</div>}
               </div>
               <div className="pro-field">
                 <label>Colores</label>
-                <input placeholder="Ej. Negro, Blanco, Rojo, Azul" value={form.colores} onChange={set("colores")} />
-                <span className="pro-field-hint">Separa con comas. Usa nombres en español para ver puntos de color</span>
-                {coloresPreview.length > 0 && (
-                  <div className="pro-chips-preview" style={{alignItems:"center"}}>
-                    {coloresPreview.map(c => {
-                      const hex = COLOR_MAP[c.toLowerCase()];
-                      return hex ? <span key={c} className="pro-color-dot" style={{background:hex,width:18,height:18}} title={c}/> : <span key={c} className="pro-chip-preview">{c}</span>;
-                    })}
-                  </div>
-                )}
+                <input placeholder="Ej. Negro, Blanco, Rojo" value={form.colores} onChange={set("colores")}/>
+                <span className="pro-field-hint">Separa con comas</span>
+                {coloresPreview.length>0&&(<div className="pro-chips-preview" style={{alignItems:"center"}}>{coloresPreview.map(c=>{const hex=COLOR_MAP[c.toLowerCase()];return hex?<span key={c} className="pro-color-dot" style={{background:hex,width:18,height:18}} title={c}/>:<span key={c} className="pro-chip-preview">{c}</span>;})}</div>)}
               </div>
+
               <div className="pro-section-divider">Estado</div>
               <div className="pro-field">
                 <div className="pro-toggle-row">
@@ -731,130 +682,55 @@ export default function Productos() {
             <div className="pro-mfoot">
               <button className="pro-btn pro-btn-ghost" onClick={closeModal} disabled={saving}>Cancelar</button>
               <button className="pro-btn pro-btn-primary" onClick={handleSave} disabled={saving}>
-                {saving ? <><MdRefresh size={16} className="spinning"/> Guardando…</> : <><MdCheckCircle size={16}/> {editing?"Guardar cambios":"Crear producto"}</>}
+                {saving?<><MdRefresh size={16} className="spinning"/> Guardando…</>:<><MdCheckCircle size={16}/> {editing?"Guardar cambios":"Crear producto"}</>}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Modal: Import CSV ── */}
-      {showImport && (
-        <div className="pro-overlay" onClick={e => { if(e.target.classList.contains("pro-overlay")) { setShowImport(false); setImportRows([]); } }}>
+      {/* Import */}
+      {showImport&&(
+        <div className="pro-overlay" onClick={e=>{if(e.target.classList.contains("pro-overlay")){setShowImport(false);setImportRows([]);}}}>
           <div className="pro-modal pro-modal-sm">
-            <div className="pro-mhead">
-              <h3>Importar productos desde CSV</h3>
-              <button className="pro-mclose" onClick={()=>{setShowImport(false);setImportRows([]);}}><MdClose/></button>
-            </div>
+            <div className="pro-mhead"><h3>Importar desde CSV</h3><button className="pro-mclose" onClick={()=>{setShowImport(false);setImportRows([]);}}><MdClose/></button></div>
             <div className="pro-mbody">
-              <div className="pro-import-summary">
-                <span className="pro-import-badge new">✓ {importRows.length - importDups.length} nuevos</span>
-                {importDups.length > 0 && <span className="pro-import-badge dup">⚠ {importDups.length} duplicados</span>}
-              </div>
-              {importDups.length > 0 && (
-                <div className="pro-warn-box">
-                  <div style={{fontWeight:700,marginBottom:6,display:"flex",gap:6,alignItems:"center"}}><MdWarning/> {importDups.length} producto(s) ya existen</div>
-                  <div style={{marginBottom:10,fontSize:".82rem"}}>
-                    {importDups.slice(0,3).map(d => <span key={d.nombre} style={{display:"block"}}>• {d.nombre}</span>)}
-                    {importDups.length > 3 && <span>…y {importDups.length-3} más</span>}
-                  </div>
-                  <div style={{display:"flex",gap:8}}>
-                    <button className="pro-btn pro-btn-ghost" style={{flex:1,fontSize:".82rem",padding:"8px 10px",borderColor: dupAction==="skip"?"#1e3a5f":"#e2e8f0", background: dupAction==="skip"?"#ebf8ff":"#f7fafc"}} onClick={()=>setDupAction("skip")}>
-                      Ignorar duplicados
-                    </button>
-                    <button className="pro-btn pro-btn-ghost" style={{flex:1,fontSize:".82rem",padding:"8px 10px",borderColor: dupAction==="update"?"#1e3a5f":"#e2e8f0", background: dupAction==="update"?"#ebf8ff":"#f7fafc"}} onClick={()=>setDupAction("update")}>
-                      Actualizar existentes
-                    </button>
-                  </div>
-                </div>
-              )}
-              <div className="pro-import-preview">
-                <table>
-                  <thead><tr><th>Nombre</th><th>Marca</th><th>Precio</th><th>Categoría</th></tr></thead>
-                  <tbody>
-                    {importRows.slice(0,8).map((r,i) => (
-                      <tr key={i} style={importDups.find(d=>d.nombre===r.nombre)?{background:"#fffbeb"}:{}}>
-                        <td>{r.nombre}</td><td>{r.marca||"—"}</td><td>{r.precio||"—"}</td><td>{r.categoria||"—"}</td>
-                      </tr>
-                    ))}
-                    {importRows.length > 8 && <tr><td colSpan={4} style={{color:"#a0aec0",textAlign:"center"}}>…y {importRows.length-8} filas más</td></tr>}
-                  </tbody>
-                </table>
-              </div>
-              <div className="pro-info-box">
-                <strong>💡 Tip:</strong> Descarga la <button onClick={handleExportTemplate} style={{background:"none",border:"none",color:"#2b6cb0",fontWeight:700,cursor:"pointer",padding:0,textDecoration:"underline"}}>plantilla CSV</button> para ver el formato correcto.
-              </div>
+              <div className="pro-import-summary"><span className="pro-import-badge new">✓ {importRows.length-importDups.length} nuevos</span>{importDups.length>0&&<span className="pro-import-badge dup">⚠ {importDups.length} duplicados</span>}</div>
+              {importDups.length>0&&(<div className="pro-warn-box"><div style={{fontWeight:700,marginBottom:6,display:"flex",gap:6,alignItems:"center"}}><MdWarning/> {importDups.length} ya existen</div><div style={{marginBottom:10,fontSize:".82rem"}}>{importDups.slice(0,3).map(d=><span key={d.nombre} style={{display:"block"}}>• {d.nombre}</span>)}{importDups.length>3&&<span>…y {importDups.length-3} más</span>}</div><div style={{display:"flex",gap:8}}><button className="pro-btn pro-btn-ghost" style={{flex:1,fontSize:".82rem",padding:"8px 10px",borderColor:dupAction==="skip"?"#1e3a5f":"#e2e8f0",background:dupAction==="skip"?"#ebf8ff":"#f7fafc"}} onClick={()=>setDupAction("skip")}>Ignorar</button><button className="pro-btn pro-btn-ghost" style={{flex:1,fontSize:".82rem",padding:"8px 10px",borderColor:dupAction==="update"?"#1e3a5f":"#e2e8f0",background:dupAction==="update"?"#ebf8ff":"#f7fafc"}} onClick={()=>setDupAction("update")}>Actualizar</button></div></div>)}
+              <div className="pro-import-preview"><table><thead><tr><th>Nombre</th><th>Marca</th><th>Precio</th><th>Categoría</th></tr></thead><tbody>{importRows.slice(0,8).map((r,i)=>(<tr key={i} style={importDups.find(d=>d.nombre===r.nombre)?{background:"#fffbeb"}:{}}><td>{r.nombre}</td><td>{r.marca||"—"}</td><td>{r.precio||"—"}</td><td>{r.categoria||"—"}</td></tr>))}{importRows.length>8&&<tr><td colSpan={4} style={{color:"#a0aec0",textAlign:"center"}}>…y {importRows.length-8} más</td></tr>}</tbody></table></div>
+              <div className="pro-info-box"><strong>💡 Tip:</strong> Descarga la <button onClick={handleExportTemplate} style={{background:"none",border:"none",color:"#2b6cb0",fontWeight:700,cursor:"pointer",padding:0,textDecoration:"underline"}}>plantilla CSV</button>.</div>
             </div>
-            <div className="pro-mfoot">
-              <button className="pro-btn pro-btn-ghost" onClick={()=>{setShowImport(false);setImportRows([]);}}>Cancelar</button>
-              <button className="pro-btn pro-btn-primary" onClick={handleImportConfirm} disabled={importing || (importDups.length > 0 && !dupAction)}>
-                {importing ? <><MdRefresh size={16} className="spinning"/> Importando…</> : <><MdCheckCircle size={16}/> Confirmar importación</>}
-              </button>
-            </div>
+            <div className="pro-mfoot"><button className="pro-btn pro-btn-ghost" onClick={()=>{setShowImport(false);setImportRows([]);}}>Cancelar</button><button className="pro-btn pro-btn-primary" onClick={handleImportConfirm} disabled={importing||(importDups.length>0&&!dupAction)}>{importing?<><MdRefresh size={16} className="spinning"/> Importando…</>:<><MdCheckCircle size={16}/> Confirmar</>}</button></div>
           </div>
         </div>
       )}
 
-      {/* ── Modal: Import Summary ── */}
-      {showSummary && importResult && (
-        <div className="pro-overlay" onClick={e => { if(e.target.classList.contains("pro-overlay")) setShowSummary(false); }}>
+      {/* Summary */}
+      {showSummary&&importResult&&(
+        <div className="pro-overlay" onClick={e=>{if(e.target.classList.contains("pro-overlay"))setShowSummary(false);}}>
           <div className="pro-modal pro-modal-sm">
-            <div className="pro-mhead">
-              <h3>✅ Importación completada</h3>
-              <button className="pro-mclose" onClick={() => setShowSummary(false)}><MdClose /></button>
-            </div>
+            <div className="pro-mhead"><h3>✅ Importación completada</h3><button className="pro-mclose" onClick={()=>setShowSummary(false)}><MdClose/></button></div>
             <div className="pro-mbody">
-              <div className="pro-success-box">
-                Se procesaron <strong>{importResult.total}</strong> fila{importResult.total !== 1 ? "s" : ""} del CSV correctamente.
-              </div>
+              <div className="pro-success-box">Se procesaron <strong>{importResult.total}</strong> fila{importResult.total!==1?"s":""}.</div>
               <div className="pro-summary-grid">
-                <div className="pro-summary-card created">
-                  <span className="pro-summary-num created">{importResult.created}</span>
-                  <span className="pro-summary-label">🆕 Productos creados</span>
-                </div>
-                <div className="pro-summary-card updated">
-                  <span className="pro-summary-num updated">{importResult.updated}</span>
-                  <span className="pro-summary-label">✏️ Productos actualizados</span>
-                </div>
-                <div className="pro-summary-card skipped">
-                  <span className="pro-summary-num skipped">{importResult.skipped}</span>
-                  <span className="pro-summary-label">⏭ Duplicados omitidos</span>
-                </div>
-                <div className="pro-summary-card errors">
-                  <span className="pro-summary-num errors">{importResult.errors}</span>
-                  <span className="pro-summary-label">❌ Errores</span>
-                </div>
+                <div className="pro-summary-card created"><span className="pro-summary-num created">{importResult.created}</span><span className="pro-summary-label">🆕 Creados</span></div>
+                <div className="pro-summary-card updated"><span className="pro-summary-num updated">{importResult.updated}</span><span className="pro-summary-label">✏️ Actualizados</span></div>
+                <div className="pro-summary-card skipped"><span className="pro-summary-num skipped">{importResult.skipped}</span><span className="pro-summary-label">⏭ Omitidos</span></div>
+                <div className="pro-summary-card errors"><span className="pro-summary-num errors">{importResult.errors}</span><span className="pro-summary-label">❌ Errores</span></div>
               </div>
-              {importResult.errors > 0 && (
-                <div className="pro-warn-box">
-                  <strong>⚠ {importResult.errors} fila(s) no se pudieron importar.</strong> Verifica que los datos sean correctos y vuelve a intentarlo.
-                </div>
-              )}
+              {importResult.errors>0&&<div className="pro-warn-box"><strong>⚠ {importResult.errors} fila(s) no importadas.</strong></div>}
             </div>
-            <div className="pro-mfoot">
-              <button className="pro-btn pro-btn-primary" onClick={() => setShowSummary(false)}>
-                <MdCheckCircle size={16} /> Cerrar
-              </button>
-            </div>
+            <div className="pro-mfoot"><button className="pro-btn pro-btn-primary" onClick={()=>setShowSummary(false)}><MdCheckCircle size={16}/> Cerrar</button></div>
           </div>
         </div>
       )}
 
-      {/* Drag & drop overlay */}
-      <div
-        onDragOver={e=>{e.preventDefault();setDragOver(true);}}
-        onDragLeave={()=>setDragOver(false)}
-        onDrop={handleDrop}
-        style={{
-          position:"fixed", inset:0, zIndex:dragOver?3999:-1, background:dragOver?"rgba(49,130,206,.12)":"transparent",
-          border:dragOver?"3px dashed #3182ce":"none", pointerEvents:dragOver?"all":"none",
-          display:"flex", alignItems:"center", justifyContent:"center", transition:"all .2s"
-        }}
-      >
-        {dragOver && <div style={{background:"white",padding:"24px 40px",borderRadius:16,boxShadow:"0 20px 60px rgba(0,0,0,.2)",fontSize:"1.1rem",fontWeight:700,color:"#2b6cb0"}}>📂 Suelta el CSV aquí</div>}
+      <div onDragOver={e=>{e.preventDefault();setDragOver(true);}} onDragLeave={()=>setDragOver(false)} onDrop={handleDrop}
+        style={{position:"fixed",inset:0,zIndex:dragOver?3999:-1,background:dragOver?"rgba(49,130,206,.12)":"transparent",border:dragOver?"3px dashed #3182ce":"none",pointerEvents:dragOver?"all":"none",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .2s"}}>
+        {dragOver&&<div style={{background:"white",padding:"24px 40px",borderRadius:16,boxShadow:"0 20px 60px rgba(0,0,0,.2)",fontSize:"1.1rem",fontWeight:700,color:"#2b6cb0"}}>📂 Suelta el CSV aquí</div>}
       </div>
 
-      {toast && <div className={`pro-toast ${toast.type}`}>{toast.msg}</div>}
+      {toast&&<div className={`pro-toast ${toast.type}`}>{toast.msg}</div>}
     </div>
   );
 }

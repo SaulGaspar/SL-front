@@ -1,3 +1,6 @@
+// ============================================================
+// Catalogo.js  —  responsive mejorado
+// ============================================================
 import React, { useState, useEffect, useMemo, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
@@ -66,8 +69,8 @@ const getCSS = (dark) => `
 /* ── CARD ── */
 .sl-card { background:var(--white); display:flex; flex-direction:column; cursor:pointer; position:relative; overflow:hidden; }
 .sl-card:hover { z-index:2; }
-.sl-card-img { position:relative; height:300px; overflow:hidden; background:${dark ? "#0f172a" : "#ececec"}; }
-.sl-card-img img { width:100%; height:100%; object-fit:cover; transition:transform .5s cubic-bezier(.25,.46,.45,.94); display:block; }
+.sl-card-img { position:relative; height:300px; overflow:hidden; background:${dark ? "#1e293b" : "#f8f8f8"}; }
+.sl-card-img img { width:100%; height:100%; object-fit:contain; object-position:center; padding:12px; transition:transform .5s cubic-bezier(.25,.46,.45,.94); display:block; }
 .sl-card:hover .sl-card-img img { transform:scale(1.08); }
 .sl-card-overlay { position:absolute; inset:0; background:linear-gradient(to top,rgba(10,26,47,.72) 0%,transparent 55%); opacity:0; transition:opacity .3s ease; display:flex; align-items:flex-end; padding:18px; }
 .sl-card:hover .sl-card-overlay { opacity:1; }
@@ -109,18 +112,36 @@ const getCSS = (dark) => `
 .sl-error { margin-bottom:24px; background:${dark?"#2d1515":"#fff5f5"}; border-left:4px solid var(--danger); padding:14px 18px; color:${dark?"#fca5a5":"#9b2c2c"}; font-size:.9rem; border-radius:4px; }
 
 /* ── RESPONSIVE ── */
-@media (max-width:768px) {
+@media (max-width:900px) {
   .sl-bar { flex-wrap:wrap; padding:12px 16px; gap:8px; position:static; }
-  .sl-bar-brand { width:100%; margin-right:0; }
+  .sl-bar-brand { width:100%; margin-right:0; font-size:1.1rem; }
   .sl-search-wrap { max-width:100%; margin-right:0; flex:1 1 100%; }
-  .sl-sel { flex:1; margin-right:0; }
-  .sl-range-pill { display:none; }
-  .sl-clear { margin-left:0; }
-  .sl-wrap { padding:24px 16px 48px; }
+  .sl-sel { flex:1; margin-right:0; font-size:.8rem; padding:8px 10px; }
+  .sl-range-pill { flex:1 1 100%; justify-content:space-between; }
+  .sl-range-pill input[type=range] { flex:1; }
+  .sl-clear { margin-left:0; width:100%; text-align:center; padding:10px; }
+  .sl-wrap { padding:20px 16px 48px; }
   .sl-grid, .sl-skeleton-grid { grid-template-columns:repeat(2,1fr); gap:1px; }
   .sl-card-img { height:200px; }
+  .sl-skel-img  { height:200px; }
+  .sl-card-body { padding:10px 12px 14px; gap:6px; }
+  .sl-card-name { font-size:.85rem; }
+  .sl-card-price { font-size:1.1rem; }
+  .sl-card-desc { display:none; }
+  .sl-chips-section { display:none; }
+  .sl-count { font-size:1.6rem; }
 }
-@media (max-width:420px) { .sl-grid, .sl-skeleton-grid { grid-template-columns:1fr; } }
+
+@media (max-width:480px) {
+  .sl-grid, .sl-skeleton-grid { grid-template-columns:repeat(2,1fr); gap:1px; }
+  .sl-card-img { height:160px; }
+  .sl-skel-img  { height:160px; }
+  .sl-card-name { font-size:.78rem; -webkit-line-clamp:2; }
+  .sl-card-price { font-size:1rem; }
+  .sl-card-body { padding:8px 10px 12px; }
+  .sl-wrap { padding:12px 8px 40px; }
+  .sl-card-overlay { display:none; }
+}
 `;
 
 const COLOR_MAP = {
@@ -186,7 +207,6 @@ export default function Catalogo() {
     <div className="sl-cat">
       <style>{getCSS(darkMode)}</style>
 
-      {/* Barra filtros */}
       <div className="sl-bar">
         <span className="sl-bar-brand">SPORTLIKE</span>
         <div className="sl-search-wrap">
@@ -208,7 +228,6 @@ export default function Catalogo() {
         <button className="sl-clear" onClick={limpiar}>Limpiar</button>
       </div>
 
-      {/* Contenido */}
       <div className="sl-wrap">
         {error && <div className="sl-error">⚠ {error}</div>}
         {!loading && !error && (

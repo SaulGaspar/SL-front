@@ -11,11 +11,11 @@ const getCSS = (dark) => `
 .pd-root {
   --navy:   #0a1a2f;
   --navy2:  #1e3a5f;
-  --cream:  ${dark ? "#0f172a"  : "#f7f5f0"};
-  --white:  ${dark ? "#1e293b"  : "#ffffff"};
-  --muted:  ${dark ? "#94a3b8"  : "#8a8f98"};
-  --border: ${dark ? "#334155"  : "#e4e2dd"};
-  --text:   ${dark ? "#e2e8f0"  : "#0a1a2f"};
+  --cream:  ${dark ? "#0f172a" : "#f7f5f0"};
+  --white:  ${dark ? "#1e293b" : "#ffffff"};
+  --muted:  ${dark ? "#94a3b8" : "#8a8f98"};
+  --border: ${dark ? "#334155" : "#e4e2dd"};
+  --text:   ${dark ? "#e2e8f0" : "#0a1a2f"};
   --accent: #c8f03c;
   --danger: #e53e3e;
   --green:  #38a169;
@@ -25,32 +25,42 @@ const getCSS = (dark) => `
   min-height:100vh;
 }
 
-/* Breadcrumb */
-.pd-bread { background:var(--navy); padding:12px 48px; display:flex; align-items:center; gap:8px; font-size:.8rem; color:rgba(255,255,255,.45); }
+.pd-bread { background:var(--navy); padding:12px 48px; display:flex; align-items:center; gap:8px; font-size:.8rem; color:rgba(255,255,255,.45); flex-wrap:wrap; }
 .pd-bread a { color:rgba(255,255,255,.55); text-decoration:none; transition:color .15s; }
 .pd-bread a:hover { color:var(--accent); }
 .pd-bread-sep { color:rgba(255,255,255,.2); }
 .pd-bread-cur { color:rgba(255,255,255,.8); font-weight:500; }
 
-/* Layout */
 .pd-wrap { max-width:1300px; margin:0 auto; padding:40px 48px 80px; display:grid; grid-template-columns:1fr 1fr; gap:64px; }
 
 /* Galería */
 .pd-gallery { display:flex; flex-direction:column; gap:12px; }
-.pd-main-img { position:relative; background:var(--white); overflow:hidden; aspect-ratio:4/5; }
-.pd-main-img img { width:100%; height:100%; object-fit:cover; transition:transform .5s ease; }
+.pd-main-img { position:relative; background:#f8f8f8; overflow:hidden; aspect-ratio:1/1; }
+.pd-main-img img { width:100%; height:100%; object-fit:contain; object-position:center; padding:20px; transition:transform .5s ease; }
 .pd-main-img:hover img { transform:scale(1.04); }
-.pd-badge-out { position:absolute; top:16px; left:16px; background:var(--danger); color:white; font-size:.7rem; font-weight:700; letter-spacing:1px; padding:5px 12px; text-transform:uppercase; }
-.pd-badge-marca { position:absolute; top:16px; right:16px; background:var(--navy); color:white; font-size:.7rem; font-weight:700; letter-spacing:1px; padding:5px 12px; text-transform:uppercase; }
-.pd-thumbs { display:flex; gap:8px; }
-.pd-thumb { flex:1; aspect-ratio:1; overflow:hidden; background:var(--white); cursor:pointer; border:2px solid transparent; transition:border-color .2s; }
-.pd-thumb.active { border-color:var(--text); }
-.pd-thumb img { width:100%; height:100%; object-fit:cover; }
+.pd-badge-out { position:absolute; top:16px; left:16px; background:var(--danger); color:white; font-size:.7rem; font-weight:700; letter-spacing:1px; padding:5px 12px; text-transform:uppercase; z-index:2; }
+.pd-badge-marca { position:absolute; top:16px; right:16px; background:var(--navy); color:white; font-size:.7rem; font-weight:700; letter-spacing:1px; padding:5px 12px; text-transform:uppercase; z-index:2; }
 
-/* Info */
+/* Thumbnails */
+.pd-thumbs { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
+.pd-thumbs::-webkit-scrollbar { height:4px; }
+.pd-thumbs::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.pd-thumb { width:72px; height:72px; flex-shrink:0; overflow:hidden; background:#f8f8f8; cursor:pointer; border:2px solid transparent; transition:border-color .2s; border-radius:6px; }
+.pd-thumb.active { border-color:var(--text); }
+.pd-thumb img { width:100%; height:100%; object-fit:contain; padding:4px; background:#f8f8f8; }
+
+/* Contador de imágenes */
+.pd-img-counter { position:absolute; bottom:10px; right:12px; background:rgba(0,0,0,.45); color:white; font-size:.72rem; font-weight:700; padding:3px 8px; border-radius:20px; }
+
+/* Navegación flechas */
+.pd-img-nav { position:absolute; top:50%; transform:translateY(-50%); background:white; border:none; width:36px; height:36px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.15); font-size:1.1rem; color:var(--navy); transition:all .15s; z-index:2; }
+.pd-img-nav:hover { background:var(--navy); color:white; }
+.pd-img-nav.prev { left:10px; }
+.pd-img-nav.next { right:10px; }
+
 .pd-info { display:flex; flex-direction:column; }
 .pd-tag { font-size:.75rem; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
-.pd-title { font-family:'Bebas Neue',sans-serif; font-size:clamp(2.4rem,4vw,3.6rem); letter-spacing:2px; line-height:1; color:var(--text); margin-bottom:16px; }
+.pd-title { font-family:'Bebas Neue',sans-serif; font-size:clamp(2rem,4vw,3.6rem); letter-spacing:2px; line-height:1; color:var(--text); margin-bottom:16px; }
 .pd-price-row { display:flex; align-items:baseline; gap:14px; margin-bottom:6px; }
 .pd-price { font-family:'Bebas Neue',sans-serif; font-size:2.4rem; letter-spacing:2px; color:var(--text); }
 .pd-stock-badge { font-size:.75rem; font-weight:700; letter-spacing:.5px; padding:4px 12px; border-radius:2px; }
@@ -58,7 +68,6 @@ const getCSS = (dark) => `
 .pd-out-stock { background:${dark?"#450a0a":"#fed7d7"}; color:${dark?"#fca5a5":"#9b2c2c"}; }
 .pd-desc { font-size:.9rem; color:var(--muted); line-height:1.7; margin-bottom:28px; border-top:1px solid var(--border); padding-top:20px; }
 
-/* Opciones */
 .pd-opt-label { font-size:.72rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
 .pd-opt-section { margin-bottom:22px; }
 .pd-sizes { display:flex; flex-wrap:wrap; gap:8px; }
@@ -72,14 +81,12 @@ const getCSS = (dark) => `
 .pd-color-text-btn { padding:6px 14px; border:1.5px solid var(--border); background:transparent; color:var(--text); font-family:'Outfit',sans-serif; font-size:.82rem; font-weight:600; cursor:pointer; border-radius:20px; transition:all .15s; }
 .pd-color-text-btn.active { background:var(--text); color:var(--cream); border-color:var(--text); }
 
-/* Cantidad */
 .pd-qty-row { display:flex; align-items:center; margin-bottom:28px; width:fit-content; border:1.5px solid var(--border); border-radius:4px; overflow:hidden; }
 .pd-qty-btn { width:40px; height:44px; background:transparent; border:none; font-size:1.3rem; color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s; }
 .pd-qty-btn:hover { background:var(--border); }
 .pd-qty-val { width:52px; height:44px; border:none; border-left:1.5px solid var(--border); border-right:1.5px solid var(--border); text-align:center; font-family:'Outfit',sans-serif; font-size:.95rem; font-weight:700; color:var(--text); background:var(--white); }
 .pd-qty-val:focus { outline:none; }
 
-/* CTAs */
 .pd-ctas { display:flex; gap:10px; margin-bottom:24px; }
 .pd-btn-add { flex:1; padding:16px 24px; background:var(--navy); color:white; border:none; font-family:'Outfit',sans-serif; font-size:.95rem; font-weight:700; letter-spacing:.5px; cursor:pointer; border-radius:4px; transition:background .2s,transform .15s; }
 .pd-btn-add:hover:not(:disabled) { background:var(--navy2); transform:translateY(-1px); }
@@ -88,11 +95,9 @@ const getCSS = (dark) => `
 .pd-btn-back { padding:16px 20px; background:transparent; color:var(--text); border:1.5px solid var(--border); font-family:'Outfit',sans-serif; font-size:.9rem; font-weight:600; cursor:pointer; border-radius:4px; transition:border-color .15s,background .15s; }
 .pd-btn-back:hover { border-color:var(--text); background:var(--border); }
 
-/* Meta */
 .pd-meta { display:flex; flex-direction:column; gap:6px; padding-top:20px; border-top:1px solid var(--border); font-size:.82rem; color:var(--muted); }
 .pd-meta span strong { color:var(--text); font-weight:600; }
 
-/* Specs */
 .pd-bottom { max-width:1300px; margin:0 auto; padding:0 48px 80px; display:grid; grid-template-columns:1fr 1fr; gap:24px; }
 .pd-card { background:var(--white); padding:28px; }
 .pd-card-title { font-family:'Bebas Neue',sans-serif; font-size:1.3rem; letter-spacing:2px; color:var(--text); margin-bottom:18px; padding-bottom:12px; border-bottom:2px solid var(--text); display:inline-block; }
@@ -104,34 +109,52 @@ const getCSS = (dark) => `
 .pd-spec-k { font-size:.72rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
 .pd-spec-v { font-size:.9rem; font-weight:600; color:var(--text); }
 
-/* Relacionados */
 .pd-related { max-width:1300px; margin:0 auto; padding:0 48px 80px; }
 .pd-related-title { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:3px; color:var(--text); margin-bottom:20px; }
 .pd-related-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:2px; }
 .pd-rel-card { background:var(--white); cursor:pointer; overflow:hidden; }
 .pd-rel-card:hover .pd-rel-img img { transform:scale(1.06); }
-.pd-rel-img { height:200px; overflow:hidden; }
-.pd-rel-img img { width:100%; height:100%; object-fit:cover; transition:transform .4s ease; }
+.pd-rel-img { height:200px; overflow:hidden; background:#f8f8f8; }
+.pd-rel-img img { width:100%; height:100%; object-fit:contain; padding:8px; background:#f8f8f8; transition:transform .4s ease; }
 .pd-rel-body { padding:12px; }
 .pd-rel-name { font-size:.85rem; font-weight:700; color:var(--text); margin-bottom:4px; }
 .pd-rel-price { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; color:var(--text); letter-spacing:1px; }
 
-/* Toast */
 .pd-toast { position:fixed; bottom:28px; right:28px; z-index:9999; background:var(--navy); color:white; padding:14px 22px; border-radius:6px; font-family:'Outfit',sans-serif; font-size:.88rem; font-weight:600; box-shadow:0 12px 32px rgba(10,26,47,.3); display:flex; align-items:center; gap:10px; animation:pd-slide-up .3s ease; border-left:4px solid var(--accent); }
 @keyframes pd-slide-up { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
 
-/* Loading */
 .pd-loading { min-height:60vh; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px; color:var(--muted); }
 .pd-spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--navy); border-radius:50%; animation:pd-spin .8s linear infinite; }
 @keyframes pd-spin { to{transform:rotate(360deg)} }
 
-/* Responsive */
 @media (max-width:900px) {
-  .pd-wrap { grid-template-columns:1fr; gap:32px; padding:24px 20px 40px; }
-  .pd-bottom { grid-template-columns:1fr; padding:0 20px 40px; }
-  .pd-related { padding:0 20px 40px; }
+  .pd-wrap { grid-template-columns:1fr; gap:0; padding:0 0 32px; }
+  .pd-gallery { gap:0; }
+  .pd-main-img { aspect-ratio:1/1; max-height:420px; }
+  .pd-info { padding:20px 16px 24px; }
+  .pd-title { font-size:clamp(1.8rem,8vw,2.8rem); margin-bottom:12px; }
+  .pd-price { font-size:1.8rem; }
+  .pd-desc { font-size:.85rem; margin-bottom:20px; }
+  .pd-ctas { flex-direction:column; }
+  .pd-btn-back { text-align:center; }
+  .pd-bread { padding:10px 16px; font-size:.74rem; }
+  .pd-bottom { grid-template-columns:1fr; padding:0 16px 32px; gap:12px; }
+  .pd-card { padding:20px 16px; }
+  .pd-related { padding:0 16px 40px; }
   .pd-related-grid { grid-template-columns:repeat(2,1fr); }
-  .pd-bread { padding:10px 20px; }
+  .pd-rel-img { height:140px; }
+  .pd-thumb { width:60px; height:60px; }
+}
+@media (max-width:480px) {
+  .pd-main-img { aspect-ratio:1/1; max-height:340px; }
+  .pd-info { padding:16px 12px 20px; }
+  .pd-title { font-size:clamp(1.5rem,9vw,2.2rem); }
+  .pd-price { font-size:1.5rem; }
+  .pd-size-btn { min-width:40px; padding:7px 8px; font-size:.8rem; }
+  .pd-related-grid { grid-template-columns:repeat(2,1fr); gap:1px; }
+  .pd-rel-img { height:120px; }
+  .pd-toast { bottom:16px; right:12px; left:12px; font-size:.82rem; padding:12px 16px; }
+  .pd-thumb { width:52px; height:52px; }
 }
 `;
 
@@ -150,10 +173,11 @@ export default function ProductoDetalle() {
   const { darkMode } = useContext(ThemeContext);
 
   const [product, setProduct] = useState(null);
+  const [images,  setImages]  = useState([]); // galería real
   const [related, setRelated] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(null);
-  const [mainImg, setMainImg] = useState("");
+  const [activeIdx, setActiveIdx] = useState(0); // índice activo en galería
   const [size,    setSize]    = useState("");
   const [color,   setColor]   = useState("");
   const [qty,     setQty]     = useState(1);
@@ -162,7 +186,7 @@ export default function ProductoDetalle() {
 
   useEffect(() => {
     (async () => {
-      setLoading(true); setError(null);
+      setLoading(true); setError(null); setActiveIdx(0);
       try {
         const res = await fetch(`${API_URL}/api/products`);
         if (!res.ok) throw new Error("Error cargando producto");
@@ -170,7 +194,26 @@ export default function ProductoDetalle() {
         const prod = all.find(p => p.id === Number(id));
         if (!prod) throw new Error("Producto no encontrado");
         setProduct(prod);
-        setMainImg(prod.imagen || "");
+
+        // Cargar imágenes de product_images
+        try {
+          const imgRes = await fetch(`${API_URL}/api/admin/products/${prod.id}/images`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+          });
+          if (imgRes.ok) {
+            const imgs = await imgRes.json();
+            if (imgs.length > 0) {
+              setImages(imgs.map(i => i.url));
+            } else {
+              setImages(prod.imagen ? [prod.imagen] : []);
+            }
+          } else {
+            setImages(prod.imagen ? [prod.imagen] : []);
+          }
+        } catch {
+          setImages(prod.imagen ? [prod.imagen] : []);
+        }
+
         const tallas  = parseLista(prod.talla);
         const colores = parseLista(prod.colores);
         if (tallas.length)  setSize(tallas[0]);
@@ -183,7 +226,7 @@ export default function ProductoDetalle() {
 
   const handleAdd = () => {
     if (!product) return;
-    addToCart({ id:product.id, title:product.nombre, price:product.precio, img:product.imagen, qty, size:size||"Único", color:color||"Único" });
+    addToCart({ id:product.id, title:product.nombre, price:product.precio, img:images[0]||product.imagen, qty, size:size||"Único", color:color||"Único" });
     setAdded(true);
     setToast(`✓  ${product.nombre} agregado al carrito`);
     toggleMiniCart();
@@ -191,30 +234,33 @@ export default function ProductoDetalle() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const imgSrc = (src) => src || `https://picsum.photos/seed/${product?.id}/600/750`;
+  const prevImg = () => setActiveIdx(i => (i - 1 + images.length) % images.length);
+  const nextImg = () => setActiveIdx(i => (i + 1) % images.length);
+
+  const fallback = `https://picsum.photos/seed/${product?.id}/600/600`;
+  const mainSrc  = images[activeIdx] || fallback;
 
   if (loading) return (
     <div className="pd-root"><style>{getCSS(darkMode)}</style>
-      <div className="pd-loading"><div className="pd-spinner" /><span>Cargando producto...</span></div>
+      <div className="pd-loading"><div className="pd-spinner"/><span>Cargando producto...</span></div>
     </div>
   );
 
   if (error || !product) return (
     <div className="pd-root"><style>{getCSS(darkMode)}</style>
       <div style={{padding:"48px",textAlign:"center"}}>
-        <p style={{color:"#9b2c2c",marginBottom:20}}>{error || "Producto no encontrado"}</p>
+        <p style={{color:"#9b2c2c",marginBottom:20}}>{error||"Producto no encontrado"}</p>
         <div style={{display:"flex",gap:12,justifyContent:"center"}}>
-          <button onClick={() => navigate(-1)} style={{padding:"10px 20px",cursor:"pointer"}}>Volver</button>
+          <button onClick={()=>navigate(-1)} style={{padding:"10px 20px",cursor:"pointer"}}>Volver</button>
           <Link to="/catalogo" style={{padding:"10px 20px",background:"#0a1a2f",color:"white",textDecoration:"none"}}>Ver catálogo</Link>
         </div>
       </div>
     </div>
   );
 
-  const tallas   = parseLista(product.talla);
-  const colores  = parseLista(product.colores);
+  const tallas  = parseLista(product.talla);
+  const colores = parseLista(product.colores);
   const sinStock = product.stock_total === 0;
-  const thumbImgs = [product.imagen, product.imagen, product.imagen].filter(Boolean).slice(0,3);
 
   return (
     <div className="pd-root">
@@ -223,7 +269,7 @@ export default function ProductoDetalle() {
       <div className="pd-bread">
         <Link to="/">Inicio</Link><span className="pd-bread-sep">›</span>
         <Link to="/catalogo">Catálogo</Link>
-        {product.categoria && <><span className="pd-bread-sep">›</span><span>{product.categoria}</span></>}
+        {product.categoria&&<><span className="pd-bread-sep">›</span><span>{product.categoria}</span></>}
         <span className="pd-bread-sep">›</span>
         <span className="pd-bread-cur">{product.nombre}</span>
       </div>
@@ -232,15 +278,26 @@ export default function ProductoDetalle() {
         {/* Galería */}
         <div className="pd-gallery">
           <div className="pd-main-img">
-            <img src={imgSrc(mainImg)} alt={product.nombre} onError={e=>{e.target.src=imgSrc("");}} />
-            {sinStock && <span className="pd-badge-out">Agotado</span>}
-            {product.marca && <span className="pd-badge-marca">{product.marca}</span>}
+            <img src={mainSrc} alt={product.nombre} onError={e=>{e.target.src=fallback;}}/>
+            {sinStock&&<span className="pd-badge-out">Agotado</span>}
+            {product.marca&&<span className="pd-badge-marca">{product.marca}</span>}
+
+            {/* Flechas navegación — solo si hay más de 1 imagen */}
+            {images.length > 1 && (
+              <>
+                <button className="pd-img-nav prev" onClick={prevImg}>‹</button>
+                <button className="pd-img-nav next" onClick={nextImg}>›</button>
+                <span className="pd-img-counter">{activeIdx+1} / {images.length}</span>
+              </>
+            )}
           </div>
-          {thumbImgs.length > 1 && (
+
+          {/* Thumbnails */}
+          {images.length > 1 && (
             <div className="pd-thumbs">
-              {thumbImgs.map((src,i) => (
-                <div key={i} className={`pd-thumb ${mainImg===src?"active":""}`} onClick={()=>setMainImg(src)}>
-                  <img src={imgSrc(src)} alt="" onError={e=>{e.target.src=`https://picsum.photos/seed/${product.id+i}/200/200`;}} />
+              {images.map((src,i) => (
+                <div key={i} className={`pd-thumb ${activeIdx===i?"active":""}`} onClick={()=>setActiveIdx(i)}>
+                  <img src={src} alt={`vista-${i+1}`} onError={e=>{e.target.src=fallback;}}/>
                 </div>
               ))}
             </div>
@@ -249,21 +306,21 @@ export default function ProductoDetalle() {
 
         {/* Info */}
         <div className="pd-info">
-          {product.marca && <div className="pd-tag">{product.marca}</div>}
+          {product.marca&&<div className="pd-tag">{product.marca}</div>}
           <h1 className="pd-title">{product.nombre}</h1>
           <div className="pd-price-row">
             <div className="pd-price">${Number(product.precio).toLocaleString("es-MX")}</div>
             <span className={`pd-stock-badge ${sinStock?"pd-out-stock":"pd-in-stock"}`}>
-              {sinStock ? "Sin stock" : "Disponible"}
+              {sinStock?"Sin stock":"Disponible"}
             </span>
           </div>
-          {product.descripcion && <p className="pd-desc">{product.descripcion}</p>}
+          {product.descripcion&&<p className="pd-desc">{product.descripcion}</p>}
 
           {tallas.length > 0 && (
             <div className="pd-opt-section">
               <div className="pd-opt-label">Talla — <strong style={{color:"var(--text)"}}>{size}</strong></div>
               <div className="pd-sizes">
-                {tallas.map(t => <button key={t} className={`pd-size-btn ${size===t?"active":""}`} onClick={()=>setSize(t)}>{t}</button>)}
+                {tallas.map(t=><button key={t} className={`pd-size-btn ${size===t?"active":""}`} onClick={()=>setSize(t)}>{t}</button>)}
               </div>
             </div>
           )}
@@ -272,11 +329,11 @@ export default function ProductoDetalle() {
             <div className="pd-opt-section">
               <div className="pd-opt-label">Color — <strong style={{color:"var(--text)"}}>{color}</strong></div>
               <div className="pd-colors">
-                {colores.map(c => {
-                  const hex = COLOR_MAP[c.toLowerCase()];
+                {colores.map(c=>{
+                  const hex=COLOR_MAP[c.toLowerCase()];
                   return hex
-                    ? <button key={c} className={`pd-color-btn ${color===c?"active":""}`} style={{background:hex}} title={c} onClick={()=>setColor(c)} />
-                    : <button key={c} className={`pd-color-text-btn ${color===c?"active":""}`} onClick={()=>setColor(c)}>{c}</button>;
+                    ?<button key={c} className={`pd-color-btn ${color===c?"active":""}`} style={{background:hex}} title={c} onClick={()=>setColor(c)}/>
+                    :<button key={c} className={`pd-color-text-btn ${color===c?"active":""}`} onClick={()=>setColor(c)}>{c}</button>;
                 })}
               </div>
             </div>
@@ -285,13 +342,13 @@ export default function ProductoDetalle() {
           <div className="pd-opt-label" style={{marginBottom:10}}>Cantidad</div>
           <div className="pd-qty-row">
             <button className="pd-qty-btn" onClick={()=>setQty(q=>Math.max(1,q-1))}>−</button>
-            <input className="pd-qty-val" type="number" value={qty} min={1} onChange={e=>setQty(Math.max(1,Number(e.target.value)||1))} />
+            <input className="pd-qty-val" type="number" value={qty} min={1} onChange={e=>setQty(Math.max(1,Number(e.target.value)||1))}/>
             <button className="pd-qty-btn" onClick={()=>setQty(q=>q+1)}>+</button>
           </div>
 
           <div className="pd-ctas">
             <button className={`pd-btn-add ${added?"added":""}`} disabled={sinStock} onClick={handleAdd}>
-              {added ? "✓ Agregado al carrito" : sinStock ? "Sin disponibilidad" : "Agregar al carrito"}
+              {added?"✓ Agregado al carrito":sinStock?"Sin disponibilidad":"Agregar al carrito"}
             </button>
             <button className="pd-btn-back" onClick={()=>navigate(-1)}>← Volver</button>
           </div>
@@ -299,7 +356,7 @@ export default function ProductoDetalle() {
           <div className="pd-meta">
             <span><strong>Envío:</strong> Entrega en 2–5 días hábiles</span>
             <span><strong>Devoluciones:</strong> 30 días por defectos de fábrica</span>
-            {product.categoria && <span><strong>Categoría:</strong> {product.categoria}</span>}
+            {product.categoria&&<span><strong>Categoría:</strong> {product.categoria}</span>}
           </div>
         </div>
       </div>
@@ -331,11 +388,11 @@ export default function ProductoDetalle() {
         <div className="pd-related">
           <div className="pd-related-title">También te puede gustar</div>
           <div className="pd-related-grid">
-            {related.map(r => (
+            {related.map(r=>(
               <div key={r.id} className="pd-rel-card" onClick={()=>navigate(`/producto/${r.id}`)}>
                 <div className="pd-rel-img">
-                  <img src={r.imagen||`https://picsum.photos/seed/${r.id}/300/200`} alt={r.nombre}
-                    onError={e=>{e.target.src=`https://picsum.photos/seed/${r.id}/300/200`;}} />
+                  <img src={r.imagen||`https://picsum.photos/seed/${r.id}/300/300`} alt={r.nombre}
+                    onError={e=>{e.target.src=`https://picsum.photos/seed/${r.id}/300/300`;}}/>
                 </div>
                 <div className="pd-rel-body">
                   <div className="pd-rel-name">{r.nombre}</div>
@@ -347,7 +404,7 @@ export default function ProductoDetalle() {
         </div>
       )}
 
-      {toast && <div className="pd-toast">{toast}</div>}
+      {toast&&<div className="pd-toast">{toast}</div>}
     </div>
   );
 }
