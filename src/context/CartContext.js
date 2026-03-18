@@ -25,7 +25,6 @@ export function CartProvider({ children }) {
 
   function updateQty(item, newQty) {
     if (newQty <= 0) return removeItem(item);
-
     const updated = cart.map((p) =>
       p === item ? { ...p, qty: newQty } : p
     );
@@ -35,6 +34,11 @@ export function CartProvider({ children }) {
   function removeItem(item) {
     const updated = cart.filter((p) => p !== item);
     saveCart(updated);
+  }
+
+  // Vacía el carrito completo — usado después de completar un pago
+  function clearCart() {
+    saveCart([]);
   }
 
   function toggleMiniCart() {
@@ -48,8 +52,9 @@ export function CartProvider({ children }) {
         addToCart,
         updateQty,
         removeItem,
+        clearCart,
         showMiniCart,
-        toggleMiniCart
+        toggleMiniCart,
       }}
     >
       {children}
