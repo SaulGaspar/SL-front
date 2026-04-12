@@ -55,7 +55,7 @@ const S = `
   .inv-edit-btn:hover { background: #90cdf4; }
   .inv-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
   .inv-modal { background: white; border-radius: 16px; width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); font-family: 'DM Sans', sans-serif; animation: invIn .22s ease; }
-  .inv-modal-lg  { max-width: 680px; max-height: 90vh; overflow-y: auto; }
+  .inv-modal-lg  { max-width: 900px; max-height: 90vh; overflow-y: auto; }
   .inv-modal-md  { max-width: 520px; max-height: 90vh; overflow-y: auto; }
   @keyframes invIn { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
   .inv-modal-header { padding: 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white; border-radius: 16px 16px 0 0; z-index: 1; }
@@ -79,7 +79,7 @@ const S = `
   .inv-summary-badge { padding: 5px 12px; border-radius: 20px; font-size: .8rem; font-weight: 700; }
   .inv-summary-badge.new { background: #c6f6d5; color: #276749; }
   .inv-summary-badge.dup { background: #fef5e7; color: #975a16; }
-  .inv-export-table-wrap { max-height: 320px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; }
+  .inv-export-table-wrap { max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; }
   .inv-export-table { width: 100%; border-collapse: collapse; font-size: .78rem; }
   .inv-export-table thead { position: sticky; top: 0; background: #f7fafc; z-index: 1; }
   .inv-export-table th { padding: 9px 12px; text-align: left; color: #4a5568; font-weight: 700; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
@@ -103,7 +103,6 @@ const S = `
   .inv-result-num.updated { color: #2b6cb0; }
   .inv-result-num.skipped { color: #718096; }
   .inv-result-num.errors  { color: #9b2c2c; }
-  .inv-result-label { font-size: .8rem; font-weight: 600; color: #718096; }
   .inv-date-active { margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: .82rem; color: #2b6cb0; }
   .inv-toast { position: fixed; bottom: 24px; right: 24px; z-index: 9999; padding: 12px 20px; border-radius: 10px; color: white; font-family: 'DM Sans', sans-serif; font-size: .88rem; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.2); animation: invIn .3s ease; }
   .inv-toast.ok  { background: #276749; }
@@ -113,7 +112,6 @@ const S = `
 `;
 
 // ── CSV helpers ──────────────────────────────────────────────────────────────
-
 function toCSV(rows) {
   const escape = v => { const s = String(v ?? ""); return s.includes(",") || s.includes('"') ? `"${s.replace(/"/g,'""')}"` : s; };
   const lines = [CSV_HEADERS.join(",")];
@@ -158,8 +156,6 @@ function analyzeEmptyFields(rows) {
   return counts;
 }
 
-// ── Interpreta errores del backend ───────────────────────────────────────────
-
 function interpretError(serverMsg, action, row) {
   const producto = row.producto || row.product_id || "?";
   const suc = row.branch_id;
@@ -177,8 +173,6 @@ function interpretError(serverMsg, action, row) {
     return { producto, branch_id: suc, tipo: "red", msg: "Servidor ocupado — reintenta en un momento" };
   return { producto, branch_id: suc, tipo: "servidor", msg: `Error: ${serverMsg}` };
 }
-
-// ── Component ────────────────────────────────────────────────────────────────
 
 export default function Inventario() {
   const [inventory,      setInventory]      = useState([]);
@@ -249,7 +243,6 @@ export default function Inventario() {
   };
 
   // ── EXPORT ──────────────────────────────────────────────────────────────────
-
   const handleExportPreview = () => {
     const data = filtered.length && filtered.length < inventory.length ? filtered : inventory;
     setExportData(data);
@@ -264,7 +257,6 @@ export default function Inventario() {
   };
 
   // ── PLANTILLA ────────────────────────────────────────────────────────────────
-
   const handleDownloadTemplate = () => {
     const escape = v => { const s = String(v ?? ""); return s.includes(",") || s.includes('"') ? `"${s.replace(/"/g,'""')}"` : s; };
     const samples = inventory.length >= 3
@@ -277,7 +269,6 @@ export default function Inventario() {
   };
 
   // ── IMPORT ──────────────────────────────────────────────────────────────────
-
   const handleFileRead = (file) => {
     if (!file) return;
     const reader = new FileReader();
@@ -305,8 +296,7 @@ export default function Inventario() {
     const authHeader = { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` };
     const norm = s => (s || "").toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    // Paso 1: mapa nombre → product_id desde la API
-    const productMap    = new Map();
+    const productMap = new Map();
     const productMapRaw = new Map();
     try {
       const pRes = await fetch(`${API_URL}/api/admin/products`, { headers: authHeader });
@@ -319,11 +309,9 @@ export default function Inventario() {
       }
     } catch (e) { console.error("No se pudo obtener productos:", e); }
 
-    // Paso 2: mapas del inventario local
     const existingMap   = new Map(inventory.map(i => [`${norm(i.producto)}-${i.branch_id}`, i]));
     const existingByIds = new Map(inventory.map(i => [`${i.product_id}-${i.branch_id}`, i]));
 
-    // Paso 3: pre-filtrar filas
     const toProcess    = [];
     const noMatchNames = new Set();
     const errorDetails = [];
@@ -364,7 +352,6 @@ export default function Inventario() {
 
     setImportProgress({ done: 0, total: toCreate.length + toUpdate.length });
 
-    // ── Batch create (1 sola conexión) ────────────────────────────────────────
     if (toCreate.length > 0) {
       try {
         const res = await fetch(`${API_URL}/api/admin/inventory/batch`, {
@@ -377,7 +364,6 @@ export default function Inventario() {
           updated += d.updated || 0;
           errors  += d.errors  || 0;
         } else {
-          // Fallback secuencial si batch no existe
           for (let i = 0; i < toCreate.length; i++) {
             const item = toCreate[i];
             setImportProgress({ done: i + 1, total: toCreate.length + toUpdate.length });
@@ -386,13 +372,11 @@ export default function Inventario() {
                 method: "POST", headers: authHeader,
                 body: JSON.stringify({ product_id: item.product_id, branch_id: item.branch_id, stock: item.stock, min_stock: item.min_stock }),
               });
-              if (r.ok) {
-                created++;
-              } else {
+              if (r.ok) { created++; }
+              else {
                 const d = await r.json().catch(() => ({}));
                 const errMsg = (d.error || "").toLowerCase();
                 if (errMsg.includes("ya tiene") || errMsg.includes("error agregando")) {
-                  // Intentar PUT automático si ya existe
                   const ex = existingByIds.get(`${item.product_id}-${item.branch_id}`);
                   if (ex) {
                     const pr = await fetch(`${API_URL}/api/admin/inventory/${ex.id}`, {
@@ -401,10 +385,7 @@ export default function Inventario() {
                     });
                     if (pr.ok) updated++; else errors++;
                   } else errors++;
-                } else {
-                  errorDetails.push(interpretError(d.error, "create", item));
-                  errors++;
-                }
+                } else { errorDetails.push(interpretError(d.error, "create", item)); errors++; }
               }
             } catch { errors++; }
             await new Promise(r => setTimeout(r, 300));
@@ -415,7 +396,6 @@ export default function Inventario() {
 
     setImportProgress({ done: toCreate.length, total: toCreate.length + toUpdate.length });
 
-    // ── Batch update (1 sola conexión) ────────────────────────────────────────
     if (toUpdate.length > 0) {
       try {
         const res = await fetch(`${API_URL}/api/admin/inventory/batch-update`, {
@@ -427,7 +407,6 @@ export default function Inventario() {
           updated += d.updated || 0;
           errors  += d.errors  || 0;
         } else {
-          // Fallback secuencial
           for (let i = 0; i < toUpdate.length; i++) {
             const item = toUpdate[i];
             setImportProgress({ done: toCreate.length + i + 1, total: toCreate.length + toUpdate.length });
@@ -465,7 +444,6 @@ export default function Inventario() {
   };
 
   // ── Edit stock ───────────────────────────────────────────────────────────────
-
   const handleSave = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -490,8 +468,6 @@ export default function Inventario() {
   };
   const getBarColor = item => item.stock === 0 ? "#fc8181" : item.stock <= item.min_stock ? "#f6ad55" : "#68d391";
   const getBarWidth = item => { const max = Math.max(item.min_stock*3, item.stock, 1); return Math.min((item.stock/max)*100, 100); };
-
-  // ── RENDER ───────────────────────────────────────────────────────────────────
 
   return (
     <div className="inv-wrap">
@@ -630,7 +606,7 @@ export default function Inventario() {
         )}
       </div>
 
-      {/* ── Modal: Export Preview ── */}
+      {/* Modal: Export Preview */}
       {showExport && (
         <div className="inv-modal-overlay" onClick={() => setShowExport(false)}>
           <div className="inv-modal inv-modal-lg" onClick={e => e.stopPropagation()}>
@@ -692,7 +668,7 @@ export default function Inventario() {
         </div>
       )}
 
-      {/* ── Modal: Edit stock ── */}
+      {/* Modal: Edit stock */}
       {editing && (
         <div className="inv-modal-overlay" onClick={() => setEditing(null)}>
           <div className="inv-modal" onClick={e => e.stopPropagation()}>
@@ -715,7 +691,7 @@ export default function Inventario() {
         </div>
       )}
 
-      {/* ── Modal: Import CSV ── */}
+      {/* Modal: Import CSV */}
       {showImport && (
         <div className="inv-modal-overlay" onClick={() => { setShowImport(false); setImportRows([]); }}>
           <div className="inv-modal inv-modal-md" onClick={e => e.stopPropagation()}>
@@ -730,12 +706,8 @@ export default function Inventario() {
                     <MdWarning/> {importDups.length} registro(s) ya existen en ese producto + sucursal
                   </div>
                   <div style={{ display:"flex", gap:8, marginTop:8 }}>
-                    <button className="inv-btn-cancel" style={{ flex:1, fontSize:".82rem", color:dupAction==="skip"?"#1e3a5f":"#2d3748", borderColor:dupAction==="skip"?"#1e3a5f":"#e2e8f0", background:dupAction==="skip"?"#ebf8ff":"white" }} onClick={() => setDupAction("skip")}>
-                      Ignorar duplicados
-                    </button>
-                    <button className="inv-btn-cancel" style={{ flex:1, fontSize:".82rem", color:dupAction==="update"?"#1e3a5f":"#2d3748", borderColor:dupAction==="update"?"#1e3a5f":"#e2e8f0", background:dupAction==="update"?"#ebf8ff":"white" }} onClick={() => setDupAction("update")}>
-                      Actualizar existentes
-                    </button>
+                    <button className="inv-btn-cancel" style={{ flex:1, fontSize:".82rem", color:dupAction==="skip"?"#1e3a5f":"#2d3748", borderColor:dupAction==="skip"?"#1e3a5f":"#e2e8f0", background:dupAction==="skip"?"#ebf8ff":"white" }} onClick={() => setDupAction("skip")}>Ignorar duplicados</button>
+                    <button className="inv-btn-cancel" style={{ flex:1, fontSize:".82rem", color:dupAction==="update"?"#1e3a5f":"#2d3748", borderColor:dupAction==="update"?"#1e3a5f":"#e2e8f0", background:dupAction==="update"?"#ebf8ff":"white" }} onClick={() => setDupAction("update")}>Actualizar existentes</button>
                   </div>
                 </div>
               )}
@@ -779,7 +751,6 @@ export default function Inventario() {
                 </div>
               </div>
             </div>
-
             {importing && importProgress && importProgress.total > 0 && (
               <div style={{ padding:"0 24px 14px" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", fontSize:".78rem", color:"#4a5568", marginBottom:5, fontWeight:600 }}>
@@ -791,11 +762,8 @@ export default function Inventario() {
                 </div>
               </div>
             )}
-
             <div className="inv-modal-footer">
-              <button className="inv-btn-cancel" onClick={() => { setShowImport(false); setImportRows([]); }} disabled={importing}>
-                Cancelar
-              </button>
+              <button className="inv-btn-cancel" onClick={() => { setShowImport(false); setImportRows([]); }} disabled={importing}>Cancelar</button>
               <button className="inv-btn-save" onClick={handleImportConfirm} disabled={importing || (importDups.length > 0 && !dupAction)}>
                 {importing ? <><MdRefresh size={16} className="spinning"/> Importando…</> : <><MdCheckCircle size={16}/> Confirmar importación</>}
               </button>
@@ -804,7 +772,7 @@ export default function Inventario() {
         </div>
       )}
 
-      {/* ── Modal: Import Summary ── */}
+      {/* Modal: Import Summary */}
       {showSummary && importResult && (
         <div className="inv-modal-overlay" onClick={() => setShowSummary(false)}>
           <div className="inv-modal inv-modal-md" onClick={e => e.stopPropagation()}>
@@ -817,88 +785,27 @@ export default function Inventario() {
                 Se procesaron <strong>{importResult.total}</strong> fila{importResult.total !== 1 ? "s" : ""} del CSV.
               </div>
               <div className="inv-result-grid">
-                <div className="inv-result-card created">
-                  <span className="inv-result-num created">{importResult.created}</span>
-                  <span className="inv-result-label">🆕 Registros creados</span>
-                </div>
-                <div className="inv-result-card updated">
-                  <span className="inv-result-num updated">{importResult.updated}</span>
-                  <span className="inv-result-label">✏️ Actualizados</span>
-                </div>
-                <div className="inv-result-card skipped">
-                  <span className="inv-result-num skipped">{importResult.skipped}</span>
-                  <span className="inv-result-label">⏭ Omitidos</span>
-                </div>
-                <div className="inv-result-card errors">
-                  <span className="inv-result-num errors">{importResult.errors}</span>
-                  <span className="inv-result-label">❌ Errores</span>
-                </div>
+                <div className="inv-result-card created"><span className="inv-result-num created">{importResult.created}</span><span>🆕 Registros creados</span></div>
+                <div className="inv-result-card updated"><span className="inv-result-num updated">{importResult.updated}</span><span>✏️ Actualizados</span></div>
+                <div className="inv-result-card skipped"><span className="inv-result-num skipped">{importResult.skipped}</span><span>⏭ Omitidos</span></div>
+                <div className="inv-result-card errors"><span className="inv-result-num errors">{importResult.errors}</span><span>❌ Errores</span></div>
               </div>
-
               {importResult.errors > 0 && (
                 <div className="inv-warn-box">
                   <strong>⚠ {importResult.errors} fila(s) no se pudieron importar.</strong>
-
                   {importResult.noMatchNames?.length > 0 && (
                     <div style={{ marginTop:10 }}>
-                      <div style={{ fontWeight:700, marginBottom:4, fontSize:".82rem" }}>
-                        🔍 {importResult.noMatchNames.length} producto(s) no encontrados en el catálogo:
-                      </div>
+                      <div style={{ fontWeight:700, marginBottom:4, fontSize:".82rem" }}>🔍 {importResult.noMatchNames.length} producto(s) no encontrados:</div>
                       <div style={{ maxHeight:100, overflowY:"auto", background:"#fffbeb", borderRadius:6, padding:"6px 10px" }}>
-                        {importResult.noMatchNames.map((n, i) => (
-                          <div key={i} style={{ fontSize:".78rem", padding:"2px 0", borderBottom:"1px solid #fbd38d", color:"#744210" }}>• {n}</div>
-                        ))}
-                      </div>
-                      <div style={{ marginTop:6, fontSize:".76rem", color:"#92400e" }}>
-                        Verifica que los nombres coincidan exactamente con los del catálogo de productos.
+                        {importResult.noMatchNames.map((n, i) => <div key={i} style={{ fontSize:".78rem", padding:"2px 0", borderBottom:"1px solid #fbd38d", color:"#744210" }}>• {n}</div>)}
                       </div>
                     </div>
                   )}
-
-                  {(() => {
-                    const errs = (importResult.errorDetails || []).filter(e => typeof e === "object");
-                    if (!errs.length) return null;
-                    const grupos = errs.reduce((acc, e) => {
-                      const k = e.tipo || "servidor";
-                      if (!acc[k]) acc[k] = { msg: e.msg, items:[] };
-                      acc[k].items.push(e.producto);
-                      return acc;
-                    }, {});
-                    const iconos = {
-                      duplicado:    { icon:"🔁", color:"#975a16", bg:"#fef5e7", border:"#f6e05e" },
-                      no_encontrado:{ icon:"🔍", color:"#9b2c2c", bg:"#fff5f5", border:"#fc8181" },
-                      inactivo:     { icon:"⛔", color:"#744210", bg:"#fffbeb", border:"#f6e05e" },
-                      sucursal:     { icon:"🏪", color:"#9b2c2c", bg:"#fff5f5", border:"#fc8181" },
-                      red:          { icon:"📡", color:"#2c5282", bg:"#ebf8ff", border:"#90cdf4" },
-                      servidor:     { icon:"⚠️", color:"#744210", bg:"#fffbeb", border:"#f6e05e" },
-                      desconocido:  { icon:"❓", color:"#718096", bg:"#f7fafc", border:"#e2e8f0" },
-                    };
-                    return (
-                      <div style={{ marginTop:12, display:"flex", flexDirection:"column", gap:8 }}>
-                        {Object.entries(grupos).map(([tipo, { msg, items }]) => {
-                          const st = iconos[tipo] || iconos.desconocido;
-                          return (
-                            <div key={tipo} style={{ background:st.bg, border:`1px solid ${st.border}`, borderRadius:8, padding:"10px 12px" }}>
-                              <div style={{ fontWeight:700, fontSize:".82rem", color:st.color, marginBottom:4 }}>
-                                {st.icon} {msg} <span style={{ fontWeight:400 }}>({items.length} producto{items.length>1?"s":""})</span>
-                              </div>
-                              <div style={{ maxHeight:72, overflowY:"auto" }}>
-                                {items.slice(0,5).map((p,i) => <div key={i} style={{ fontSize:".76rem", color:st.color, padding:"1px 0" }}>• {p}</div>)}
-                                {items.length > 5 && <div style={{ fontSize:".74rem", color:"#a0aec0", marginTop:2 }}>…y {items.length-5} más</div>}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
                 </div>
               )}
             </div>
             <div className="inv-modal-footer">
-              <button className="inv-btn-save" onClick={() => setShowSummary(false)}>
-                <MdCheckCircle size={16} /> Cerrar
-              </button>
+              <button className="inv-btn-save" onClick={() => setShowSummary(false)}><MdCheckCircle size={16} /> Cerrar</button>
             </div>
           </div>
         </div>

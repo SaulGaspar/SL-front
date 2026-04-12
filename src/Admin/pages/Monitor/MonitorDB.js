@@ -1,567 +1,406 @@
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  MdRefresh, MdStorage, MdSpeed, MdCheckCircle, MdWarning,
-  MdError, MdInfo, MdTableChart, MdMemory, MdQueryStats,
-  MdSignalCellularAlt, MdTimer, MdTune, MdDataUsage,
-  MdLock, MdBolt, MdCircle, MdSearch,
-} from "react-icons/md";
 
 const API_URL = "https://sl-back.vercel.app";
 const auth = () => ({ Authorization: `Bearer ${localStorage.getItem("token")}` });
+const hdrs = () => ({ ...auth(), "Content-Type": "application/json" });
 
-/* ─── CSS — tema blanco limpio ─────────────────────────────────────── */
-const S = `
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+/* ── Formatters ── */
+const safeNum = v => (isFinite(Number(v)) ? Number(v) : 0);
+const fmtNum  = n => safeNum(n).toLocaleString("es-MX");
+const fmtKB   = kb => { const v = safeNum(kb); if (!v) return "0 KB"; if (v >= 1024*1024) return `${(v/1024/1024).toFixed(2)} GB`; if (v >= 1024) return `${(v/1024).toFixed(2)} MB`; return `${v.toFixed(1)} KB`; };
+const fmtMB   = mb => { const v = safeNum(mb); return v >= 1024 ? `${(v/1024).toFixed(2)} GB` : `${v} MB`; };
+const fmtSec  = s  => { const v = safeNum(s); if (!v) return "0ms"; if (v >= 3600) return `${(v/3600).toFixed(1)}h`; if (v >= 60) return `${(v/60).toFixed(1)}m`; if (v >= 1) return `${v.toFixed(2)}s`; return `${(v*1000).toFixed(0)}ms`; };
+const fmtUp   = s  => { const v = safeNum(s); if (!v) return "—"; const d = Math.floor(v/86400), h = Math.floor((v%86400)/3600), m = Math.floor((v%3600)/60); return d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m}m` : `${m}m`; };
+const fmtDate = v  => v ? new Date(v).toLocaleString("es-MX", {dateStyle:"short",timeStyle:"short"}) : "—";
+const fmtBytes= b  => { const v = safeNum(b); if (!v) return "—"; if (v < 1024) return `${v} B`; if (v < 1048576) return `${(v/1024).toFixed(1)} KB`; return `${(v/1048576).toFixed(2)} MB`; };
+const safePct = (a,b) => { const r = safeNum(b) > 0 ? (safeNum(a)/safeNum(b))*100 : 0; return isFinite(r) ? Math.min(r,100) : 0; };
 
-.mdb * { box-sizing: border-box; }
-.mdb, .mdb * { font-family: 'Inter', sans-serif; }
+/* ══════════════════════════════════════════════
+   ESTILOS — idénticos al AdminLayout
+   ══════════════════════════════════════════════ */
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-.mdb-body  { display:flex; flex-direction:column; gap:20px; }
-.mdb-grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
-.mdb-grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-.mdb-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.mon * { box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.mon { background: #f5f7fa; min-height: 100vh; color: #1e3a5f; }
 
-/* ── KPI card ── */
-.mdb-stat {
-  background:#fff; border:1px solid #e5e7eb; border-radius:12px;
-  padding:18px 20px; display:flex; align-items:flex-start; gap:14px;
-  box-shadow:0 1px 3px rgba(0,0,0,.06); transition:box-shadow .2s, transform .15s;
+/* ── Banner (mismo look que el topbar del AdminLayout) ── */
+.mon-banner {
+  background: linear-gradient(180deg, #1e3a5f 0%, #2c5282 100%);
+  padding: 16px 24px; display: flex; align-items: center;
+  justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
 }
-.mdb-stat:hover { box-shadow:0 4px 12px rgba(0,0,0,.10); transform:translateY(-2px); }
-.mdb-stat-ico {
-  width:44px; height:44px; border-radius:10px;
-  display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1.3rem;
-}
-.mdb-stat-ico.blue   { background:#eff6ff; color:#2563eb; }
-.mdb-stat-ico.green  { background:#f0fdf4; color:#16a34a; }
-.mdb-stat-ico.yellow { background:#fffbeb; color:#d97706; }
-.mdb-stat-ico.red    { background:#fef2f2; color:#dc2626; }
-.mdb-stat-ico.purple { background:#f5f3ff; color:#7c3aed; }
-.mdb-stat-ico.teal   { background:#f0fdfa; color:#0d9488; }
-.mdb-stat-ico.coral  { background:#fff7ed; color:#ea580c; }
-.mdb-stat-info { display:flex; flex-direction:column; gap:3px; min-width:0; }
-.mdb-stat-label { font-size:.72rem; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.6px; }
-.mdb-stat-val   { font-family:'JetBrains Mono',monospace; font-size:1.75rem; font-weight:700; color:#111827; line-height:1.1; }
-.mdb-stat-val.sm { font-size:1.2rem; }
-.mdb-stat-sub   { font-size:.73rem; color:#9ca3af; margin-top:1px; }
+.mon-banner-left { display: flex; align-items: center; gap: 12px; }
+.mon-banner-icon { width: 40px; height: 40px; background: rgba(255,255,255,.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+.mon-banner-title { color: #fff; font-size: 1.2rem; font-weight: 700; margin: 0; }
+.mon-banner-sub   { color: rgba(255,255,255,.65); font-size: .78rem; margin: 2px 0 0; }
+.mon-banner-right { display: flex; align-items: center; gap: 10px; }
+.mon-pill { background: rgba(57,211,83,.2); border: 1px solid rgba(57,211,83,.4); color: #39d353; border-radius: 20px; padding: 5px 14px; font-size: .78rem; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.mon-dot { width: 7px; height: 7px; border-radius: 50%; background: #39d353; animation: mPulse 2s ease-in-out infinite; }
+@keyframes mPulse { 0%,100%{opacity:1;box-shadow:0 0 0 #39d353} 50%{opacity:.5;box-shadow:0 0 8px #39d353} }
 
-/* ── Panel / card ── */
-.mdb-panel {
-  background:#fff; border:1px solid #e5e7eb; border-radius:12px;
-  overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06);
+/* ── Tabs (mismo estilo que las páginas del admin) ── */
+.mon-tabs { background: #fff; border-bottom: 2px solid #e2e8f0; padding: 0 24px; display: flex; gap: 0; overflow-x: auto; }
+.mon-tab { padding: 14px 18px; border: none; background: none; cursor: pointer; font-family: inherit; font-size: .88rem; font-weight: 600; color: #718096; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all .15s; white-space: nowrap; }
+.mon-tab:hover { color: #2c5282; }
+.mon-tab.active { color: #2c5282; border-bottom-color: #2c5282; }
+
+/* ── Cuerpo ── */
+.mon-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+/* ── Grids ── */
+.g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+.g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+/* ── Stat cards ── */
+.stat {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+  padding: 18px 20px; display: flex; align-items: flex-start; gap: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05); transition: .2s;
+  position: relative; overflow: hidden;
 }
-.mdb-panel-head {
-  padding:14px 18px; border-bottom:1px solid #f3f4f6;
-  display:flex; align-items:center; justify-content:space-between;
-}
-.mdb-panel-title { font-size:.8rem; font-weight:700; color:#374151; display:flex; align-items:center; gap:8px; }
-.mdb-panel-title svg { color:#2563eb; }
-.mdb-panel-body { padding:16px 18px; }
-.mdb-badge {
-  font-family:'JetBrains Mono',monospace; font-size:.68rem; font-weight:600;
-  padding:3px 10px; border-radius:20px; background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe;
-}
+.stat::after { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--stripe,#2c5282); border-radius:12px 12px 0 0; }
+.stat:hover { box-shadow: 0 6px 20px rgba(0,0,0,.1); transform: translateY(-2px); }
+.stat-ico { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.2rem; }
+.ic-blue   { background:#e8f0fe; color:#2c5282; }
+.ic-green  { background:#e6f4ea; color:#1e7e34; }
+.ic-yellow { background:#fff8e1; color:#c9961a; }
+.ic-red    { background:#fce8e6; color:#c0392b; }
+.ic-purple { background:#f3e5f5; color:#6d28d9; }
+.ic-teal   { background:#e0f2f1; color:#0d7377; }
+.stat-lbl { font-size: .7rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: .6px; }
+.stat-val { font-size: 1.75rem; font-weight: 800; color: #1e3a5f; line-height: 1.1; }
+.stat-val.sm { font-size: 1.1rem; }
+.stat-sub { font-size: .75rem; color: #a0aec0; margin-top: 2px; }
+
+/* ── Panels ── */
+.panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+.panel-head { padding: 14px 20px; border-bottom: 1px solid #f0f4f8; display: flex; align-items: center; justify-content: space-between; }
+.panel-title { font-size: .9rem; font-weight: 700; color: #1e3a5f; display: flex; align-items: center; gap: 8px; }
+.panel-body { padding: 18px 20px; }
+.badge { font-size: .72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: #e8f0fe; color: #2c5282; border: 1px solid #c3d6f5; }
+
+/* ── Tablas ── */
+.tbl { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.tbl th { padding: 10px 14px; text-align: left; font-size: .68rem; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: .5px; background: linear-gradient(180deg,#1e3a5f,#2c5282); white-space: nowrap; }
+.tbl td { padding: 11px 14px; border-bottom: 1px solid #f0f4f8; color: #374151; vertical-align: middle; }
+.tbl tbody tr:hover td { background: #f8fafc; }
+.tbl tbody tr:last-child td { border-bottom: none; }
+.tscroll { overflow-x: auto; }
+
+/* ── Progress bars ── */
+.bar-wrap  { display: flex; align-items: center; gap: 8px; }
+.bar-track { flex: 1; height: 8px; background: #f0f4f8; border-radius: 4px; overflow: hidden; min-width: 60px; }
+.bar-fill  { height: 100%; border-radius: 4px; transition: width .5s; }
+.bar-pct   { font-size: .7rem; color: #a0aec0; min-width: 32px; text-align: right; }
 
 /* ── KV rows ── */
-.mdb-kv { display:flex; flex-direction:column; gap:6px; }
-.mdb-kv-row {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:8px 12px; background:#f9fafb; border-radius:8px; border:1px solid #f3f4f6;
-}
-.mdb-kv-key { font-size:.78rem; color:#6b7280; }
-.mdb-kv-val { font-family:'JetBrains Mono',monospace; font-size:.8rem; color:#111827; font-weight:600; }
-
-/* ── Table ── */
-.mdb-table { width:100%; border-collapse:collapse; font-size:.8rem; }
-.mdb-table th {
-  padding:10px 14px; text-align:left; font-size:.68rem; font-weight:700;
-  color:#6b7280; text-transform:uppercase; letter-spacing:.5px;
-  border-bottom:2px solid #f3f4f6; white-space:nowrap; background:#f9fafb;
-}
-.mdb-table td { padding:10px 14px; border-bottom:1px solid #f9fafb; color:#374151; vertical-align:middle; }
-.mdb-table tbody tr:hover td { background:#f9fafb; }
-.mdb-table tbody tr:last-child td { border-bottom:none; }
-.mdb-mono { font-family:'JetBrains Mono',monospace; }
-
-/* ── Inline bar ── */
-.mdb-bw { display:flex; align-items:center; gap:8px; }
-.mdb-bt { flex:1; height:6px; background:#e5e7eb; border-radius:3px; overflow:hidden; min-width:50px; }
-.mdb-bf { height:100%; border-radius:3px; transition:width .4s; }
-.mdb-bp { font-family:'JetBrains Mono',monospace; font-size:.68rem; color:#9ca3af; min-width:32px; text-align:right; }
-
-/* ── Mini bar chart ── */
-.mdb-bchart { display:flex; align-items:flex-end; gap:4px; }
-.mdb-bcol   { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; justify-content:flex-end; }
-.mdb-bbar   { width:100%; border-radius:3px 3px 0 0; min-height:2px; }
-.mdb-blbl   { font-size:.55rem; color:#9ca3af; white-space:nowrap; }
-
-/* ── Checks ── */
-.mdb-checks { display:flex; flex-direction:column; gap:6px; }
-.mdb-check {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:10px 14px; border-radius:8px; border:1px solid #f3f4f6; background:#f9fafb;
-  transition:border-color .15s;
-}
-.mdb-check:hover { border-color:#bfdbfe; background:#fff; }
-.mdb-check-left { display:flex; align-items:center; gap:10px; }
-.mdb-check-name { font-size:.83rem; color:#374151; }
-.mdb-cbadge {
-  font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:700;
-  padding:3px 12px; border-radius:20px;
-}
-.mdb-cbadge.ok    { background:#dcfce7; color:#15803d; }
-.mdb-cbadge.warn  { background:#fef9c3; color:#a16207; }
-.mdb-cbadge.error { background:#fee2e2; color:#b91c1c; }
-.mdb-cbadge.info  { background:#dbeafe; color:#1d4ed8; }
-
-/* ── Ring ── */
-.mdb-ring { position:relative; display:inline-flex; align-items:center; justify-content:center; }
-.mdb-ring svg { transform:rotate(-90deg); }
-.mdb-ring-lbl { position:absolute; text-align:center; line-height:1.2; }
-
-/* ── Tabs ── */
-.mdb-tabs { display:flex; gap:0; border-bottom:2px solid #f3f4f6; overflow-x:auto; }
-.mdb-tab {
-  padding:11px 20px; border:none; background:none; cursor:pointer;
-  font-family:'Inter',sans-serif; font-size:.85rem; font-weight:600;
-  color:#9ca3af; border-bottom:2px solid transparent; margin-bottom:-2px;
-  transition:all .15s; white-space:nowrap;
-}
-.mdb-tab:hover { color:#374151; }
-.mdb-tab.active { color:#2563eb; border-bottom-color:#2563eb; }
-.mdb-tab.new-tab { color:#d97706; }
-.mdb-tab.new-tab.active { color:#d97706; border-bottom-color:#d97706; }
-
-/* ── Alerts ── */
-.mdb-alert-ok   { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 14px; font-size:.82rem; color:#15803d; }
-.mdb-alert-warn { background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:10px 14px; font-size:.82rem; color:#92400e; }
-.mdb-alert-err  { background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px 14px; font-size:.82rem; color:#b91c1c; }
-.mdb-alert-info { background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 14px; font-size:.82rem; color:#1d4ed8; }
+.kv { display: flex; flex-direction: column; gap: 6px; }
+.kv-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 13px; background: #f8fafc; border-radius: 8px; border: 1px solid #f0f4f8; }
+.kv-k { font-size: .84rem; color: #718096; }
+.kv-v { font-size: .88rem; color: #1e3a5f; font-weight: 700; }
 
 /* ── Tags ── */
-.tag { display:inline-block; padding:2px 8px; border-radius:12px; font-size:.69rem; font-weight:700; font-family:'JetBrains Mono',monospace; }
-.tag-engine { background:#f3f4f6; color:#374151; }
-.tag-ok     { background:#dcfce7; color:#15803d; }
-.tag-warn   { background:#fef9c3; color:#a16207; }
-.tag-err    { background:#fee2e2; color:#b91c1c; }
-.tag-info   { background:#dbeafe; color:#1d4ed8; }
-.tag-unique { background:#dcfce7; color:#15803d; }
-.tag-lock   { background:#fce7f3; color:#be185d; }
-.tag-run    { background:#dcfce7; color:#15803d; }
-.tag-sleep  { background:#f3f4f6; color:#6b7280; }
-.tag-wait   { background:#fef9c3; color:#a16207; }
+.tag { display: inline-block; padding: 2px 9px; border-radius: 12px; font-size: .72rem; font-weight: 700; }
+.t-ok    { background: #e6f4ea; color: #1e7e34; }
+.t-warn  { background: #fff8e1; color: #c9961a; }
+.t-err   { background: #fce8e6; color: #c0392b; }
+.t-info  { background: #e8f0fe; color: #2c5282; }
+.t-pk    { background: #fce4ec; color: #ad1457; }
 
-/* ── Loading ── */
-.mdb-loading { display:flex; align-items:center; justify-content:center; min-height:240px; gap:12px; color:#9ca3af; font-size:.9rem; }
-.spinning { animation:spin .9s linear infinite; }
-@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-@keyframes pulse2 { 0%,100%{opacity:1} 50%{opacity:.3} }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+/* ── Alertas ── */
+.a-ok   { background: #e6f4ea; border: 1px solid #a8d5b5; border-radius: 8px; padding: 12px 16px; font-size: .84rem; color: #1e7e34; }
+.a-warn { background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; padding: 12px 16px; font-size: .84rem; color: #c9961a; }
+.a-err  { background: #fce8e6; border: 1px solid #ef9a9a; border-radius: 8px; padding: 12px 16px; font-size: .84rem; color: #c0392b; }
+.a-info { background: #e8f0fe; border: 1px solid #c3d6f5; border-radius: 8px; padding: 12px 16px; font-size: .84rem; color: #2c5282; }
 
-/* ── Donut chart ── */
-.mdb-donut { position:relative; display:inline-flex; align-items:center; justify-content:center; }
-.mdb-donut svg { transform:rotate(-90deg); }
-.mdb-donut-lbl { position:absolute; text-align:center; }
+/* ── H-Bar chart ── */
+.chart-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.chart-lbl { width: 120px; flex-shrink: 0; font-size: .75rem; color: #374151; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chart-area { flex: 1; height: 24px; background: #f0f4f8; border-radius: 6px; overflow: hidden; position: relative; }
+.chart-inner { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 8px; transition: width .5s; min-width: 4px; }
+.chart-vl { font-size: .72rem; font-weight: 700; color: #fff; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.chart-vl.out { color: #374151; padding-left: 4px; position: absolute; right: 0; }
+.chart-rv { width: 60px; flex-shrink: 0; font-size: .72rem; color: #a0aec0; text-align: right; }
 
-/* ── Section title ── */
-.mdb-section-title { font-size:.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.6px; margin-bottom:10px; }
+/* ── Donut ── */
+.donut { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.donut svg { transform: rotate(-90deg); }
+.donut-lbl { position: absolute; text-align: center; pointer-events: none; }
 
-@media(max-width:1024px){ .mdb-grid4{grid-template-columns:1fr 1fr;} .mdb-grid3{grid-template-columns:1fr 1fr;} }
-@media(max-width:640px) { .mdb-grid4,.mdb-grid3,.mdb-grid2{grid-template-columns:1fr;} }
+/* ── Botones ── */
+.btn-primary {
+  background: linear-gradient(135deg,#1e3a5f,#2c5282); color: #fff; border: none; border-radius: 8px;
+  padding: 10px 20px; font-family: inherit; font-weight: 700; font-size: .88rem;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+  box-shadow: 0 4px 14px rgba(44,82,130,.3); transition: .18s;
+}
+.btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.btn-ghost {
+  background: #f5f7fa; color: #374151; border: 1.5px solid #e2e8f0; border-radius: 8px;
+  padding: 9px 16px; font-family: inherit; font-weight: 600; font-size: .86rem;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 7px; transition: .15s;
+}
+.btn-ghost:hover { background: #edf2f7; }
+.btn-green {
+  background: linear-gradient(135deg,#1e7e34,#27ae60); color: #fff; border: none; border-radius: 8px;
+  padding: 10px 20px; font-family: inherit; font-weight: 700; font-size: .88rem;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+  box-shadow: 0 4px 14px rgba(30,126,52,.25); transition: .18s;
+}
+.btn-green:hover { transform: translateY(-1px); }
+.btn-green:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.icon-btn { padding: 7px 11px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .8rem; font-family: inherit; font-weight: 600; transition: all .15s; border: 1.5px solid; background: none; }
+.icon-btn:disabled { opacity: .4; cursor: not-allowed; }
+.ib-blue  { border-color: #c3d6f5; background: #e8f0fe; color: #2c5282; }
+.ib-green { border-color: #a8d5b5; background: #e6f4ea; color: #1e7e34; }
+.ib-red   { border-color: #ef9a9a; background: #fce8e6; color: #c0392b; }
+
+/* ── Misc ── */
+.loading { display: flex; align-items: center; justify-content: center; min-height: 220px; gap: 12px; color: #a0aec0; font-size: .9rem; }
+.spinning { animation: spin .8s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.sec-title { font-size: .7rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 10px; }
+.mono { font-family: 'Consolas', 'Courier New', monospace; font-size: .76rem; background: #1e293b; color: #7dd3fc; padding: 3px 8px; border-radius: 5px; }
+
+/* ── Toast ── */
+.toast { position: fixed; bottom: 28px; right: 28px; z-index: 9999; padding: 13px 22px; border-radius: 12px; color: #fff; font-family: inherit; font-size: .86rem; font-weight: 700; box-shadow: 0 8px 28px rgba(0,0,0,.22); animation: slideIn .3s ease; display: flex; align-items: center; gap: 9px; }
+.toast.ok  { background: linear-gradient(135deg,#1e7e34,#27ae60); }
+.toast.err { background: linear-gradient(135deg,#c0392b,#e74c3c); }
+@keyframes slideIn { from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1} }
+
+/* ── Overlay / Modal ── */
+.overlay { position: fixed; inset: 0; background: rgba(15,31,61,.55); backdrop-filter: blur(4px); z-index: 4000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.modal { background: #fff; border-radius: 16px; width: 100%; max-width: 420px; padding: 32px; text-align: center; box-shadow: 0 28px 64px rgba(0,0,0,.25); animation: slideIn .22s ease; }
+.modal h3 { margin: 0 0 8px; color: #1e3a5f; font-size: 1.1rem; font-weight: 800; }
+.modal p  { margin: 0 0 24px; color: #718096; font-size: .88rem; line-height: 1.55; }
+.modal-actions { display: flex; gap: 10px; justify-content: center; }
+
+/* ── Sub-tabs (Respaldos) ── */
+.sub-tabs { display: flex; gap: 0; background: #f5f7fa; border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px; margin-bottom: 20px; width: fit-content; }
+.sub-tab { padding: 8px 18px; border-radius: 8px; border: none; background: none; font-family: inherit; font-size: .84rem; font-weight: 600; color: #718096; cursor: pointer; transition: .15s; }
+.sub-tab.active { background: linear-gradient(135deg,#1e3a5f,#2c5282); color: #fff; box-shadow: 0 2px 8px rgba(44,82,130,.3); }
+
+/* ── Filter chips ── */
+.chips { display: flex; gap: 6px; }
+.chip { padding: 6px 14px; border-radius: 20px; border: 1.5px solid #e2e8f0; background: #fff; font-size: .76rem; font-weight: 700; color: #718096; cursor: pointer; transition: .15s; font-family: inherit; }
+.chip:hover { border-color: #2c5282; color: #2c5282; }
+.chip.active { background: linear-gradient(135deg,#1e3a5f,#2c5282); color: #fff; border-color: #2c5282; }
+
+/* ── Freq cards ── */
+.freq-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(130px,1fr)); gap: 10px; margin-bottom: 18px; }
+.freq-card { border: 2px solid #e2e8f0; border-radius: 12px; padding: 14px; cursor: pointer; transition: .15s; background: #fafafa; text-align: center; }
+.freq-card:hover, .freq-card.active { border-color: #2c5282; background: #e8f0fe; }
+.freq-card-icon { width: 34px; height: 34px; border-radius: 9px; background: #e2e8f0; color: #718096; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; transition: .15s; }
+.freq-card.active .freq-card-icon { background: linear-gradient(135deg,#1e3a5f,#2c5282); color: #fff; }
+.freq-card-label { font-size: .8rem; font-weight: 700; color: #1e3a5f; }
+.freq-card-desc  { font-size: .68rem; color: #a0aec0; margin-top: 2px; }
+
+/* ── Day/Hours btns ── */
+.day-btns  { display: flex; gap: 6px; flex-wrap: wrap; }
+.day-btn   { padding: 7px 12px; border-radius: 8px; border: 1.5px solid #e2e8f0; background: #fafafa; font-size: .76rem; font-weight: 700; color: #718096; cursor: pointer; transition: .15s; font-family: inherit; }
+.day-btn.active { background: linear-gradient(135deg,#1e3a5f,#2c5282); color: #fff; border-color: #2c5282; }
+.hrs-btn   { padding: 8px 16px; border-radius: 8px; border: 1.5px solid #e2e8f0; background: #fafafa; font-size: .8rem; font-weight: 700; cursor: pointer; transition: .15s; font-family: inherit; color: #718096; }
+.hrs-btn.active { background: linear-gradient(135deg,#1e3a5f,#2c5282); color: #fff; border-color: #2c5282; }
+
+/* ── Time input ── */
+.time-input { padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: .88rem; color: #1e3a5f; background: #fff; font-family: inherit; width: 100%; transition: .15s; }
+.time-input:focus { outline: none; border-color: #2c5282; box-shadow: 0 0 0 3px rgba(44,82,130,.1); }
+
+/* ── Backup badges ── */
+.bk-auto   { background: #ede9fe; color: #5b21b6; padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+.bk-manual { background: #e6f4ea; color: #14532d; padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+.bk-sub    { background: #fff8e1; color: #78350f; font-size: .68rem; padding: 2px 8px; border-radius: 10px; margin-left: 4px; font-weight: 700; }
+.bk-fn { font-weight: 700; color: #1e3a5f; font-size: .82rem; font-family: 'Consolas', monospace; }
+.bk-size { background: #f1f5f9; padding: 3px 10px; border-radius: 6px; font-size: .76rem; color: #475569; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+
+/* ── Spinner overlay ── */
+.spin-overlay { position: fixed; inset: 0; background: rgba(15,31,61,.65); backdrop-filter: blur(6px); z-index: 5000; display: flex; align-items: center; justify-content: center; }
+.spin-box { background: #fff; border-radius: 20px; padding: 40px 52px; text-align: center; box-shadow: 0 28px 64px rgba(0,0,0,.3); }
+.spin-box h3 { margin: 18px 0 8px; color: #1e3a5f; font-size: 1.15rem; font-weight: 800; }
+.spin-box p  { margin: 0; color: #718096; font-size: .88rem; }
+.spinner { width: 52px; height: 52px; border: 5px solid #e2e8f0; border-top-color: #2c5282; border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto; }
+
+/* ── Responsive ── */
+@media(max-width:1100px){ .g4{grid-template-columns:1fr 1fr;} .g3{grid-template-columns:1fr 1fr;} }
+@media(max-width:640px)  { .g4,.g3,.g2{grid-template-columns:1fr;} }
 `;
 
-/* ─── Helpers — defensivos contra NaN/null/undefined ──────────────── */
-const safeNum  = v => (isFinite(Number(v)) ? Number(v) : 0);
-const fmtNum   = n => safeNum(n).toLocaleString("es-MX");
-const fmtKB    = kb => {
-  const v = safeNum(kb);
-  if (v === 0) return "0 KB";
-  if (v >= 1024 * 1024) return `${(v/1024/1024).toFixed(2)} GB`;
-  if (v >= 1024)        return `${(v/1024).toFixed(2)} MB`;
-  return `${v.toFixed(1)} KB`;
-};
-const fmtSec  = s => {
-  const v = safeNum(s);
-  if (v === 0) return "0ms";
-  if (v >= 3600) return `${(v/3600).toFixed(1)}h`;
-  if (v >= 60)   return `${(v/60).toFixed(1)}m`;
-  if (v >= 1)    return `${v.toFixed(2)}s`;
-  return `${(v*1000).toFixed(1)}ms`;
-};
-const fmtUptime = s => {
-  const v = safeNum(s);
-  if (!v) return "—";
-  const d=Math.floor(v/86400), h=Math.floor((v%86400)/3600), m=Math.floor((v%3600)/60);
-  return d>0?`${d}d ${h}h ${m}m`:h>0?`${h}h ${m}m`:`${m}m`;
-};
-const fmtDate  = v => v ? new Date(v).toLocaleString("es-MX",{dateStyle:"short",timeStyle:"short"}) : "—";
-const safePct  = (a, b) => { const r = safeNum(b) > 0 ? (safeNum(a)/safeNum(b))*100 : 0; return isFinite(r) ? r : 0; };
+const DIAS = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 
-function statusIcon(s) {
-  if (s==="ok")    return <MdCheckCircle size={16} style={{color:"#16a34a"}} />;
-  if (s==="warn")  return <MdWarning     size={16} style={{color:"#d97706"}} />;
-  if (s==="error") return <MdError       size={16} style={{color:"#dc2626"}} />;
-  return                  <MdInfo        size={16} style={{color:"#2563eb"}} />;
+/* ── Micro-components ── */
+function Stat({ label, value, sub, color = "blue", icon }) {
+  const STRIPE = { blue:"#2c5282", green:"#1e7e34", yellow:"#c9961a", red:"#c0392b", purple:"#6d28d9", teal:"#0d7377" };
+  return (
+    <div className="stat" style={{"--stripe": STRIPE[color] || STRIPE.blue}}>
+      <div className={`stat-ico ic-${color}`}>{icon}</div>
+      <div style={{display:"flex",flexDirection:"column",gap:2}}>
+        <div className="stat-lbl">{label}</div>
+        <div className={`stat-val${String(value).length > 9 ? " sm" : ""}`}>{value}</div>
+        {sub && <div className="stat-sub">{sub}</div>}
+      </div>
+    </div>
+  );
 }
 
-/* ── Donut chart ── */
-function Donut({ segments=[], size=120, stroke=14, centerLabel, centerSub }) {
-  const r = (size - stroke) / 2;
-  const circ = 2 * Math.PI * r;
-  const total = segments.reduce((a, s) => a + safeNum(s.value), 0) || 1;
+function HBar({ data = [], colorFn, maxVal, lw = 120 }) {
+  const max = maxVal || Math.max(...data.map(d => safeNum(d.value)), 1);
+  return (
+    <div>
+      {data.map((d, i) => {
+        const pct = safePct(d.value, max);
+        const color = colorFn ? colorFn(d, i) : d.color || "#2c5282";
+        const inside = pct > 25;
+        return (
+          <div key={`${d.label}-${i}`} className="chart-row">
+            <div className="chart-lbl" style={{width:lw}} title={d.label}>{d.label}</div>
+            <div className="chart-area">
+              <div className="chart-inner" style={{width:`${pct}%`,background:color}}>
+                {inside && <span className="chart-vl">{d.displayVal || fmtNum(d.value)}</span>}
+              </div>
+              {!inside && <span className="chart-vl out">{d.displayVal || fmtNum(d.value)}</span>}
+            </div>
+            {d.sub && <div className="chart-rv">{d.sub}</div>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Donut({ segments = [], size = 110, stroke = 14, centerLabel, centerSub }) {
+  const r = size/2 - stroke/2, circ = 2*Math.PI*r;
+  const total = segments.reduce((a,s) => a + safeNum(s.value), 0) || 1;
   let offset = 0;
   return (
-    <div className="mdb-donut" style={{ width:size, height:size }}>
+    <div className="donut" style={{width:size,height:size}}>
       <svg width={size} height={size}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#f3f4f6" strokeWidth={stroke}/>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#f0f4f8" strokeWidth={stroke}/>
         {segments.map((seg, i) => {
-          const pct = safeNum(seg.value) / total;
-          const dash = pct * circ;
-          const gap  = circ - dash;
-          const el = (
-            <circle key={i} cx={size/2} cy={size/2} r={r} fill="none"
-              stroke={seg.color} strokeWidth={stroke}
-              strokeDasharray={`${dash} ${gap}`}
-              strokeDashoffset={-offset}
-              strokeLinecap="butt"/>
-          );
-          offset += dash;
-          return el;
+          const pct = safeNum(seg.value)/total, dash = pct*circ, gap = circ-dash;
+          const el = <circle key={i} cx={size/2} cy={size/2} r={r} fill="none" stroke={seg.color} strokeWidth={stroke} strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-offset}/>;
+          offset += dash; return el;
         })}
       </svg>
-      <div className="mdb-donut-lbl">
-        {centerLabel && <div style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:700,fontSize:".9rem",color:"#111827"}}>{centerLabel}</div>}
-        {centerSub   && <div style={{fontSize:".62rem",color:"#9ca3af",marginTop:1}}>{centerSub}</div>}
+      <div className="donut-lbl">
+        {centerLabel && <div style={{fontWeight:800,fontSize:".9rem",color:"#1e3a5f"}}>{centerLabel}</div>}
+        {centerSub   && <div style={{fontSize:".65rem",color:"#a0aec0",marginTop:1}}>{centerSub}</div>}
       </div>
     </div>
   );
 }
 
-/* ── Ring gauge ── */
-function Ring({ pct=0, color="#2563eb", size=90, stroke=10, label }) {
-  const safe = isFinite(pct) ? pct : 0;
-  const r = (size-stroke)/2, circ = 2*Math.PI*r;
-  const offset = circ - (safe/100)*circ;
-  return (
-    <div className="mdb-ring" style={{width:size,height:size}}>
-      <svg width={size} height={size}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#f3f4f6" strokeWidth={stroke}/>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
-          strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
-          style={{transition:"stroke-dashoffset .5s ease"}}/>
-      </svg>
-      <div className="mdb-ring-lbl">
-        <div style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:700,fontSize:".8rem",color}}>{Math.round(safe)}%</div>
-        {label&&<div style={{fontSize:".58rem",color:"#9ca3af",marginTop:1}}>{label}</div>}
-      </div>
-    </div>
-  );
+function Toast({ toast }) {
+  if (!toast) return null;
+  return <div className={`toast ${toast.type}`}>{toast.type === "ok" ? "✓" : "⚠"} {toast.msg}</div>;
 }
 
-/* ── Inline bar ── */
-function Bar({ pct, color="#2563eb" }) {
-  const safe = isFinite(pct) ? Math.min(pct,100) : 0;
-  return (
-    <div className="mdb-bw">
-      <div className="mdb-bt"><div className="mdb-bf" style={{width:`${safe}%`,background:color}}/></div>
-      <div className="mdb-bp">{Math.round(safe)}%</div>
-    </div>
-  );
-}
-
-/* ── Legend row ── */
-function Legend({ items=[] }) {
-  return (
-    <div style={{display:"flex",gap:16,flexWrap:"wrap",marginTop:8}}>
-      {items.map(it=>(
-        <div key={it.label} style={{display:"flex",alignItems:"center",gap:6}}>
-          <span style={{width:10,height:10,borderRadius:2,background:it.color,display:"inline-block",flexShrink:0}}/>
-          <span style={{fontSize:".75rem",color:"#6b7280"}}>{it.label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ── KPI stat card ── */
-function Stat({ label, value, sub, color="blue", icon }) {
-  return (
-    <div className="mdb-stat">
-      <div className={`mdb-stat-ico ${color}`}>{icon}</div>
-      <div className="mdb-stat-info">
-        <div className="mdb-stat-label">{label}</div>
-        <div className={`mdb-stat-val${String(value).length>9?" sm":""}`}>{value}</div>
-        {sub && <div className="mdb-stat-sub">{sub}</div>}
-      </div>
-    </div>
-  );
-}
-
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   TAB OVERVIEW
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ════════════════════════════════════════════
+   TAB: OVERVIEW
+   ════════════════════════════════════════════ */
 function TabOverview({ overview }) {
-  const connPct = safePct(overview.server.connections, overview.server.max_connections);
   const tables  = overview.tables || [];
-  const maxSize = Math.max(...tables.map(t=>safeNum(t.size_kb)), 1);
-
-  const connColor = connPct>80?"#dc2626":connPct>50?"#d97706":"#2563eb";
-
+  const connPct = safePct(overview.server.connections, overview.server.max_connections);
+  const PAL     = ["#2c5282","#6d28d9","#0d7377","#c9961a","#c0392b","#1e7e34","#f97316","#8b5cf6","#0ea5e9","#ec4899"];
+  const topSize = [...tables].sort((a,b) => safeNum(b.size_kb)-safeNum(a.size_kb)).slice(0,10);
+  const topRows = [...tables].sort((a,b) => safeNum(b.rows)-safeNum(a.rows)).slice(0,10);
   return (
     <>
-      <div className="mdb-grid4">
-        <Stat label="Tamaño total BD"   value={`${overview.database.size_mb} MB`} sub={`${overview.database.data_mb} datos + ${overview.database.index_mb} índices MB`} color="blue"   icon={<MdStorage/>}/>
-        <Stat label="Tablas"            value={overview.database.tables}           sub="en la base de datos"                color="green"  icon={<MdTableChart/>}/>
-        <Stat label="Uptime servidor"   value={fmtUptime(overview.server.uptime_seconds)} sub="desde último reinicio"      color="teal"   icon={<MdTimer/>}/>
-        <Stat label="Queries totales"   value={fmtNum(overview.server.total_queries)} sub={`${overview.server.slow_queries} lentas`} color="yellow" icon={<MdSpeed/>}/>
+      <div className="g4">
+        <Stat label="Tablas en BD"      value={overview.database.tables}    sub={`MySQL ${overview.database.version}`}                          color="blue"   icon="🗄️"/>
+        <Stat label="Conexiones activas" value={overview.server.connections} sub={`de ${overview.server.max_connections} máx — ${Math.round(connPct)}% uso`} color={connPct>70?"yellow":"green"} icon="🔗"/>
+        <Stat label="Queries lentas"    value={overview.server.slow_queries} sub="umbral configurado en servidor"                               color={overview.server.slow_queries>0?"yellow":"green"} icon="⏱️"/>
+        <Stat label="Uptime servidor"   value={fmtUp(overview.server.uptime_seconds)} sub="desde último reinicio"                              color="teal"   icon="⏰"/>
       </div>
-
-      <div className="mdb-grid2">
-        {/* Info servidor */}
-        <div className="mdb-panel">
-          <div className="mdb-panel-head">
-            <div className="mdb-panel-title"><MdStorage size={16}/> Info del servidor MySQL</div>
-            <span className="mdb-badge">v{overview.database.version}</span>
-          </div>
-          <div className="mdb-panel-body">
-            <div className="mdb-kv">
+      <div className="g3">
+        <div className="panel">
+          <div className="panel-head"><div className="panel-title">🗄️ Base de Datos</div><span className="badge">{overview.database.name}</span></div>
+          <div className="panel-body">
+            <div className="kv">
               {[
-                {k:"Base de datos",  v:overview.database.name},
-                {k:"Versión MySQL",  v:overview.database.version},
-                {k:"Charset",        v:overview.database.charset},
-                {k:"Uptime",         v:fmtUptime(overview.server.uptime_seconds)},
-                {k:"Queries lentas", v:overview.server.slow_queries,
-                  badge: overview.server.slow_queries>0
-                    ?{t:"⚠ revisar",bg:"#fef9c3",c:"#92400e"}
-                    :{t:"✓ ok",     bg:"#dcfce7",c:"#15803d"}},
-                {k:"Datos en disco",   v:`${overview.database.data_mb} MB`},
-                {k:"Índices en disco", v:`${overview.database.index_mb} MB`},
-              ].map(({k,v,badge})=>(
-                <div key={k} className="mdb-kv-row">
-                  <span className="mdb-kv-key">{k}</span>
-                  <span className="mdb-kv-val" style={{display:"flex",alignItems:"center",gap:7}}>
-                    {v}
-                    {badge&&<span style={{background:badge.bg,color:badge.c,fontSize:".65rem",padding:"2px 8px",borderRadius:12,fontWeight:700}}>{badge.t}</span>}
-                  </span>
-                </div>
+                {k:"Tablas totales",v:overview.database.tables},
+                {k:"Tamaño total",  v:fmtMB(overview.database.size_mb)},
+                {k:"Datos",        v:`${overview.database.data_mb} MB`},
+                {k:"Índices",      v:`${overview.database.index_mb} MB`},
+                {k:"Charset",      v:overview.database.charset},
+                {k:"Versión MySQL",v:overview.database.version},
+              ].map(({k,v}) => (
+                <div key={k} className="kv-row"><span className="kv-k">{k}</span><span className="kv-v">{v}</span></div>
               ))}
             </div>
           </div>
         </div>
-
-        {/* Conexiones — card con donut */}
-        <div className="mdb-panel">
-          <div className="mdb-panel-head">
-            <div className="mdb-panel-title"><MdSignalCellularAlt size={16}/> Conexiones activas</div>
-            <span className="mdb-badge" style={{background:connPct>80?"#fee2e2":connPct>50?"#fef9c3":"#eff6ff",color:connPct>80?"#b91c1c":connPct>50?"#92400e":"#1d4ed8",borderColor:connPct>80?"#fecaca":connPct>50?"#fde68a":"#bfdbfe"}}>
-              {Math.round(connPct)}% uso
-            </span>
+        <div className="panel">
+          <div className="panel-head">
+            <div className="panel-title">🔗 Conexiones MySQL</div>
+            <span className="badge" style={{background:connPct>70?"#fff8e1":"#e6f4ea",color:connPct>70?"#c9961a":"#1e7e34",borderColor:connPct>70?"#ffe082":"#a8d5b5"}}>{Math.round(connPct)}% uso</span>
           </div>
-          <div className="mdb-panel-body">
-            <div style={{display:"flex",alignItems:"center",gap:24,marginBottom:16,flexWrap:"wrap"}}>
-              <Donut
-                segments={[
-                  {value:overview.server.connections,              color:connColor},
-                  {value:overview.server.max_connections - overview.server.connections, color:"#f3f4f6"},
-                ]}
-                size={110} stroke={16}
-                centerLabel={`${overview.server.connections}`}
-                centerSub="activas"
-              />
-              <div className="mdb-kv" style={{flex:1,minWidth:130}}>
-                <div className="mdb-kv-row"><span className="mdb-kv-key">Conexiones activas</span><span className="mdb-kv-val" style={{color:connColor}}>{overview.server.connections}</span></div>
-                <div className="mdb-kv-row"><span className="mdb-kv-key">Máximo permitido</span><span className="mdb-kv-val">{overview.server.max_connections}</span></div>
-                <div className="mdb-kv-row"><span className="mdb-kv-key">Disponibles</span><span className="mdb-kv-val" style={{color:"#16a34a"}}>{safeNum(overview.server.max_connections)-safeNum(overview.server.connections)}</span></div>
+          <div className="panel-body">
+            <div style={{display:"flex",alignItems:"center",gap:18,marginBottom:14}}>
+              <Donut segments={[{value:overview.server.connections,color:connPct>70?"#c9961a":"#2c5282"},{value:Math.max(0,overview.server.max_connections-overview.server.connections),color:"#f0f4f8"}]} size={90} stroke={12} centerLabel={`${overview.server.connections}`} centerSub="activas"/>
+              <div className="kv" style={{flex:1}}>
+                <div className="kv-row"><span className="kv-k">Conectadas</span><span className="kv-v" style={{color:"#2c5282"}}>{overview.server.connections}</span></div>
+                <div className="kv-row"><span className="kv-k">Máximo</span><span className="kv-v">{overview.server.max_connections}</span></div>
+                <div className="kv-row"><span className="kv-k">Disponibles</span><span className="kv-v" style={{color:"#1e7e34"}}>{safeNum(overview.server.max_connections)-safeNum(overview.server.connections)}</span></div>
               </div>
             </div>
-            <Legend items={[{label:"Activas",color:connColor},{label:"Disponibles",color:"#e5e7eb"}]}/>
-            {connPct>70
-              ?<div className="mdb-alert-warn" style={{marginTop:12}}>⚠ Conexiones elevadas ({Math.round(connPct)}%). Posible cuello de botella.</div>
-              :<div className="mdb-alert-ok"   style={{marginTop:12}}>✓ Pool de conexiones saludable.</div>}
+            {connPct > 70
+              ? <div className="a-warn">⚠ Conexiones elevadas. Posible cuello de botella.</div>
+              : <div className="a-ok">✓ Pool de conexiones saludable.</div>
+            }
+          </div>
+        </div>
+        <div className="panel">
+          <div className="panel-head"><div className="panel-title">⚡ Performance Global</div><span className="badge">desde reinicio</span></div>
+          <div className="panel-body">
+            <div className="kv">
+              {[
+                {k:"Uptime",         v:fmtUp(overview.server.uptime_seconds)},
+                {k:"Queries totales",v:fmtNum(overview.server.total_queries)},
+                {k:"Queries lentas", v:overview.server.slow_queries, warn:overview.server.slow_queries>0},
+              ].map(({k,v,warn}) => (
+                <div key={k} className="kv-row"><span className="kv-k">{k}</span><span className="kv-v" style={warn?{color:"#c9961a"}:{}}>{v}</span></div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Top tablas */}
-      {/* ── Gráfica de barras: tamaño total por tabla (datos + índices apilados) ── */}
-      <div className="mdb-panel">
-        <div className="mdb-panel-head">
-          <div className="mdb-panel-title"><MdDataUsage size={16}/> Tamaño por tabla — datos vs índices (KB)</div>
-          <div style={{display:"flex",gap:14}}>
-            <span style={{display:"flex",alignItems:"center",gap:5,fontSize:".72rem",color:"#6b7280"}}><span style={{width:10,height:10,borderRadius:2,background:"#2563eb",display:"inline-block"}}/>Datos</span>
-            <span style={{display:"flex",alignItems:"center",gap:5,fontSize:".72rem",color:"#6b7280"}}><span style={{width:10,height:10,borderRadius:2,background:"#a78bfa",display:"inline-block"}}/>Índices</span>
-          </div>
+      <div className="g2">
+        <div className="panel">
+          <div className="panel-head"><div className="panel-title">📊 Top 10 — Tablas más pesadas</div><span className="badge">{fmtMB(overview.database.size_mb)}</span></div>
+          <div className="panel-body"><HBar data={topSize.map((t,i) => ({label:t.name,value:safeNum(t.size_kb),displayVal:fmtKB(t.size_kb),color:PAL[i%PAL.length]}))} lw={110}/></div>
         </div>
-        <div className="mdb-panel-body">
-          {(() => {
-            const sorted = [...tables].filter(t=>safeNum(t.size_kb)>0).sort((a,b)=>safeNum(b.size_kb)-safeNum(a.size_kb));
-            const maxKB  = Math.max(...sorted.map(t=>safeNum(t.size_kb)),1);
-            const BAR_H  = 22;
-            const GAP    = 10;
-            const LABEL_W = 110;
-            const VAL_W   = 56;
-            return (
-              <div style={{overflowX:"auto"}}>
-                <div style={{minWidth:360}}>
-                  {sorted.map((t,i)=>{
-                    const dataPx  = safePct(safeNum(t.data_kb),  maxKB);
-                    const idxPx   = safePct(safeNum(t.index_kb), maxKB);
-                    return (
-                      <div key={t.name} style={{display:"flex",alignItems:"center",gap:8,marginBottom:GAP}}>
-                        <div style={{width:LABEL_W,flexShrink:0,fontFamily:"'JetBrains Mono',monospace",fontSize:".72rem",color:"#374151",textAlign:"right",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t.name}</div>
-                        <div style={{flex:1,height:BAR_H,display:"flex",borderRadius:4,overflow:"hidden",background:"#f3f4f6"}}>
-                          <div style={{width:`${dataPx}%`,background:"#2563eb",transition:"width .4s"}}/>
-                          <div style={{width:`${idxPx}%`,background:"#a78bfa",transition:"width .4s"}}/>
-                        </div>
-                        <div style={{width:VAL_W,flexShrink:0,fontFamily:"'JetBrains Mono',monospace",fontSize:".72rem",color:"#6b7280",textAlign:"right"}}>{fmtKB(t.size_kb)}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
+        <div className="panel">
+          <div className="panel-head"><div className="panel-title">📈 Top 10 — Más registros</div><span className="badge">estimado</span></div>
+          <div className="panel-body"><HBar data={topRows.map((t,i) => ({label:t.name,value:safeNum(t.rows),displayVal:fmtNum(t.rows),color:PAL[i%PAL.length]}))} lw={110}/></div>
         </div>
       </div>
-
-      {/* ── Gráfica de barras: filas por tabla ── */}
-      <div className="mdb-panel">
-        <div className="mdb-panel-head">
-          <div className="mdb-panel-title"><MdTableChart size={16}/> Filas por tabla (estimado)</div>
-          <span className="mdb-badge">information_schema</span>
-        </div>
-        <div className="mdb-panel-body">
-          {(() => {
-            const sorted  = [...tables].filter(t=>safeNum(t.rows)>0).sort((a,b)=>safeNum(b.rows)-safeNum(a.rows));
-            const maxRows = Math.max(...sorted.map(t=>safeNum(t.rows)),1);
-            const BAR_H   = 22;
-            const GAP     = 10;
-            const LABEL_W = 110;
-            const VAL_W   = 70;
-            const COLORS  = ["#f59e0b","#f97316","#8b5cf6","#06b6d4","#10b981","#ec4899","#64748b","#0ea5e9","#84cc16","#ef4444"];
-            return (
-              <div style={{overflowX:"auto"}}>
-                <div style={{minWidth:360}}>
-                  {sorted.map((t,i)=>{
-                    const pct = safePct(safeNum(t.rows), maxRows);
-                    const c   = COLORS[i % COLORS.length];
-                    return (
-                      <div key={t.name} style={{display:"flex",alignItems:"center",gap:8,marginBottom:GAP}}>
-                        <div style={{width:LABEL_W,flexShrink:0,fontFamily:"'JetBrains Mono',monospace",fontSize:".72rem",color:"#374151",textAlign:"right",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t.name}</div>
-                        <div style={{flex:1,height:BAR_H,borderRadius:4,overflow:"hidden",background:"#f3f4f6"}}>
-                          <div style={{width:`${pct}%`,height:"100%",background:c,borderRadius:4,transition:"width .4s"}}/>
-                        </div>
-                        <div style={{width:VAL_W,flexShrink:0,fontFamily:"'JetBrains Mono',monospace",fontSize:".72rem",color:"#6b7280",textAlign:"right"}}>{fmtNum(t.rows)} filas</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      </div>
-
-      {/* Distribución datos vs índices + overhead por tabla */}
-      {(() => {
-        const total_size  = tables.reduce((a,t)=>a+safeNum(t.size_kb),0);
-        const total_data  = tables.reduce((a,t)=>a+safeNum(t.data_kb),0);
-        const total_index = tables.reduce((a,t)=>a+safeNum(t.index_kb),0);
-        const dataPct     = safePct(total_data,  total_size);
-        const indexPct    = safePct(total_index, total_size);
-        const withRatio   = tables.map(t=>({...t, idx_ratio: safeNum(t.data_kb)>0 ? safePct(safeNum(t.index_kb),safeNum(t.data_kb)) : 0}));
-        const avgRatio    = withRatio.length>0 ? withRatio.reduce((a,t)=>a+t.idx_ratio,0)/withRatio.length : 0;
-        return (
-          <div className="mdb-grid2">
-            {/* Donut distribución */}
-            <div className="mdb-panel">
-              <div className="mdb-panel-head"><div className="mdb-panel-title"><MdDataUsage size={16}/> Distribución: datos vs índices</div></div>
-              <div className="mdb-panel-body">
-                <div style={{display:"flex",alignItems:"center",gap:28}}>
-                  <Donut
-                    segments={[{value:total_data,color:"#2563eb"},{value:total_index,color:"#7c3aed"}]}
-                    size={110} stroke={16}
-                    centerLabel={`${Math.round(dataPct)}%`}
-                    centerSub="datos"
-                  />
-                  <div style={{flex:1}}>
-                    {[
-                      {label:"Datos reales",  val:total_data,  color:"#2563eb", pct:dataPct},
-                      {label:"Índices",        val:total_index, color:"#7c3aed", pct:indexPct},
-                    ].map(x=>(
-                      <div key={x.label} style={{marginBottom:10}}>
-                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4,fontSize:".78rem"}}>
-                          <span style={{color:x.color,fontWeight:600}}>● {x.label}</span>
-                          <span style={{fontFamily:"'JetBrains Mono',monospace",color:"#374151"}}>{fmtKB(x.val)}</span>
-                        </div>
-                        <div style={{height:7,background:"#f3f4f6",borderRadius:4,overflow:"hidden"}}>
-                          <div style={{height:"100%",width:`${x.pct}%`,background:x.color,borderRadius:4}}/>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="mdb-kv-row" style={{marginTop:4}}>
-                      <span className="mdb-kv-key">Ratio índice/dato promedio</span>
-                      <span className="mdb-kv-val" style={{color:avgRatio>60?"#d97706":"#16a34a"}}>{avgRatio.toFixed(1)}%</span>
-                    </div>
-                  </div>
-                </div>
-                {avgRatio>100
-                  ?<div className="mdb-alert-info" style={{marginTop:12}}>ℹ Índices {">"} datos: normal en BDs pequeñas. MySQL reserva espacio mínimo por índice aunque haya pocos registros.</div>
-                  :avgRatio>60
-                  ?<div className="mdb-alert-warn" style={{marginTop:12}}>⚠ Ratio elevado. Posibles índices redundantes.</div>
-                  :<div className="mdb-alert-ok"   style={{marginTop:12}}>✓ Distribución saludable entre datos e índices.</div>
-                }
-              </div>
-            </div>
-
-            {/* Overhead índices por tabla */}
-            <div className="mdb-panel">
-              <div className="mdb-panel-head"><div className="mdb-panel-title"><MdTune size={16}/> Overhead de índices por tabla</div><span className="mdb-badge">ratio idx/dato</span></div>
-              <div className="mdb-panel-body">
-                {withRatio.filter(t=>safeNum(t.size_kb)>0).sort((a,b)=>b.idx_ratio-a.idx_ratio).slice(0,8).map(t=>{
-                  const c=t.idx_ratio>80?"#dc2626":t.idx_ratio>40?"#d97706":"#16a34a";
-                  const barW=Math.min(t.idx_ratio,500)/5; // cap visual at 100% width even if ratio is 500%
-                  return (
-                    <div key={t.name} style={{marginBottom:9}}>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4,fontSize:".76rem"}}>
-                        <span style={{fontFamily:"'JetBrains Mono',monospace",color:"#374151"}}>{t.name}</span>
-                        <span style={{color:c,fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>{t.idx_ratio.toFixed(0)}%</span>
-                      </div>
-                      <div style={{height:6,background:"#f3f4f6",borderRadius:3,overflow:"hidden"}}>
-                        <div style={{height:"100%",width:`${Math.min(barW,100)}%`,background:c,borderRadius:3}}/>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div style={{fontSize:".7rem",color:"#9ca3af",marginTop:8}}>En BDs pequeñas el ratio alto es normal — MySQL reserva espacio mínimo por índice.</div>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Tabla completa */}
-      <div className="mdb-panel">
-        <div className="mdb-panel-head"><div className="mdb-panel-title"><MdTableChart size={16}/> Todas las tablas</div><span className="mdb-badge">{overview.database.size_mb} MB total</span></div>
-        <div style={{overflowX:"auto"}}>
-          <table className="mdb-table">
-            <thead><tr><th>#</th><th>Tabla</th><th>Motor</th><th>Filas est.</th><th>Tamaño</th><th style={{minWidth:120}}>% total</th><th>Datos</th><th>Índices</th><th>Modificada</th></tr></thead>
+      <div className="panel">
+        <div className="panel-head"><div className="panel-title">🗃️ Detalle de todas las tablas</div><span className="badge">{tables.length} tablas</span></div>
+        <div className="tscroll">
+          <table className="tbl">
+            <thead>
+              <tr><th>#</th><th>Tabla</th><th>Filas est.</th><th>Tamaño total</th><th style={{minWidth:120}}>% del total</th><th>Datos</th><th>Índices</th><th>Última mod.</th></tr>
+            </thead>
             <tbody>
-              {tables.map((t,i)=>{
-                const pct=safePct(safeNum(t.size_kb),maxSize);
-                const barC=pct>60?"#2563eb":pct>30?"#7c3aed":"#059669";
+              {[...tables].sort((a,b) => safeNum(b.size_kb)-safeNum(a.size_kb)).map((t,i) => {
+                const max = Math.max(...tables.map(x => safeNum(x.size_kb)), 1);
+                const pct = safePct(t.size_kb, max);
                 return (
-                  <tr key={t.name}>
-                    <td style={{color:"#9ca3af",fontFamily:"'JetBrains Mono',monospace",fontSize:".72rem"}}>{i+1}</td>
-                    <td><strong style={{color:"#111827",fontFamily:"'JetBrains Mono',monospace",fontSize:".78rem"}}>{t.name}</strong></td>
-                    <td><span className="tag tag-engine">{t.engine}</span></td>
-                    <td className="mdb-mono">{fmtNum(t.rows)}</td>
-                    <td className="mdb-mono" style={{color:"#111827",fontWeight:600}}>{fmtKB(t.size_kb)}</td>
-                    <td><Bar pct={pct} color={barC}/></td>
-                    <td className="mdb-mono" style={{color:"#6b7280"}}>{fmtKB(t.data_kb)}</td>
-                    <td className="mdb-mono" style={{color:"#6b7280"}}>{fmtKB(t.index_kb)}</td>
-                    <td style={{fontSize:".72rem",color:"#9ca3af"}}>{fmtDate(t.updated)}</td>
+                  <tr key={`${t.name}-${i}`}>
+                    <td style={{color:"#a0aec0",fontSize:".78rem"}}>{i+1}</td>
+                    <td><strong style={{color:"#1e3a5f"}}>{t.name}</strong></td>
+                    <td>{fmtNum(t.rows)}</td>
+                    <td style={{color:"#1e3a5f",fontWeight:700}}>{fmtKB(t.size_kb)}</td>
+                    <td><div className="bar-wrap"><div className="bar-track"><div className="bar-fill" style={{width:`${pct}%`,background:"#2c5282"}}/></div><div className="bar-pct">{Math.round(pct)}%</div></div></td>
+                    <td style={{color:"#718096"}}>{fmtKB(t.data_kb)}</td>
+                    <td style={{color:"#718096"}}>{fmtKB(t.index_kb)}</td>
+                    <td style={{fontSize:".78rem",color:"#a0aec0"}}>{fmtDate(t.updated)}</td>
                   </tr>
                 );
               })}
@@ -573,690 +412,781 @@ function TabOverview({ overview }) {
   );
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   TAB PERFORMANCE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function TabPerformance({ perf }) {
-  if (!perf) return <div className="mdb-alert-info">Cargando datos de performance…</div>;
-  const hitRate  = perf.buffer?.hit_rate_pct ?? null;
-  const hitC     = hitRate===null?"#6b7280":hitRate>=95?"#16a34a":hitRate>=80?"#d97706":"#dc2626";
-  const maxOps   = Math.max(...(perf.table_io||[]).map(t=>safeNum(t.total_ops)),1);
-  const fullScan = safeNum(perf.efficiency?.full_scan_ratio_pct);
-  const tmpDisk  = safeNum(perf.efficiency?.tmp_disk_ratio_pct);
+/* ════════════════════════════════════════════
+   TAB: BASE DE DATOS
+   ════════════════════════════════════════════ */
+function TabBaseDatos({ maint, onOptimize, optimizing, lastOptimize }) {
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("size");
+  if (!maint) return <div className="loading"><span className="spinning">↻</span> Cargando…</div>;
 
-  /* operaciones para gráfica de barras */
-  const ops = [
-    {label:"Leídas",      val:safeNum(perf.operations?.rows_read),      color:"#2563eb"},
-    {label:"Insertadas",  val:safeNum(perf.operations?.rows_inserted),   color:"#16a34a"},
-    {label:"Actualizadas",val:safeNum(perf.operations?.rows_updated),    color:"#d97706"},
-    {label:"Eliminadas",  val:safeNum(perf.operations?.rows_deleted),    color:"#dc2626"},
-  ];
-  const maxOp = Math.max(...ops.map(o=>o.val), 1);
+  const { summary, table_health = [], index_health = [] } = maint;
+  const sinPK  = table_health.filter(t => !index_health.some(i => i.table_name === t.name && i.is_primary));
+  const maxT   = table_health.reduce((a,b) => safeNum(b.total_kb) > safeNum(a.total_kb) ? b : a, {total_kb:0});
+  const fragC  = pct => pct > 30 ? "#c0392b" : pct > 10 ? "#c9961a" : "#1e7e34";
 
-  /* eficiencia para gráfica de barras */
-  const effItems = [
-    {label:"Full table scans",   val:safeNum(perf.efficiency?.select_scan),        max:Math.max(safeNum(perf.efficiency?.select_scan),1),      color:"#d97706", warn:v=>v>500},
-    {label:"Joins sin índice",   val:safeNum(perf.efficiency?.select_full_join),   max:Math.max(safeNum(perf.efficiency?.select_full_join),1),  color:"#dc2626", warn:v=>v>0},
-    {label:"Sort merge passes",  val:safeNum(perf.efficiency?.sort_merge_passes),  max:Math.max(safeNum(perf.efficiency?.sort_merge_passes),1), color:"#7c3aed", warn:v=>v>100},
-    {label:"Table locks wait",   val:safeNum(perf.locks?.lock_waited),             max:Math.max(safeNum(perf.locks?.lock_waited),1),            color:"#f97316", warn:v=>v>0},
-  ];
+  const filtradas = table_health
+    .filter(t => !search || t.name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a,b) => sortBy==="frag" ? b.frag_pct-a.frag_pct : sortBy==="size" ? b.total_kb-a.total_kb : b.free_kb-a.free_kb);
 
   return (
     <>
-      {/* KPIs */}
-      <div className="mdb-grid4">
-        <Stat label="Buffer pool hit rate" value={hitRate!==null?`${hitRate}%`:"N/D"} sub={hitRate>=95?"✓ Excelente":hitRate>=80?"⚠ Aceptable":"❌ Miss frecuente → disco"} color={hitRate===null?"teal":hitRate>=95?"green":hitRate>=80?"yellow":"red"} icon={<MdMemory/>}/>
-        <Stat label="Row lock waits"       value={fmtNum(perf.locks?.waits)}          sub={`promedio ${fmtNum(perf.locks?.avg_wait_ms)} ms`}    color={safeNum(perf.locks?.waits)>0?"yellow":"green"} icon={<MdBolt/>}/>
-        <Stat label="Full scan ratio"      value={`${fullScan}%`}                     sub={fullScan>30?"⚠ Muchos scans sin índice":"✓ Buen uso de índices"} color={fullScan>30?"yellow":"green"} icon={<MdSearch/>}/>
-        <Stat label="Tmp tables en disco"  value={`${tmpDisk}%`}                      sub={tmpDisk>20?"⚠ Aumentar tmp_table_size":"✓ Dentro de memoria"} color={tmpDisk>20?"yellow":"green"} icon={<MdStorage/>}/>
+      <div className="g4">
+        <Stat label="Tablas totales"      value={summary.total_tables}        sub="en la base de datos"      color="blue"   icon="🗃️"/>
+        <Stat label="Mayor tabla"         value={fmtKB(safeNum(maxT.total_kb))} sub={maxT.name||"—"}          color="purple" icon="📦"/>
+        <Stat label="Tablas fragmentadas" value={summary.high_frag_tables}    sub="> 30% fragmentación"      color={summary.high_frag_tables>0?"yellow":"green"} icon="⚠️"/>
+        <Stat label="Tablas sin PK"       value={sinPK.length}                sub="sin Primary Key"          color={sinPK.length>0?"yellow":"green"}            icon="🔑"/>
       </div>
 
-      {/* Fila 1: Buffer pool + Operaciones de filas */}
-      <div className="mdb-grid2">
-        {/* Buffer pool InnoDB */}
-        <div className="mdb-panel">
-          <div className="mdb-panel-head"><div className="mdb-panel-title"><MdMemory size={16}/> Buffer pool InnoDB</div><span className="mdb-badge">cache en RAM</span></div>
-          <div className="mdb-panel-body">
-            <div style={{display:"flex",alignItems:"center",gap:22,marginBottom:16}}>
-              <Donut
-                segments={hitRate!==null
-                  ?[{value:hitRate,color:hitC},{value:100-hitRate,color:"#f3f4f6"}]
-                  :[{value:1,color:"#e5e7eb"}]}
-                size={110} stroke={16}
-                centerLabel={hitRate!==null?`${hitRate}%`:"N/D"}
-                centerSub="hit rate"
-              />
-              <div style={{flex:1}}>
-                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"2rem",fontWeight:700,color:hitC}}>{hitRate!==null?`${hitRate}%`:"N/D"}</div>
-                <div style={{fontSize:".8rem",color:"#6b7280",marginTop:4,lineHeight:1.4}}>
-                  {hitRate>=95?"✓ Todo se lee desde RAM — mínimas lecturas a disco":
-                   hitRate>=80?"⚠ Mayoría en RAM — algunos miss al disco":
-                   hitRate!==null?"❌ Muchas lecturas al disco — la BD es lenta":"Sin datos de performance_schema"}
-                </div>
-              </div>
-            </div>
-            <Legend items={[{label:"Hit (RAM)",color:hitC},{label:"Miss (disco)",color:"#e5e7eb"}]}/>
-            <div className="mdb-kv" style={{marginTop:12}}>
-              <div className="mdb-kv-row"><span className="mdb-kv-key">Lecturas que fueron al disco</span><span className="mdb-kv-val" style={{color:safeNum(perf.buffer?.reads_from_disk)>0?"#d97706":"#16a34a"}}>{fmtNum(perf.buffer?.reads_from_disk)}</span></div>
-              <div className="mdb-kv-row"><span className="mdb-kv-key">Total de requests de lectura</span><span className="mdb-kv-val">{fmtNum(perf.buffer?.total_requests)}</span></div>
-              <div className="mdb-kv-row"><span className="mdb-kv-key">Páginas activas en buffer</span><span className="mdb-kv-val">{fmtNum(perf.buffer?.pages_data)}</span></div>
-              <div className="mdb-kv-row"><span className="mdb-kv-key">Capacidad total del buffer</span><span className="mdb-kv-val">{fmtNum(perf.buffer?.pages_total)} páginas</span></div>
-            </div>
-            <div style={{marginTop:10,padding:"8px 12px",background:"#f9fafb",borderRadius:7,border:"1px solid #f3f4f6",fontSize:".72rem",color:"#6b7280"}}>
-              💡 Si el hit rate baja de 95%, aumentar <code style={{fontFamily:"'JetBrains Mono',monospace",color:"#2563eb"}}>innodb_buffer_pool_size</code> en la config de MySQL.
-            </div>
-          </div>
+      {/* Optimize */}
+      <div className="panel">
+        <div className="panel-head">
+          <div className="panel-title">🔧 ANALYZE + OPTIMIZE TABLE</div>
+          {lastOptimize && <span style={{fontSize:".78rem",color:"#a0aec0"}}>Última: {lastOptimize}</span>}
         </div>
-
-        {/* Operaciones de filas InnoDB */}
-        <div className="mdb-panel">
-          <div className="mdb-panel-head"><div className="mdb-panel-title"><MdQueryStats size={16}/> Operaciones de filas InnoDB</div><span className="mdb-badge">acumulado desde reinicio</span></div>
-          <div className="mdb-panel-body">
-            <div style={{marginBottom:16}}>
-              {ops.map(o=>(
-                <div key={o.label} style={{marginBottom:11}}>
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:4,fontSize:".78rem"}}>
-                    <span style={{color:o.color,fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
-                      <span style={{width:8,height:8,borderRadius:2,background:o.color,display:"inline-block"}}/>
-                      Filas {o.label.toLowerCase()}
-                    </span>
-                    <span style={{fontFamily:"'JetBrains Mono',monospace",color:"#111827",fontWeight:700}}>{fmtNum(o.val)}</span>
-                  </div>
-                  <div style={{height:10,background:"#f3f4f6",borderRadius:5,overflow:"hidden"}}>
-                    <div style={{height:"100%",width:`${safePct(o.val,maxOp)}%`,background:o.color,borderRadius:5,transition:"width .4s"}}/>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{padding:"10px 12px",background:"#f9fafb",borderRadius:8,border:"1px solid #f3f4f6"}}>
-              <div style={{fontSize:".7rem",fontWeight:700,color:"#6b7280",textTransform:"uppercase",letterSpacing:".5px",marginBottom:6}}>Total acumulado</div>
-              <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-                {ops.map(o=>(
-                  <div key={o.label} style={{textAlign:"center"}}>
-                    <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:".85rem",fontWeight:700,color:o.color}}>{fmtNum(o.val)}</div>
-                    <div style={{fontSize:".65rem",color:"#9ca3af"}}>{o.label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Fila 2: Eficiencia de queries + Top I/O tablas */}
-      <div className="mdb-grid2">
-        {/* Eficiencia de queries */}
-        <div className="mdb-panel">
-          <div className="mdb-panel-head"><div className="mdb-panel-title"><MdSpeed size={16}/> Eficiencia de consultas</div><span className="mdb-badge">SHOW STATUS</span></div>
-          <div className="mdb-panel-body">
-            {effItems.map(e=>{
-              const isWarn = e.warn(e.val);
-              return (
-                <div key={e.label} style={{marginBottom:13}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-                    <span style={{fontSize:".78rem",color:isWarn?e.color:"#374151",fontWeight:isWarn?600:400}}>{e.label}</span>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:".78rem",fontWeight:700,color:isWarn?e.color:"#111827"}}>{fmtNum(e.val)}</span>
-                      {isWarn
-                        ?<span style={{background:"#fef9c3",color:"#92400e",fontSize:".65rem",fontWeight:700,padding:"1px 7px",borderRadius:12}}>⚠</span>
-                        :<span style={{background:"#dcfce7",color:"#15803d",fontSize:".65rem",fontWeight:700,padding:"1px 7px",borderRadius:12}}>✓</span>}
-                    </div>
-                  </div>
-                  <div style={{height:8,background:"#f3f4f6",borderRadius:4,overflow:"hidden"}}>
-                    <div style={{height:"100%",width:e.val===0?"4px":`${Math.min(safePct(e.val,e.max),100)}%`,background:isWarn?e.color:"#d1fae5",borderRadius:4,transition:"width .4s"}}/>
-                  </div>
-                </div>
-              );
-            })}
-            <div style={{marginTop:4,padding:"8px 12px",background:"#f9fafb",borderRadius:7,border:"1px solid #f3f4f6"}}>
-              <div style={{fontSize:".7rem",fontWeight:700,color:"#6b7280",textTransform:"uppercase",letterSpacing:".5px",marginBottom:4}}>Qué significa cada métrica</div>
-              <div style={{fontSize:".71rem",color:"#9ca3af",lineHeight:1.6}}>
-                <b style={{color:"#374151"}}>Full scans</b> — queries sin índice, escanean toda la tabla.<br/>
-                <b style={{color:"#374151"}}>Joins sin índice</b> — JOINs que no usan índice en la columna de unión.<br/>
-                <b style={{color:"#374151"}}>Sort merge passes</b> — ordenamientos que se fueron al disco por falta de RAM.<br/>
-                <b style={{color:"#374151"}}>Table locks wait</b> — consultas que esperaron por un lock de tabla.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Top tablas por I/O */}
-        <div className="mdb-panel">
-          <div className="mdb-panel-head"><div className="mdb-panel-title"><MdBolt size={16}/> Tablas más accedidas (I/O real)</div><span className="mdb-badge">performance_schema</span></div>
-          <div className="mdb-panel-body">
-            {!perf.table_io?.length?(
-              <div className="mdb-alert-info">performance_schema sin datos de I/O. Normal en Aiven tier gratuito.</div>
-            ):(
-              <>
-                {perf.table_io.slice(0,8).map((t,i)=>{
-                  const wratio = safeNum(t.total_ops)>0?safePct(safeNum(t.writes),safeNum(t.total_ops)):0;
-                  const pct    = safePct(safeNum(t.total_ops), maxOps);
-                  const COLORS = ["#2563eb","#7c3aed","#059669","#d97706","#dc2626","#0d9488","#f97316","#8b5cf6"];
-                  return (
-                    <div key={t.table_name} style={{marginBottom:12}}>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4,fontSize:".75rem"}}>
-                        <span style={{fontFamily:"'JetBrains Mono',monospace",color:COLORS[i%COLORS.length],fontWeight:600}}>{i+1}. {t.table_name}</span>
-                        <span style={{color:"#6b7280"}}>{fmtNum(t.total_ops)} ops</span>
-                      </div>
-                      {/* barra apilada lecturas/escrituras */}
-                      <div style={{height:12,borderRadius:6,overflow:"hidden",display:"flex",background:"#f3f4f6"}}>
-                        <div style={{width:`${(100-wratio)*pct/100}%`,background:"#2563eb",opacity:.8}}/>
-                        <div style={{width:`${wratio*pct/100}%`,background:"#d97706",opacity:.8}}/>
-                      </div>
-                      <div style={{display:"flex",gap:12,marginTop:3,fontSize:".63rem",color:"#9ca3af"}}>
-                        <span style={{color:"#2563eb"}}>R: {fmtNum(t.reads)}</span>
-                        <span style={{color:"#d97706"}}>W: {fmtNum(t.writes)}</span>
-                        <span>lectura: {fmtSec(t.read_sec)}</span>
-                        <span>escritura: {fmtSec(t.write_sec)}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-                <Legend items={[{label:"Lecturas",color:"#2563eb"},{label:"Escrituras",color:"#d97706"}]}/>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   TAB PROCESOS — conexiones, locks, transacciones
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function TabProcesses({ proc }) {
-  if (!proc) return <div className="mdb-alert-info">Cargando procesos activos…</div>;
-  const { processes=[], transactions=[], locks=[], summary={} } = proc;
-  const sleepCount  = processes.filter(p=>p.command==="Sleep").length;
-  const activeCount = processes.filter(p=>p.command!=="Sleep").length;
-  const longQuery   = processes.filter(p=>safeNum(p.time_sec)>10 && p.command==="Query");
-  const execCount   = processes.filter(p=>p.command==="Execute"||p.command==="Query").length;
-  const otherCount  = processes.filter(p=>p.command!=="Sleep"&&p.command!=="Execute"&&p.command!=="Query").length;
-
-  const connGroups = [
-    {label:"Sleep (esperando)", count:sleepCount,  color:"#94a3b8", desc:"Conexiones Vercel en espera — normal"},
-    {label:"Execute / Query",   count:execCount,   color:"#2563eb", desc:"Consultas ejecutándose ahora mismo"},
-    {label:"Otras",             count:otherCount,  color:"#d97706", desc:"Comandos administrativos"},
-  ].filter(g=>g.count>0);
-  const maxConn = Math.max(...connGroups.map(g=>g.count), 1);
-
-  const lockByMode  = {};
-  locks.forEach(l=>{ lockByMode[l.lock_mode]=(lockByMode[l.lock_mode]||0)+1; });
-  const lockColors  = {ExclusiveLock:"#dc2626",AccessShareLock:"#2563eb",ShareLock:"#16a34a",RowExclusiveLock:"#d97706"};
-  const maxLock     = Math.max(...Object.values(lockByMode),1);
-
-  const totalRowsLocked    = transactions.reduce((a,t)=>a+safeNum(t.rows_locked),0);
-  const totalRowsModified  = transactions.reduce((a,t)=>a+safeNum(t.rows_modified),0);
-  const byState = {};
-  transactions.forEach(t=>{ byState[t.state]=(byState[t.state]||0)+1; });
-  const trxColors = {RUNNING:"#16a34a",LOCK_WAIT:"#dc2626",ROLLING_BACK:"#d97706"};
-  const maxT = Math.max(...Object.values(byState),1);
-
-  /* tiempo promedio de conexiones sleep */
-  const sleepTimes = processes.filter(p=>p.command==="Sleep").map(p=>safeNum(p.time_sec));
-  const avgSleep   = sleepTimes.length ? Math.round(sleepTimes.reduce((a,b)=>a+b,0)/sleepTimes.length) : 0;
-  const maxSleep   = sleepTimes.length ? Math.max(...sleepTimes) : 0;
-
-  return (
-    <>
-      {/* KPIs */}
-      <div className="mdb-grid4">
-        <Stat label="Total conexiones" value={summary.total_processes||0}    sub={`${sleepCount} sleep · ${activeCount} activas`}           color="blue"   icon={<MdCircle/>}/>
-        <Stat label="Locks activos"    value={summary.total_locks||0}        sub={locks.length>0?"⚠ revisar bloqueos":"✓ sin bloqueos"}      color={locks.length>0?"red":"green"} icon={<MdLock/>}/>
-        <Stat label="Transacciones"    value={summary.total_transactions||0} sub={`${fmtNum(totalRowsLocked)} filas bloqueadas`}             color={totalRowsLocked>0?"yellow":"green"} icon={<MdBolt/>}/>
-        <Stat label="Queries activas"  value={longQuery.length}              sub={longQuery.length>0?"⚠ llevan +10s":"✓ sin queries lentas"} color={longQuery.length>0?"red":"green"} icon={<MdTimer/>}/>
-      </div>
-
-      {longQuery.length>0&&(
-        <div className="mdb-alert-err">
-          <strong>⚠ {longQuery.length} query(ies) reales llevan más de 10 segundos ejecutándose.</strong>
-          {longQuery.map(p=>(
-            <div key={p.id} style={{marginTop:5,padding:"4px 10px",background:"rgba(0,0,0,.05)",borderRadius:5,fontFamily:"'JetBrains Mono',monospace",fontSize:".72rem"}}>
-              ID:{p.id} · {p.db_user} · {fmtSec(p.time_sec)} · {p.state||p.command}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="mdb-grid3">
-
-        {/* ── SECCIÓN 1: Conexiones ── */}
-        <div className="mdb-panel">
-          <div className="mdb-panel-head">
-            <div className="mdb-panel-title"><MdSignalCellularAlt size={16}/> Conexiones activas</div>
-            <span className="mdb-badge">{summary.total_processes||0} total</span>
-          </div>
-          <div className="mdb-panel-body">
-            <div style={{display:"flex",alignItems:"center",gap:18,marginBottom:16}}>
-              <Donut segments={connGroups.map(g=>({value:g.count,color:g.color}))} size={100} stroke={14} centerLabel={`${summary.total_processes||0}`} centerSub="conexiones"/>
-              <div style={{flex:1}}>
-                {connGroups.map(g=>(
-                  <div key={g.label} style={{marginBottom:9}}>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:3,fontSize:".75rem"}}>
-                      <span style={{color:g.color,fontWeight:600,display:"flex",alignItems:"center",gap:5}}>
-                        <span style={{width:8,height:8,borderRadius:2,background:g.color,display:"inline-block"}}/>
-                        {g.label}
-                      </span>
-                      <span style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:700,color:"#111827"}}>{g.count}</span>
-                    </div>
-                    <div style={{height:8,background:"#f3f4f6",borderRadius:4,overflow:"hidden"}}>
-                      <div style={{height:"100%",width:`${safePct(g.count,maxConn)}%`,background:g.color,borderRadius:4,transition:"width .4s"}}/>
-                    </div>
-                    <div style={{fontSize:".63rem",color:"#9ca3af",marginTop:2}}>{g.desc}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* métricas de sleep */}
-            {sleepCount>0&&(
-              <div className="mdb-kv" style={{marginBottom:10}}>
-                <div className="mdb-kv-row"><span className="mdb-kv-key">Tiempo promedio en Sleep</span><span className="mdb-kv-val">{fmtSec(avgSleep)}</span></div>
-                <div className="mdb-kv-row"><span className="mdb-kv-key">Conexión más antigua</span><span className="mdb-kv-val" style={{color:maxSleep>600?"#d97706":"#374151"}}>{fmtSec(maxSleep)}</span></div>
-                <div className="mdb-kv-row"><span className="mdb-kv-key">IPs distintas conectadas</span><span className="mdb-kv-val">{new Set(processes.map(p=>(p.host||"").split(":")[0])).size}</span></div>
-              </div>
-            )}
-            {sleepCount>0&&longQuery.length===0
-              ?<div className="mdb-alert-ok" style={{fontSize:".74rem"}}>✓ Sleep es normal — Vercel mantiene conexiones abiertas entre requests para evitar latencia de reconexión.</div>
-              :sleepCount===0&&<div className="mdb-alert-ok" style={{fontSize:".74rem"}}>✓ Sin conexiones en espera.</div>
-            }
-          </div>
-        </div>
-
-        {/* ── SECCIÓN 2: Locks ── */}
-        <div className="mdb-panel">
-          <div className="mdb-panel-head">
-            <div className="mdb-panel-title"><MdLock size={16} style={{color:locks.length>0?"#dc2626":"#2563eb"}}/> Bloqueos (Locks)</div>
-            <span className="mdb-badge" style={{background:locks.length>0?"#fee2e2":"#f0fdf4",color:locks.length>0?"#b91c1c":"#15803d",borderColor:locks.length>0?"#fecaca":"#bbf7d0"}}>{locks.length} activos</span>
-          </div>
-          <div className="mdb-panel-body">
-            {locks.length===0?(
-              <>
-                <div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
-                  <Donut segments={[{value:1,color:"#dcfce7"}]} size={90} stroke={14} centerLabel="0" centerSub="locks"/>
-                </div>
-                <div className="mdb-kv" style={{marginBottom:10}}>
-                  <div className="mdb-kv-row"><span className="mdb-kv-key">Row lock waits totales</span><span className="mdb-kv-val">{fmtNum(summary.lock_waits||0)}</span></div>
-                  <div className="mdb-kv-row"><span className="mdb-kv-key">Table locks inmediatos</span><span className="mdb-kv-val">{fmtNum(summary.lock_immediate||0)}</span></div>
-                  <div className="mdb-kv-row"><span className="mdb-kv-key">Table locks esperados</span><span className="mdb-kv-val" style={{color:safeNum(summary.lock_waited)>0?"#dc2626":"#16a34a"}}>{fmtNum(summary.lock_waited||0)}</span></div>
-                </div>
-                <div className="mdb-alert-ok" style={{fontSize:".74rem"}}>✓ Sin bloqueos activos — no hay cuellos de botella entre transacciones.</div>
-              </>
-            ):(
-              <>
-                <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:14}}>
-                  <Donut segments={Object.entries(lockByMode).map(([m,c])=>({value:c,color:lockColors[m]||"#6b7280"}))} size={90} stroke={14} centerLabel={`${locks.length}`} centerSub="locks"/>
-                  <div style={{flex:1}}>
-                    {Object.entries(lockByMode).map(([mode,count])=>(
-                      <div key={mode} style={{marginBottom:8}}>
-                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:3,fontSize:".73rem"}}>
-                          <span style={{color:lockColors[mode]||"#6b7280",fontWeight:600}}>{mode}</span>
-                          <span style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>{count}</span>
-                        </div>
-                        <div style={{height:7,background:"#f3f4f6",borderRadius:3,overflow:"hidden"}}>
-                          <div style={{height:"100%",width:`${safePct(count,maxLock)}%`,background:lockColors[mode]||"#6b7280",borderRadius:3}}/>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div style={{padding:"8px 12px",background:"#f9fafb",borderRadius:7,border:"1px solid #f3f4f6",fontSize:".71rem",color:"#6b7280",marginBottom:10}}>
-                  <b style={{color:"#374151"}}>ExclusiveLock</b> = escritura, bloquea todo.<br/>
-                  <b style={{color:"#374151"}}>AccessShareLock</b> = lectura normal, no bloquea otras lecturas.<br/>
-                  <b style={{color:"#374151"}}>ShareLock</b> = lectura con bloqueo de escritura.
-                </div>
-                <div className="mdb-alert-warn" style={{fontSize:".74rem"}}>⚠ Hay bloqueos — pueden causar esperas entre transacciones.</div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* ── SECCIÓN 3: Transacciones ── */}
-        <div className="mdb-panel">
-          <div className="mdb-panel-head">
-            <div className="mdb-panel-title"><MdBolt size={16}/> Transacciones InnoDB</div>
-            <span className="mdb-badge">{transactions.length} en curso</span>
-          </div>
-          <div className="mdb-panel-body">
-            {transactions.length===0?(
-              <>
-                <div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
-                  <Donut segments={[{value:1,color:"#dcfce7"}]} size={90} stroke={14} centerLabel="0" centerSub="trx"/>
-                </div>
-                <div className="mdb-kv" style={{marginBottom:10}}>
-                  <div className="mdb-kv-row"><span className="mdb-kv-key">Filas bloqueadas ahora</span><span className="mdb-kv-val" style={{color:"#16a34a"}}>0</span></div>
-                  <div className="mdb-kv-row"><span className="mdb-kv-key">Filas modificadas</span><span className="mdb-kv-val">0</span></div>
-                  <div className="mdb-kv-row"><span className="mdb-kv-key">Tablas en uso</span><span className="mdb-kv-val">0</span></div>
-                </div>
-                <div className="mdb-alert-ok" style={{fontSize:".74rem"}}>✓ Sin transacciones abiertas — no hay operaciones pendientes de commit.</div>
-              </>
-            ):(
-              <>
-                <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:14}}>
-                  <Donut segments={Object.entries(byState).map(([s,c])=>({value:c,color:trxColors[s]||"#6b7280"}))} size={90} stroke={14} centerLabel={`${transactions.length}`} centerSub="trx"/>
-                  <div style={{flex:1}}>
-                    {Object.entries(byState).map(([state,count])=>(
-                      <div key={state} style={{marginBottom:8}}>
-                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:3,fontSize:".73rem"}}>
-                          <span style={{color:trxColors[state]||"#6b7280",fontWeight:600}}>{state}</span>
-                          <span style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>{count}</span>
-                        </div>
-                        <div style={{height:7,background:"#f3f4f6",borderRadius:3,overflow:"hidden"}}>
-                          <div style={{height:"100%",width:`${safePct(count,maxT)}%`,background:trxColors[state]||"#6b7280",borderRadius:3}}/>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="mdb-kv" style={{marginBottom:10}}>
-                  <div className="mdb-kv-row"><span className="mdb-kv-key">Total filas bloqueadas</span><span className="mdb-kv-val" style={{color:totalRowsLocked>0?"#dc2626":"#16a34a"}}>{fmtNum(totalRowsLocked)}</span></div>
-                  <div className="mdb-kv-row"><span className="mdb-kv-key">Total filas modificadas</span><span className="mdb-kv-val">{fmtNum(totalRowsModified)}</span></div>
-                  <div className="mdb-kv-row"><span className="mdb-kv-key">Tablas en uso</span><span className="mdb-kv-val">{fmtNum(transactions.reduce((a,t)=>a+safeNum(t.tables_in_use),0))}</span></div>
-                </div>
-                {totalRowsLocked>0&&<div className="mdb-alert-warn" style={{fontSize:".74rem"}}>⚠ Hay filas bloqueadas — otras queries que necesiten esas filas tendrán que esperar.</div>}
-              </>
-            )}
-          </div>
-        </div>
-
-      </div>
-    </>
-  );
-}
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   TAB INTEGRIDAD
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function TabIntegrity({ integrity }) {
-  const checks    = integrity.checks || [];
-  const int_ok    = checks.filter(c=>c.status==="ok").length;
-  const int_info  = checks.filter(c=>c.status==="info").length;
-  const int_warn  = checks.filter(c=>c.status==="warn").length;
-  const int_error = checks.filter(c=>c.status==="error").length;
-  const health    = Math.round(safePct(int_ok, checks.length));
-  const totalIssues = int_warn + int_error;
-
-  /* agrupar checks por categoría para la gráfica de barras */
-  const checksByStatus = [
-    {label:"OK",          count:int_ok,    color:"#16a34a"},
-    {label:"Informativo", count:int_info,  color:"#2563eb"},
-    {label:"Advertencia", count:int_warn,  color:"#d97706"},
-    {label:"Error",       count:int_error, color:"#dc2626"},
-  ].filter(g=>g.count>0);
-  const maxCheck = Math.max(...checksByStatus.map(g=>g.count), 1);
-
-  /* checks con valor > 0 para gráfica de barras de afectados */
-  const checksWithValue = checks.filter(c=>safeNum(c.value)>0);
-  const maxVal = Math.max(...checksWithValue.map(c=>safeNum(c.value)), 1);
-
-  return (
-    <>
-      {/* KPIs */}
-      <div className="mdb-grid4">
-        <Stat label="Health score"     value={`${health}%`}  sub={health>=80?"BD en buen estado":health>=50?"Requiere atención":"Problemas detectados"} color={health>=80?"green":health>=50?"yellow":"red"} icon={<MdCheckCircle/>}/>
-        <Stat label="Checks OK"        value={int_ok}        sub={`de ${checks.length} verificaciones`} color="green"  icon={<MdCheckCircle/>}/>
-        <Stat label="Advertencias"     value={int_warn}      sub="revisar pronto"                       color={int_warn>0?"yellow":"green"}  icon={<MdWarning/>}/>
-        <Stat label="Errores críticos" value={int_error}     sub="atención inmediata"                   color={int_error>0?"red":"green"}    icon={<MdError/>}/>
-      </div>
-
-      {/* Fila 1: health score + distribución de checks */}
-      <div className="mdb-grid2">
-
-        {/* Health score */}
-        <div className="mdb-panel">
-          <div className="mdb-panel-head"><div className="mdb-panel-title"><MdTimer size={16}/> Health score de la BD</div></div>
-          <div className="mdb-panel-body">
-            <div style={{display:"flex",alignItems:"center",gap:22,marginBottom:16}}>
-              <Donut
-                segments={[
-                  {value:int_ok,    color:"#16a34a"},
-                  {value:int_info,  color:"#2563eb"},
-                  {value:int_warn,  color:"#d97706"},
-                  {value:int_error, color:"#dc2626"},
-                  {value:Math.max(checks.length-int_ok-int_info-int_warn-int_error,0), color:"#f3f4f6"},
-                ]}
-                size={120} stroke={18}
-                centerLabel={`${health}%`}
-                centerSub="salud"
-              />
-              <div style={{flex:1}}>
-                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"2.4rem",fontWeight:700,color:health>=80?"#16a34a":health>=50?"#d97706":"#dc2626",lineHeight:1}}>
-                  {health}<span style={{fontSize:"1rem",color:"#9ca3af"}}>/100</span>
-                </div>
-                <div style={{fontSize:".85rem",color:health>=80?"#16a34a":health>=50?"#d97706":"#dc2626",marginTop:6,fontWeight:600}}>
-                  {health>=80?"✓ Base de datos saludable":health>=50?"⚠ Requiere atención":"❌ Problemas detectados"}
-                </div>
-                <div style={{height:8,background:"#f3f4f6",borderRadius:4,overflow:"hidden",marginTop:12}}>
-                  <div style={{height:"100%",width:`${health}%`,background:health>=80?"#16a34a":health>=50?"#d97706":"#dc2626",borderRadius:4,transition:"width .5s"}}/>
-                </div>
-                <div style={{fontSize:".72rem",color:"#9ca3af",marginTop:6}}>
-                  {int_ok} ok · {int_info} info · {int_warn} warn · {int_error} error
-                </div>
-              </div>
-            </div>
-            {/* Barra de distribución por estado */}
-            <div style={{marginBottom:4,fontSize:".7rem",fontWeight:700,color:"#6b7280",textTransform:"uppercase",letterSpacing:".5px"}}>Distribución de checks</div>
-            {checksByStatus.map(g=>(
-              <div key={g.label} style={{marginBottom:8}}>
-                <div style={{display:"flex",justifyContent:"space-between",marginBottom:3,fontSize:".75rem"}}>
-                  <span style={{color:g.color,fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
-                    <span style={{width:8,height:8,borderRadius:2,background:g.color,display:"inline-block"}}/>
-                    {g.label}
-                  </span>
-                  <span style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:700,color:"#111827"}}>{g.count}</span>
-                </div>
-                <div style={{height:8,background:"#f3f4f6",borderRadius:4,overflow:"hidden"}}>
-                  <div style={{height:"100%",width:`${safePct(g.count,maxCheck)}%`,background:g.color,borderRadius:4,transition:"width .4s"}}/>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Lista completa de checks */}
-        <div className="mdb-panel">
-          <div className="mdb-panel-head"><div className="mdb-panel-title"><MdQueryStats size={16}/> Verificaciones de integridad</div><span className="mdb-badge">{checks.length} checks</span></div>
-          <div className="mdb-panel-body">
-            <div className="mdb-checks">
-              {checks.map(c=>(
-                <div key={c.name} className="mdb-check">
-                  <div className="mdb-check-left">{statusIcon(c.status)}<span className="mdb-check-name">{c.name}</span></div>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    {safeNum(c.value)>0&&(
-                      <div style={{width:60,height:5,background:"#f3f4f6",borderRadius:3,overflow:"hidden"}}>
-                        <div style={{height:"100%",width:`${safePct(safeNum(c.value),maxVal||1)}%`,background:c.status==="ok"?"#16a34a":c.status==="warn"?"#d97706":c.status==="error"?"#dc2626":"#2563eb",borderRadius:3}}/>
-                      </div>
-                    )}
-                    <span className={`mdb-cbadge ${c.status}`}>{c.value===0&&c.status==="ok"?"✓ 0":fmtNum(c.value)}</span>
-                  </div>
-                </div>
+        <div className="panel-body">
+          <div className="a-info" style={{marginBottom:14}}>ℹ En entornos serverless (Vercel), InnoDB puede tener fragmentación lógica aunque <code>data_free = 0</code>. Se reconstruyen estadísticas del optimizador y se compactan índices en <strong>todas las tablas InnoDB</strong>.</div>
+          {summary.high_frag_tables > 0 && <div className="a-warn" style={{marginBottom:14}}>⚠ {summary.high_frag_tables} tabla(s) con alta fragmentación detectadas.</div>}
+          <div style={{marginBottom:16}}>
+            <div className="sec-title">Tablas que se optimizarán ({table_health.filter(t => (t.engine||"").toLowerCase()==="innodb").length} InnoDB)</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8}}>
+              {table_health.filter(t => (t.engine||"").toLowerCase()==="innodb").slice(0,24).map((t,i) => (
+                <span key={`opt-${t.name}-${i}`} style={{background:t.frag_pct>20?"#e8f0fe":"#f1f5f9",color:t.frag_pct>20?"#2c5282":"#475569",border:`1px solid ${t.frag_pct>20?"#c3d6f5":"#e2e8f0"}`,borderRadius:6,padding:"3px 10px",fontSize:".74rem",fontWeight:700}}>
+                  {t.name}{t.frag_pct>20?` (${t.frag_pct.toFixed(0)}%)`:""}
+                </span>
               ))}
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Fila 2: gráfica de afectados + leyenda + problemas */}
-      {checksWithValue.length>0&&(
-        <div className="mdb-grid2">
-          {/* Gráfica de barras: cuántos registros afectados por check */}
-          <div className="mdb-panel">
-            <div className="mdb-panel-head"><div className="mdb-panel-title"><MdInfo size={16}/> Registros afectados por verificación</div></div>
-            <div className="mdb-panel-body">
-              {checksWithValue.sort((a,b)=>safeNum(b.value)-safeNum(a.value)).map(c=>{
-                const statusC = c.status==="ok"?"#16a34a":c.status==="warn"?"#d97706":c.status==="error"?"#dc2626":"#2563eb";
-                return (
-                  <div key={c.name} style={{marginBottom:11}}>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4,fontSize:".76rem"}}>
-                      <span style={{color:statusC,fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
-                        {statusIcon(c.status)} {c.name}
-                      </span>
-                      <span style={{fontFamily:"'JetBrains Mono',monospace",color:"#111827",fontWeight:700}}>{fmtNum(c.value)}</span>
-                    </div>
-                    <div style={{height:10,background:"#f3f4f6",borderRadius:5,overflow:"hidden"}}>
-                      <div style={{height:"100%",width:`${safePct(safeNum(c.value),maxVal)}%`,background:statusC,borderRadius:5,transition:"width .4s"}}/>
-                    </div>
-                  </div>
-                );
-              })}
-              <div style={{marginTop:8,fontSize:".71rem",color:"#9ca3af"}}>Cada barra muestra cuántos registros tienen ese problema. Lo ideal es que todas estén en 0.</div>
-            </div>
-          </div>
-
-          {/* Leyenda + problemas detectados */}
-          <div style={{display:"flex",flexDirection:"column",gap:14}}>
-            <div className="mdb-panel">
-              <div className="mdb-panel-head"><div className="mdb-panel-title"><MdInfo size={16}/> Qué significa cada estado</div></div>
-              <div className="mdb-panel-body">
-                {[
-                  {s:"ok",    label:"Sin problema",   desc:"El check pasó — dato íntegro"},
-                  {s:"info",  label:"Informativo",     desc:"Dato a tener en cuenta, no crítico"},
-                  {s:"warn",  label:"Advertencia",     desc:"Hay datos inconsistentes, corregir pronto"},
-                  {s:"error", label:"Error crítico",   desc:"Integridad referencial comprometida"},
-                ].map(({s,label,desc})=>(
-                  <div key={s} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:"#f9fafb",borderRadius:7,border:"1px solid #f3f4f6",marginBottom:6}}>
-                    {statusIcon(s)}
-                    <div>
-                      <div style={{fontSize:".8rem",fontWeight:600,color:"#374151"}}>{label}</div>
-                      <div style={{fontSize:".68rem",color:"#9ca3af"}}>{desc}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {totalIssues>0&&(
-              <div className="mdb-panel">
-                <div className="mdb-panel-head">
-                  <div className="mdb-panel-title"><MdWarning size={16} style={{color:"#d97706"}}/> Acciones requeridas</div>
-                  <span className="mdb-badge" style={{background:"#fef9c3",color:"#92400e",borderColor:"#fde68a"}}>{totalIssues} problema{totalIssues!==1?"s":""}</span>
-                </div>
-                <div className="mdb-panel-body">
-                  {checks.filter(c=>c.status==="warn"||c.status==="error").map(c=>(
-                    <div key={`p-${c.name}`} className="mdb-check" style={{marginBottom:6,borderColor:c.status==="error"?"#fecaca":"#fde68a",background:c.status==="error"?"#fef2f2":"#fffbeb"}}>
-                      <div className="mdb-check-left">
-                        {statusIcon(c.status)}
-                        <div>
-                          <div className="mdb-check-name" style={{fontWeight:600}}>{c.name}</div>
-                          <div style={{fontSize:".68rem",color:"#9ca3af",marginTop:1}}>
-                            {c.status==="error"?"⚡ Corregir inmediatamente — afecta integridad":"⏰ Revisar pronto — datos huérfanos o inconsistentes"}
-                          </div>
-                        </div>
-                      </div>
-                      <span className={`mdb-cbadge ${c.status}`}>{fmtNum(c.value)} afectados</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {int_warn===0&&int_error===0&&(
-        <div className="mdb-alert-ok">✓ Todas las verificaciones pasaron. La integridad referencial de la base de datos está en perfecto estado.</div>
-      )}
-    </>
-  );
-}
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   COMPONENTE PRINCIPAL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-export default function MonitorBD() {
-  const [overview,  setOverview]  = useState(null);
-  const [integrity, setIntegrity] = useState(null);
-  const [perf,      setPerf]      = useState(null);
-  const [proc,      setProc]      = useState(null);
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState(null);
-  const [lastUpdate,setLastUpdate]= useState(null);
-  const [tab,       setTab]       = useState("overview");
-
-  const fetchAll = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const [ovR,inR,pfR,prR] = await Promise.all([
-        fetch(`${API_URL}/api/admin/monitor/overview`,    {headers:auth()}),
-        fetch(`${API_URL}/api/admin/monitor/integrity`,   {headers:auth()}),
-        fetch(`${API_URL}/api/admin/monitor/performance`, {headers:auth()}),
-        fetch(`${API_URL}/api/admin/monitor/processes`,   {headers:auth()}),
-      ]);
-      if (ovR.ok) setOverview(await ovR.json());
-      if (inR.ok) setIntegrity(await inR.json());
-      if (pfR.ok) setPerf(await pfR.json());
-      if (prR.ok) setProc(await prR.json());
-      setLastUpdate(new Date());
-    } catch { setError("No se pudo conectar con el servidor de monitoreo."); }
-    finally  { setLoading(false); }
-  }, []);
-
-  const fetchProcesses = useCallback(async () => {
-    try { const r=await fetch(`${API_URL}/api/admin/monitor/processes`,{headers:auth()}); if(r.ok) setProc(await r.json()); } catch {}
-  }, []);
-
-  useEffect(()=>{ fetchAll(); },[]);
-  useEffect(()=>{ const t=setInterval(fetchAll,60000);       return ()=>clearInterval(t); },[]);
-  useEffect(()=>{ const t=setInterval(fetchProcesses,30000); return ()=>clearInterval(t); },[]);
-
-  const tabs=[
-    {id:"overview",  label:"📊 Overview",    cls:""},
-    {id:"perf",      label:"⚡ Performance",  cls:"new-tab"},
-    {id:"processes", label:"🔄 Procesos",     cls:"new-tab"},
-    {id:"integrity", label:"🔍 Integridad",   cls:""},
-  ];
-
-  return (
-    <div className="mdb" style={{background:"#f9fafb",minHeight:"100vh",padding:"24px",color:"#111827"}}>
-      <style>{S}</style>
-
-      {/* Header */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:24}}>
-        <div>
-          <h2 style={{margin:0,display:"flex",alignItems:"center",gap:10,color:"#111827",fontSize:"1.3rem",fontWeight:700}}>
-            <MdStorage style={{color:"#2563eb"}}/>
-            Monitor de Base de Datos
-          </h2>
-          <p style={{margin:"4px 0 0",color:"#9ca3af",fontSize:".8rem"}}>
-            MySQL · métricas técnicas reales · performance_schema + information_schema
-            {lastUpdate&&<span style={{marginLeft:12}}>· actualizado: {lastUpdate.toLocaleTimeString("es-MX")}</span>}
-          </p>
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          {!loading&&!error&&(
-            <div style={{display:"flex",alignItems:"center",gap:7,background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:20,padding:"5px 14px",fontSize:".75rem",color:"#15803d",fontWeight:600}}>
-              <span style={{width:7,height:7,borderRadius:"50%",background:"#16a34a",display:"inline-block",animation:"pulse2 2s ease-in-out infinite"}}/>
-              Conectado
-            </div>
-          )}
-          <button onClick={fetchAll} disabled={loading} style={{display:"flex",alignItems:"center",gap:7,background:"#2563eb",color:"#fff",border:"none",padding:"9px 18px",borderRadius:8,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:".84rem",fontWeight:600,opacity:loading?.6:1,boxShadow:"0 1px 3px rgba(37,99,235,.3)"}}>
-            <MdRefresh size={16} className={loading?"spinning":""}/>
-            {loading?"Cargando…":"Actualizar"}
+          <button className="btn-green" onClick={onOptimize} disabled={optimizing}>
+            {optimizing ? <><span className="spinning">↻</span>Optimizando…</> : <>🔧 Ejecutar OPTIMIZE ahora</>}
           </button>
         </div>
       </div>
 
-      {error&&<div className="mdb-alert-err" style={{marginBottom:18}}>⚠ {error}</div>}
+      <div className="g2">
+        <div className="panel">
+          <div className="panel-head"><div className="panel-title">📊 Fragmentación por tabla</div><span className="badge">data_free</span></div>
+          <div className="panel-body">
+            {table_health.every(t => safeNum(t.free_kb) === 0)
+              ? <div className="a-ok">✓ data_free = 0 en todas las tablas. InnoDB gestiona espacio eficientemente.</div>
+              : <HBar data={[...table_health].filter(t => safeNum(t.free_kb)>0).sort((a,b) => b.frag_pct-a.frag_pct).slice(0,10).map(t => ({label:t.name,value:t.frag_pct,displayVal:`${t.frag_pct.toFixed(1)}%`,sub:fmtKB(t.free_kb),color:fragC(t.frag_pct)}))} lw={110}/>
+            }
+          </div>
+        </div>
+        <div className="panel">
+          <div className="panel-head"><div className="panel-title">🔑 Índices por tabla</div><span className="badge">{index_health.length} total</span></div>
+          <div className="panel-body">
+            {Object.entries(
+              index_health.reduce((acc, idx) => {
+                if (!acc[idx.table_name]) acc[idx.table_name] = {pk:0,uq:0,reg:0};
+                if (idx.is_primary) acc[idx.table_name].pk++;
+                else if (idx.is_unique) acc[idx.table_name].uq++;
+                else acc[idx.table_name].reg++;
+                return acc;
+              }, {})
+            ).sort(([,a],[,b]) => (b.pk+b.uq+b.reg)-(a.pk+a.uq+a.reg)).slice(0,10).map(([table,counts]) => {
+              const total = counts.pk+counts.uq+counts.reg;
+              return (
+                <div key={`idx-${table}`} style={{marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:3,fontSize:".84rem"}}>
+                    <span style={{color:"#374151",fontWeight:600}}>{table}</span>
+                    <div style={{display:"flex",gap:4}}>
+                      {counts.pk>0 && <span className="tag t-pk" style={{fontSize:".62rem"}}>PK</span>}
+                      {counts.uq>0 && <span className="tag t-ok" style={{fontSize:".62rem"}}>UQ:{counts.uq}</span>}
+                      {counts.reg>0 && <span className="tag t-info" style={{fontSize:".62rem"}}>IDX:{counts.reg}</span>}
+                      <span style={{fontWeight:800,color:"#1e3a5f"}}>{total}</span>
+                    </div>
+                  </div>
+                  <div style={{height:8,background:"#f0f4f8",borderRadius:4,overflow:"hidden",display:"flex"}}>
+                    <div style={{width:`${safePct(counts.pk,total)}%`,background:"#1e7e34"}}/>
+                    <div style={{width:`${safePct(counts.uq,total)}%`,background:"#2c5282"}}/>
+                    <div style={{width:`${safePct(counts.reg,total)}%`,background:"#a78bfa"}}/>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
-      {loading&&!overview?(
-        <div className="mdb-loading"><MdRefresh size={20} className="spinning" style={{color:"#2563eb"}}/> Consultando base de datos…</div>
-      ):(
-        <div className="mdb-body">
-          <div style={{background:"#fff",borderRadius:12,border:"1px solid #e5e7eb",boxShadow:"0 1px 3px rgba(0,0,0,.06)",overflow:"hidden",marginBottom:4}}>
-            <div className="mdb-tabs" style={{padding:"0 8px"}}>
-              {tabs.map(t=>(
-                <button key={t.id} className={`mdb-tab ${t.cls} ${tab===t.id?"active":""}`} onClick={()=>setTab(t.id)}>{t.label}</button>
+      <div className="panel">
+        <div className="panel-head">
+          <div className="panel-title">🗃️ Detalle de tablas</div>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Filtrar tabla…" style={{padding:"5px 10px",border:"1.5px solid #e2e8f0",borderRadius:7,fontSize:".84rem",color:"#374151",fontFamily:"inherit",width:150}}/>
+            <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{padding:"5px 10px",border:"1.5px solid #e2e8f0",borderRadius:7,fontSize:".84rem",color:"#374151",fontFamily:"inherit"}}>
+              <option value="size">↓ Tamaño</option>
+              <option value="frag">↓ Fragmentación</option>
+              <option value="free">↓ data_free</option>
+            </select>
+          </div>
+        </div>
+        <div className="tscroll">
+          <table className="tbl">
+            <thead>
+              <tr><th>Tabla</th><th>Filas est.</th><th>Total</th><th style={{minWidth:130}}>% relativo</th><th>data_free</th><th>Fragmentación</th><th>Estado</th></tr>
+            </thead>
+            <tbody>
+              {filtradas.map((t, i) => {
+                const maxKB = Math.max(...table_health.map(x => safeNum(x.total_kb)), 1);
+                return (
+                  <tr key={`td-${t.name}-${i}`}>
+                    <td><strong style={{color:"#1e3a5f"}}>{t.name}</strong></td>
+                    <td>{fmtNum(t.est_rows)}</td>
+                    <td style={{color:"#1e3a5f",fontWeight:700}}>{fmtKB(t.total_kb)}</td>
+                    <td><div className="bar-wrap"><div className="bar-track"><div className="bar-fill" style={{width:`${safePct(t.total_kb,maxKB)}%`,background:"#2c5282"}}/></div><div className="bar-pct">{Math.round(safePct(t.total_kb,maxKB))}%</div></div></td>
+                    <td style={{color:safeNum(t.free_kb)>0?"#c9961a":"#a0aec0"}}>{fmtKB(t.free_kb)}</td>
+                    <td><span style={{fontSize:".84rem",color:fragC(t.frag_pct),fontWeight:700}}>{t.frag_pct.toFixed(1)}%</span></td>
+                    <td><span className={`tag ${t.status==="critical"?"t-err":t.status==="warn"?"t-warn":"t-ok"}`}>{t.status==="critical"?"Crítica":t.status==="warn"?"Moderada":"Óptima"}</span></td>
+                  </tr>
+                );
+              })}
+              {filtradas.length === 0 && <tr><td colSpan={7} style={{textAlign:"center",padding:"32px",color:"#a0aec0"}}>Sin resultados</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ════════════════════════════════════════════
+   TAB: CONEXIONES
+   ════════════════════════════════════════════ */
+function TabConexiones({ procData }) {
+  if (!procData) return <div className="loading"><span className="spinning">↻</span> Cargando…</div>;
+  const { processes = [], transactions = [], locks = [], summary = {} } = procData;
+  const PAL = ["#2c5282","#6d28d9","#0d7377","#c9961a","#c0392b"];
+  const stateEntries = Object.entries(summary.state_summary || {}).sort((a,b) => b[1]-a[1]);
+  return (
+    <>
+      <div className="g4">
+        <Stat label="Procesos activos"  value={summary.total_processes}    sub="en information_schema"  color="blue"   icon="⚙️"/>
+        <Stat label="Transacciones"     value={summary.total_transactions} sub="InnoDB activas"          color="purple" icon="🔄"/>
+        <Stat label="Locks activos"     value={summary.total_locks}        sub="data_locks"              color={summary.total_locks>0?"yellow":"green"} icon="🔒"/>
+        <Stat label="Larga duración"    value={summary.long_running}       sub="> 10 segundos"           color={summary.long_running>0?"red":"green"}   icon="⏳"/>
+      </div>
+      <div className="g2">
+        <div className="panel">
+          <div className="panel-head"><div className="panel-title">⚙️ Procesos activos</div><span className="badge">{processes.length}</span></div>
+          <div className="tscroll">
+            <table className="tbl">
+              <thead>
+                <tr><th>ID</th><th>Usuario</th><th>DB</th><th>Comando</th><th>Tiempo</th><th>Estado</th><th>Query</th></tr>
+              </thead>
+              <tbody>
+                {processes.length === 0
+                  ? <tr><td colSpan={7} style={{textAlign:"center",padding:"24px",color:"#a0aec0"}}>Sin procesos activos</td></tr>
+                  : processes.map((p,i) => (
+                    <tr key={`pr-${p.id}-${i}`}>
+                      <td style={{fontSize:".76rem",color:"#a0aec0"}}>{p.id}</td>
+                      <td style={{fontWeight:600,color:"#2c5282"}}>{p.db_user}</td>
+                      <td style={{fontSize:".8rem"}}>{p.db_name}</td>
+                      <td><span className="tag t-info" style={{fontSize:".7rem"}}>{p.command}</span></td>
+                      <td style={{color:p.time_sec>10?"#c0392b":p.time_sec>5?"#c9961a":"#374151",fontWeight:600}}>{p.time_sec}s</td>
+                      <td style={{fontSize:".78rem",color:"#718096"}}>{p.state||"—"}</td>
+                      <td style={{fontSize:".76rem",color:"#374151",maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={p.query_preview}>{p.query_preview||"—"}</td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="panel">
+          <div className="panel-head"><div className="panel-title">🔄 Transacciones InnoDB</div><span className="badge">{transactions.length}</span></div>
+          <div className="panel-body">
+            {transactions.length === 0
+              ? <div className="a-ok">✓ Sin transacciones activas en este momento.</div>
+              : <div className="kv">
+                {transactions.map((t,i) => (
+                  <div key={`trx-${t.trx_id}-${i}`} className="kv-row" style={{flexDirection:"column",alignItems:"flex-start",gap:4}}>
+                    <div style={{display:"flex",justifyContent:"space-between",width:"100%"}}>
+                      <span style={{fontWeight:700,fontSize:".84rem",color:"#1e3a5f"}}>TRX {t.trx_id}</span>
+                      <span className={`tag ${t.state==="RUNNING"?"t-ok":"t-warn"}`} style={{fontSize:".7rem"}}>{t.state}</span>
+                    </div>
+                    <div style={{fontSize:".78rem",color:"#718096"}}>Duración: {t.duration_sec}s · Filas locked: {t.rows_locked} · Modificadas: {t.rows_modified}</div>
+                  </div>
+                ))}
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+      {stateEntries.length > 0 && (
+        <div className="panel">
+          <div className="panel-head"><div className="panel-title">📊 Distribución de estados</div></div>
+          <div className="panel-body"><HBar data={stateEntries.map(([state,count],i) => ({label:state,value:count,displayVal:String(count),color:PAL[i%PAL.length]}))} lw={140}/></div>
+        </div>
+      )}
+      {locks.length > 0 && (
+        <div className="panel">
+          <div className="panel-head"><div className="panel-title">🔒 Locks activos</div><span className="badge" style={{background:"#fff8e1",color:"#c9961a",borderColor:"#ffe082"}}>{locks.length}</span></div>
+          <div className="tscroll">
+            <table className="tbl">
+              <thead>
+                <tr><th>TRX ID</th><th>Tabla</th><th>Tipo</th><th>Modo</th><th>Estado</th><th>Data</th></tr>
+              </thead>
+              <tbody>
+                {locks.map((l,i) => (
+                  <tr key={`lk-${l.lock_id}-${i}`}>
+                    <td style={{fontSize:".76rem"}}>{l.trx_id}</td>
+                    <td style={{fontWeight:600}}>{l.table_name}</td>
+                    <td><span className="tag t-info" style={{fontSize:".7rem"}}>{l.lock_type}</span></td>
+                    <td style={{fontSize:".78rem"}}>{l.lock_mode}</td>
+                    <td><span className={`tag ${l.lock_status==="GRANTED"?"t-ok":"t-warn"}`} style={{fontSize:".7rem"}}>{l.lock_status}</span></td>
+                    <td style={{fontSize:".76rem",color:"#a0aec0"}}>{l.lock_data||"—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ════════════════════════════════════════════
+   TAB: OPTIMIZACIÓN
+   ════════════════════════════════════════════ */
+function TabOptimizacion({ maint, onOptimize, optimizing, lastOptimize, optimLogs }) {
+  if (!maint) return <div className="loading"><span className="spinning">↻</span> Cargando…</div>;
+  const { summary, table_health = [] } = maint;
+  const innodbTables = table_health.filter(t => (t.engine || "").toLowerCase() === "innodb");
+  return (
+    <>
+      <div style={{background:"linear-gradient(135deg,#1e3a5f,#2c5282)",borderRadius:12,padding:"20px 24px",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-20,right:-20,width:160,height:160,borderRadius:"50%",background:"rgba(255,255,255,.07)"}}/>
+        <div style={{display:"flex",alignItems:"center",gap:14}}>
+          <div style={{width:44,height:44,borderRadius:12,background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.4rem"}}>🛠️</div>
+          <div>
+            <div style={{color:"#fff",fontWeight:800,fontSize:"1.15rem",marginBottom:3}}>Optimización de Rendimiento</div>
+            <div style={{color:"rgba(255,255,255,.75)",fontSize:".84rem"}}>
+              {lastOptimize ? `✓ El sistema está en buen estado. ${lastOptimize}` : "Sin optimizaciones registradas en esta sesión."}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="g4">
+        <Stat label="Tablas analizadas"  value={summary.total_tables}        sub="en la base de datos"  color="blue"   icon="🗃️"/>
+        <Stat label="Alta fragmentación" value={summary.high_frag_tables}    sub="data_free > 20%"      color={summary.high_frag_tables>0?"yellow":"green"} icon="⚠️"/>
+        <Stat label="Espacio frag."      value={fmtKB(summary.total_free_kb)} sub={`${summary.global_frag_pct}% global`} color={summary.global_frag_pct>20?"yellow":"green"} icon="💾"/>
+        <Stat label="Índices débiles"    value={summary.low_selectivity_idx} sub="selectividad < 10%"   color={summary.low_selectivity_idx>0?"yellow":"green"} icon="🔑"/>
+      </div>
+      <div className="panel">
+        <div className="panel-head" style={{background:"linear-gradient(135deg,#1e3a5f,#2c5282)",borderRadius:"12px 12px 0 0"}}>
+          <div className="panel-title" style={{color:"#fff"}}>🔧 Optimización de Base de Datos</div>
+        </div>
+        <div className="panel-body">
+          <div className="g2" style={{marginBottom:16}}>
+            <div>
+              <div style={{fontWeight:700,fontSize:".9rem",color:"#1e3a5f",marginBottom:6}}>⚡ Ejecutar optimización ahora</div>
+              <div style={{fontSize:".84rem",color:"#718096",lineHeight:1.55,marginBottom:14}}>Actualiza las estadísticas internas y reorganiza los índices de las tablas principales para mejorar la velocidad de consultas.</div>
+              <button className="btn-primary" onClick={onOptimize} disabled={optimizing}>
+                {optimizing ? <><span className="spinning">↻</span>Optimizando…</> : <>🛠️ Ejecutar optimización</>}
+              </button>
+            </div>
+            <div>
+              <div style={{fontWeight:700,fontSize:".9rem",color:"#1e3a5f",marginBottom:10}}>🗃️ Tablas incluidas en el proceso</div>
+              <div style={{fontSize:".82rem",color:"#718096",marginBottom:10}}>Se optimizan todas las tablas InnoDB del sistema.</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                {innodbTables.slice(0,24).map(t => (
+                  <span key={t.name} style={{background:t.frag_pct>20?"#e8f0fe":"#f1f5f9",color:t.frag_pct>20?"#2c5282":"#475569",border:`1px solid ${t.frag_pct>20?"#c3d6f5":"#e2e8f0"}`,borderRadius:6,padding:"3px 10px",fontSize:".74rem",fontWeight:700}}>
+                    {t.name}{t.frag_pct>20?` (${t.frag_pct.toFixed(0)}%)`:""}
+                  </span>
+                ))}
+                {innodbTables.length > 24 && <span style={{background:"#f1f5f9",color:"#475569",border:"1px solid #e2e8f0",borderRadius:6,padding:"3px 10px",fontSize:".74rem",fontWeight:700}}>+{innodbTables.length-24} más</span>}
+              </div>
+            </div>
+          </div>
+          <div style={{background:"#f8fafc",borderRadius:10,padding:"16px",border:"1px solid #f0f4f8"}}>
+            <div style={{display:"flex",gap:0,flexWrap:"wrap"}}>
+              {[
+                {n:1,title:"Actualización de estadísticas",desc:"Recalcula la distribución de datos para que el sistema elija el camino más rápido."},
+                {n:2,title:"Reorganización de índices",    desc:"Compacta y reconstruye los índices internos eliminando fragmentación."},
+                {n:3,title:"Registro de resultados",       desc:"Genera un log con fecha, duración y resultado tabla por tabla."},
+              ].map(step => (
+                <div key={step.n} style={{display:"flex",alignItems:"flex-start",gap:10,flex:1,minWidth:200,padding:"0 16px"}}>
+                  <div style={{width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#1e3a5f,#2c5282)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:".88rem",flexShrink:0}}>{step.n}</div>
+                  <div>
+                    <div style={{fontWeight:700,fontSize:".84rem",color:"#1e3a5f"}}>{step.title}</div>
+                    <div style={{fontSize:".78rem",color:"#718096",marginTop:2,lineHeight:1.45}}>{step.desc}</div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
+        </div>
+      </div>
+      <div className="panel">
+        <div className="panel-head"><div className="panel-title">🕐 Historial de optimizaciones</div></div>
+        <div className="tscroll">
+          <table className="tbl">
+            <thead>
+              <tr><th>FECHA</th><th>ORIGEN</th><th>TABLAS</th><th>DURACIÓN</th><th>RESULTADO</th></tr>
+            </thead>
+            <tbody>
+              {optimLogs.length === 0
+                ? <tr><td colSpan={5} style={{textAlign:"center",padding:"32px",color:"#a0aec0"}}>
+                    <div style={{fontSize:"1.8rem",marginBottom:8}}>🕐</div>
+                    <div style={{fontWeight:700}}>Sin historial de optimizaciones aún</div>
+                    <div style={{fontSize:".82rem",marginTop:4}}>Ejecuta la primera optimización con el botón de arriba</div>
+                  </td></tr>
+                : optimLogs.map((log, i) => (
+                  <tr key={`ol-${i}`}>
+                    <td style={{fontSize:".82rem"}}>{fmtDate(log.fecha||log.created_at)}</td>
+                    <td><span className={log.origen==="auto"?"bk-auto":"bk-manual"}>{log.origen==="auto"?"⚡ AUTO":"👤 MANUAL"}</span></td>
+                    <td style={{fontWeight:700}}>{log.ok||log.tablas_ok||"—"} / {log.total||log.tablas_total||"—"}</td>
+                    <td style={{color:"#374151"}}>{log.total_ms?(log.total_ms/1000).toFixed(2)+"s":log.duracion||"—"}</td>
+                    <td><span className={`tag ${(log.errors||0)===0?"t-ok":"t-warn"}`}>{(log.errors||0)===0?"EXITOSO":"PARCIAL"}</span></td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+}
 
-          {tab==="overview"  && overview   && <TabOverview   overview={overview}/>}
-          {tab==="perf"                    && <TabPerformance perf={perf}/>}
-          {tab==="processes"               && <TabProcesses  proc={proc}/>}
-          {tab==="integrity" && integrity  && <TabIntegrity  integrity={integrity}/>}
+/* ════════════════════════════════════════════
+   TAB: RESPALDOS
+   ════════════════════════════════════════════ */
+function TabRespaldos({ showToast }) {
+  const [subTab,       setSubTab]       = useState("historial");
+  const [backups,      setBackups]      = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [generating,   setGenerating]   = useState(false);
+  const [downloading,  setDownloading]  = useState(null);
+  const [confirmDel,   setConfirmDel]   = useState(null);
+  const [deleting,     setDeleting]     = useState(false);
+  const [filtro,       setFiltro]       = useState("todos");
+  const [schedules,    setSchedules]    = useState([]);
+  const [schedLoading, setSchedLoading] = useState(false);
+  const [newFreq,      setNewFreq]      = useState("diario");
+  const [newHora,      setNewHora]      = useState("02:00");
+  const [newDiaSem,    setNewDiaSem]    = useState(0);
+  const [newCadaHoras, setNewCadaHoras] = useState(6);
+  const [savingSched,  setSavingSched]  = useState(false);
+  const [runningId,    setRunningId]    = useState(null);
+  const [deletingSchId,setDeletingSchId]= useState(null);
 
-          {tab==="overview"  && !overview  && <div className="mdb-alert-info">Cargando overview…</div>}
-          {tab==="integrity" && !integrity && <div className="mdb-alert-info">Cargando verificaciones…</div>}
+  useEffect(() => { fetchBackups(); fetchSchedules(); }, []);
+
+  const fetchBackups = async () => {
+    setLoading(true);
+    try { const r = await fetch(`${API_URL}/api/admin/backups`, {headers:hdrs()}); if (r.ok) setBackups(await r.json()); }
+    catch {} finally { setLoading(false); }
+  };
+  const fetchSchedules = async () => {
+    setSchedLoading(true);
+    try { const r = await fetch(`${API_URL}/api/admin/backups/schedules`, {headers:hdrs()}); if (r.ok) setSchedules(await r.json()); }
+    catch {} finally { setSchedLoading(false); }
+  };
+
+  const getTipo    = b => (b.creado_por==="sistema"||b.nombre?.includes("_auto_"))?"auto":"manual";
+  const getSubtipo = (n="") => n.includes("_diario_")?"diario":n.includes("_semanal_")?"semanal":n.includes("_mensual_")?"mensual":null;
+  const fmtFreq    = s => {
+    if (s.frecuencia==="diario")  return `Diario a las ${s.hora}`;
+    if (s.frecuencia==="semanal") return `${DIAS[s.dia_semana??0]} a las ${s.hora}`;
+    if (s.frecuencia==="mensual") return `Día 1 de cada mes a las ${s.hora}`;
+    if (s.frecuencia==="horas")   return `Cada ${s.cada_horas}h`;
+    return s.cron_expr||"—";
+  };
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    try {
+      const r = await fetch(`${API_URL}/api/admin/backups/generate`, {method:"POST",headers:hdrs()});
+      const d = await r.json();
+      if (r.ok) { showToast(`✅ Backup generado: ${d.nombre}`); fetchBackups(); }
+      else showToast(d.error||"Error generando backup","err");
+    } catch { showToast("Error de conexión","err"); } finally { setGenerating(false); }
+  };
+
+  const handleDownload = async (backup) => {
+    setDownloading(backup.id);
+    try {
+      const r = await fetch(`${API_URL}/api/admin/backups/${backup.id}/download`, {headers:hdrs()});
+      const d = await r.json();
+      if (r.ok) {
+        const fr = await fetch(d.url);
+        const blob = await fr.blob();
+        const url = URL.createObjectURL(new Blob([blob],{type:"application/octet-stream"}));
+        const a = document.createElement("a"); a.href=url; a.download=d.nombre;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        showToast(`📥 Descargando ${d.nombre}`);
+      } else showToast(d.error||"Error al descargar","err");
+    } catch { showToast("Error de conexión","err"); } finally { setDownloading(null); }
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDel) return;
+    setDeleting(true);
+    try {
+      const r = await fetch(`${API_URL}/api/admin/backups/${confirmDel.id}`, {method:"DELETE",headers:hdrs()});
+      if (r.ok) { showToast("Backup eliminado correctamente"); fetchBackups(); }
+      else { const d = await r.json(); showToast(d.error||"Error al eliminar","err"); }
+    } catch { showToast("Error de conexión","err"); } finally { setDeleting(false); setConfirmDel(null); }
+  };
+
+  const handleSaveSchedule = async () => {
+    setSavingSched(true);
+    try {
+      const body = {frecuencia:newFreq,hora:newHora,dia_semana:newFreq==="semanal"?parseInt(newDiaSem):null,cada_horas:newFreq==="horas"?parseInt(newCadaHoras):null};
+      const r = await fetch(`${API_URL}/api/admin/backups/schedules`, {method:"POST",headers:hdrs(),body:JSON.stringify(body)});
+      const d = await r.json();
+      if (r.ok) { showToast(`✅ Programación guardada (${d.cron_expr})`); await fetchSchedules(); }
+      else showToast(d.error||"Error guardando programación","err");
+    } catch { showToast("Error de conexión","err"); } finally { setSavingSched(false); }
+  };
+
+  const handleToggle = async id => {
+    try {
+      const r = await fetch(`${API_URL}/api/admin/backups/schedules/${id}/toggle`, {method:"PATCH",headers:hdrs()});
+      const d = await r.json();
+      if (r.ok) { showToast(d.activo?"▶️ Activada":"⏸️ Pausada"); await fetchSchedules(); }
+      else showToast(d.error||"Error","err");
+    } catch { showToast("Error","err"); }
+  };
+
+  const handleRunSchedule = async id => {
+    setRunningId(id);
+    try {
+      const r = await fetch(`${API_URL}/api/admin/backups/schedules/${id}/run`, {method:"POST",headers:hdrs()});
+      const d = await r.json();
+      if (r.ok) { showToast(`✅ Backup ejecutado: ${d.nombre}`); await fetchBackups(); }
+      else showToast(d.error||"Error","err");
+    } catch { showToast("Error","err"); } finally { setRunningId(null); }
+  };
+
+  const handleDeleteSchedule = async id => {
+    setDeletingSchId(id);
+    try {
+      const r = await fetch(`${API_URL}/api/admin/backups/schedules/${id}`, {method:"DELETE",headers:hdrs()});
+      const d = await r.json();
+      if (r.ok) { showToast("Programación eliminada"); await fetchSchedules(); }
+      else showToast(d.error||"Error","err");
+    } catch { showToast("Error","err"); } finally { setDeletingSchId(null); }
+  };
+
+  const totalBytes   = backups.reduce((s,b) => s+(b.tamanio_bytes||0), 0);
+  const activeScheds = schedules.filter(s => s.activo).length;
+  const bkFiltrados  = backups.filter(b => filtro==="todos" ? true : getTipo(b)===filtro);
+  const FREQ_OPTIONS = [
+    {val:"diario", icon:"☀️", label:"Una vez al día",      desc:"Ideal para producción"},
+    {val:"horas",  icon:"⏰", label:"Cada varias horas",   desc:"Alta disponibilidad"},
+    {val:"semanal",icon:"📅", label:"Una vez a la semana", desc:"Moderado"},
+    {val:"mensual",icon:"📆", label:"Una vez al mes",      desc:"Archivado"},
+  ];
+
+  return (
+    <>
+      <div className="sub-tabs">
+        <button className={`sub-tab${subTab==="historial"?" active":""}`} onClick={() => setSubTab("historial")}>💾 Respaldos</button>
+        <button className={`sub-tab${subTab==="programar"?" active":""}`} onClick={() => setSubTab("programar")}>📅 Programar Respaldo</button>
+      </div>
+
+      {subTab === "historial" && (
+        <>
+          <div className="g4">
+            <Stat label="Total backups"          value={backups.length}               sub={`${backups.filter(b=>getTipo(b)==="manual").length} manuales · ${backups.filter(b=>getTipo(b)==="auto").length} automáticos`} color="blue"   icon="💾"/>
+            <Stat label="Espacio en Supabase"    value={fmtBytes(totalBytes)}         sub="almacenamiento total"                           color="purple" icon="☁️"/>
+            <Stat label="Último backup"          value={backups[0]?fmtDate(backups[0].creado_at):"—"} sub={backups[0]?(getTipo(backups[0])==="auto"?"🤖 automático":"👤 manual"):"ninguno"} color="teal" icon="🕐"/>
+            <Stat label="Programaciones activas" value={activeScheds}                 sub={`de ${schedules.length} configuradas`}           color="green"  icon="⚙️"/>
+          </div>
+          <div style={{background:"#fff",padding:"14px 18px",borderRadius:12,boxShadow:"0 2px 8px rgba(0,0,0,.05)",border:"1px solid #e2e8f0",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+              <button className="btn-ghost" onClick={fetchBackups} disabled={loading}><span className={loading?"spinning":""}>↻</span> Actualizar</button>
+              <div className="chips">
+                {["todos","manual","auto"].map(f => (
+                  <button key={f} className={`chip${filtro===f?" active":""}`} onClick={() => setFiltro(f)}>
+                    {f==="todos"?"Todos":f==="manual"?"👤 Manuales":"🤖 Automáticos"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button className="btn-primary" onClick={handleGenerate} disabled={generating}>
+              {generating ? <><span className="spinning">↻</span>Generando…</> : <>💾 Generar backup ahora</>}
+            </button>
+          </div>
+          <div className="panel">
+            <div className="panel-head"><div className="panel-title">📋 Historial de respaldos</div><span className="badge">{bkFiltrados.length}</span></div>
+            <div className="tscroll">
+              {loading
+                ? <div className="loading" style={{minHeight:120}}>Cargando respaldos…</div>
+                : bkFiltrados.length === 0
+                  ? <div style={{padding:"48px",textAlign:"center",color:"#a0aec0"}}><div style={{fontSize:"2.5rem",marginBottom:12}}>💾</div><div style={{fontWeight:700,color:"#374151"}}>No hay backups{filtro!=="todos"?" con ese filtro":""}</div></div>
+                  : <table className="tbl">
+                    <thead>
+                      <tr><th>Archivo</th><th>Tipo</th><th>Tamaño</th><th>Generado por</th><th>Fecha</th><th>Acciones</th></tr>
+                    </thead>
+                    <tbody>
+                      {bkFiltrados.map((b,i) => {
+                        const tipo = getTipo(b); const sub = getSubtipo(b.nombre);
+                        return (
+                          <tr key={`bk-${b.id||i}`}>
+                            <td><div className="bk-fn">{b.nombre}</div></td>
+                            <td><span className={tipo==="auto"?"bk-auto":"bk-manual"}>{tipo==="auto"?"🤖 Auto":"👤 Manual"}</span>{sub&&<span className="bk-sub">{sub}</span>}</td>
+                            <td><span className="bk-size">💾 {fmtBytes(b.tamanio_bytes)}</span></td>
+                            <td style={{fontSize:".84rem",color:"#475569"}}>{b.creado_por==="sistema"?"🤖 sistema":b.creado_por||"—"}</td>
+                            <td style={{fontSize:".82rem",color:"#718096"}}>{fmtDate(b.creado_at)}</td>
+                            <td>
+                              <div style={{display:"flex",gap:6}}>
+                                <button className="icon-btn ib-green" onClick={() => handleDownload(b)} disabled={downloading===b.id} title="Descargar">{downloading===b.id?<span className="spinning">↻</span>:"⬇️"}</button>
+                                <button className="icon-btn ib-red" onClick={() => setConfirmDel(b)} title="Eliminar">🗑️</button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+              }
+            </div>
+          </div>
+        </>
+      )}
+
+      {subTab === "programar" && (
+        <>
+          <div className="panel">
+            <div className="panel-head" style={{background:"linear-gradient(135deg,#1e3a5f,#2c5282)",borderRadius:"12px 12px 0 0"}}>
+              <div className="panel-title" style={{color:"#fff"}}>📅 Nueva programación de respaldo automático</div>
+              <span style={{color:"rgba(255,255,255,.65)",fontSize:".78rem"}}>node-cron · zona horaria: Ciudad de México</span>
+            </div>
+            <div className="panel-body">
+              <div style={{marginBottom:18}}>
+                <div className="sec-title">¿Con qué frecuencia se ejecuta?</div>
+                <div className="freq-grid">
+                  {FREQ_OPTIONS.map(f => (
+                    <div key={f.val} className={`freq-card${newFreq===f.val?" active":""}`} onClick={() => setNewFreq(f.val)}>
+                      <div className="freq-card-icon">{f.icon}</div>
+                      <div className="freq-card-label">{f.label}</div>
+                      <div className="freq-card-desc">{f.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{display:"flex",gap:16,marginBottom:18,flexWrap:"wrap"}}>
+                {newFreq !== "horas" && (
+                  <div style={{flex:1,minWidth:160}}>
+                    <div className="sec-title">¿A qué hora?</div>
+                    <input type="time" value={newHora} onChange={e => setNewHora(e.target.value)} className="time-input"/>
+                  </div>
+                )}
+                {newFreq === "horas" && (
+                  <div style={{flex:1}}>
+                    <div className="sec-title">¿Cada cuántas horas?</div>
+                    <div style={{display:"flex",gap:6}}>{[2,4,6,8,12].map(h => <button key={h} className={`hrs-btn${newCadaHoras===h?" active":""}`} onClick={() => setNewCadaHoras(h)}>{h}h</button>)}</div>
+                  </div>
+                )}
+                {newFreq === "semanal" && (
+                  <div style={{flex:2}}>
+                    <div className="sec-title">¿Qué día de la semana?</div>
+                    <div className="day-btns">{DIAS.map((d,i) => <button key={i} className={`day-btn${newDiaSem===i?" active":""}`} onClick={() => setNewDiaSem(i)}>{d.slice(0,3)}</button>)}</div>
+                  </div>
+                )}
+              </div>
+              <button className="btn-primary" onClick={handleSaveSchedule} disabled={savingSched}>
+                {savingSched ? <><span className="spinning">↻</span>Guardando…</> : <>📅 Guardar programación</>}
+              </button>
+            </div>
+          </div>
+          <div className="panel">
+            <div className="panel-head">
+              <div className="panel-title">⚙️ Programaciones activas</div>
+              <button className="btn-ghost" onClick={fetchSchedules} disabled={schedLoading} style={{fontSize:".82rem",padding:"7px 13px"}}><span className={schedLoading?"spinning":""}>↻</span> Actualizar</button>
+            </div>
+            {schedLoading
+              ? <div className="loading" style={{minHeight:100}}>Cargando…</div>
+              : schedules.length === 0
+                ? <div style={{padding:"48px",textAlign:"center",color:"#a0aec0"}}><div style={{fontSize:"2rem",marginBottom:8}}>📅</div><div style={{fontWeight:700,color:"#374151"}}>Sin programaciones configuradas</div></div>
+                : <div className="tscroll">
+                  <table className="tbl">
+                    <thead>
+                      <tr><th>Nombre</th><th>Frecuencia</th><th>Expresión Cron</th><th>Última ejecución</th><th>Estado</th><th>Acciones</th></tr>
+                    </thead>
+                    <tbody>
+                      {schedules.map(s => (
+                        <tr key={s.id}>
+                          <td style={{fontWeight:700,color:"#1e3a5f"}}>{s.nombre}</td>
+                          <td style={{color:"#475569"}}>{fmtFreq(s)}</td>
+                          <td><span className="mono">{s.cron_expr}</span></td>
+                          <td style={{fontSize:".8rem",color:"#a0aec0"}}>{s.ultima_ejecucion?new Date(s.ultima_ejecucion).toLocaleString("es-MX"):"—"}</td>
+                          <td><span style={{padding:"3px 12px",borderRadius:20,fontSize:".74rem",fontWeight:700,background:s.activo?"#e6f4ea":"#f1f5f9",color:s.activo?"#1e7e34":"#718096"}}>{s.activo?"● Activa":"○ Inactiva"}</span></td>
+                          <td>
+                            <div style={{display:"flex",gap:6}}>
+                              <button className="icon-btn ib-green" onClick={() => handleRunSchedule(s.id)} disabled={runningId===s.id} title="Ejecutar ahora">{runningId===s.id?<span className="spinning">↻</span>:"▶"}</button>
+                              <button className="icon-btn" onClick={() => handleToggle(s.id)} title={s.activo?"Pausar":"Activar"} style={{borderColor:s.activo?"#ffe082":"#a8d5b5",background:s.activo?"#fff8e1":"#e6f4ea",color:s.activo?"#c9961a":"#1e7e34"}}>{s.activo?"⏸":"▶"}</button>
+                              <button className="icon-btn ib-red" onClick={() => handleDeleteSchedule(s.id)} disabled={deletingSchId===s.id} title="Eliminar">{deletingSchId===s.id?<span className="spinning">↻</span>:"🗑"}</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+            }
+          </div>
+        </>
+      )}
+
+      {confirmDel && (
+        <div className="overlay" onClick={() => !deleting && setConfirmDel(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div style={{fontSize:"3rem",marginBottom:12}}>🗑️</div>
+            <h3>¿Eliminar este backup?</h3>
+            <p>Se eliminará <strong>{confirmDel.nombre}</strong> de Supabase Storage y del registro.<br/><br/><span style={{color:"#c0392b",fontWeight:700}}>Esta acción no se puede deshacer.</span></p>
+            <div className="modal-actions">
+              <button className="btn-ghost" onClick={() => setConfirmDel(null)} disabled={deleting}>Cancelar</button>
+              <button style={{padding:"10px 20px",borderRadius:8,border:"none",background:"#c0392b",color:"#fff",fontFamily:"inherit",fontWeight:700,fontSize:".88rem",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}} onClick={handleDelete} disabled={deleting}>
+                {deleting ? <><span className="spinning">↻</span>Eliminando…</> : <>🗑️ Sí, eliminar</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {generating && (
+        <div className="spin-overlay">
+          <div className="spin-box">
+            <div className="spinner"/>
+            <h3>Generando backup…</h3>
+            <p>Exportando todas las tablas y subiendo a Supabase Storage</p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ════════════════════════════════════════════
+   COMPONENTE PRINCIPAL
+   ════════════════════════════════════════════ */
+export default function MonitorDB() {
+  const [overview,    setOverview]    = useState(null);
+  const [perf,        setPerf]        = useState(null);
+  const [maint,       setMaint]       = useState(null);
+  const [procData,    setProcData]    = useState(null);
+  const [loading,     setLoading]     = useState(true);
+  const [error,       setError]       = useState(null);
+  const [lastUpdate,  setLastUpdate]  = useState(null);
+  const [tab,         setTab]         = useState("overview");
+  const [optimizing,  setOptimizing]  = useState(false);
+  const [lastOptimize,setLastOptimize]= useState(null);
+  const [optimLogs,   setOptimLogs]   = useState([]);
+  const [toast,       setToast]       = useState(null);
+
+  const showToast = useCallback((msg, type = "ok") => {
+    setToast({msg,type}); setTimeout(() => setToast(null), 3500);
+  }, []);
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const [ovR, pfR, mnR, prR] = await Promise.all([
+        fetch(`${API_URL}/api/admin/monitor/overview`,    {headers:auth()}),
+        fetch(`${API_URL}/api/admin/monitor/performance`, {headers:auth()}),
+        fetch(`${API_URL}/api/admin/monitor/maintenance`, {headers:auth()}),
+        fetch(`${API_URL}/api/admin/monitor/processes`,   {headers:auth()}),
+      ]);
+      if (ovR.ok) setOverview(await ovR.json());
+      if (pfR.ok) setPerf(await pfR.json());
+      if (mnR.ok) setMaint(await mnR.json());
+      if (prR.ok) setProcData(await prR.json());
+      setLastUpdate(new Date());
+    } catch { setError("No se pudo conectar con el servidor."); }
+    finally { setLoading(false); }
+  }, []);
+
+  const handleOptimize = async () => {
+    setOptimizing(true);
+    try {
+      const res  = await fetch(`${API_URL}/api/admin/monitor/optimize`, {method:"POST",headers:{...auth(),"Content-Type":"application/json"},body:JSON.stringify({optimizeAll:true})});
+      const data = await res.json();
+      if (res.ok) {
+        const logEntry = {fecha:new Date(),origen:"manual",ok:data.ok,total:data.total,total_ms:data.total_ms,errors:data.results?.filter(r => r.status==="error").length||0};
+        setOptimLogs(prev => [logEntry,...prev]);
+        setLastOptimize(`${new Date().toLocaleString("es-MX")} — ${data.ok}/${data.total} tablas en ${(data.total_ms/1000).toFixed(1)}s`);
+        showToast(`✓ Optimización completada: ${data.ok}/${data.total} tablas en ${(data.total_ms/1000).toFixed(1)}s`);
+        const mnR = await fetch(`${API_URL}/api/admin/monitor/maintenance`, {headers:auth()});
+        if (mnR.ok) setMaint(await mnR.json());
+      }
+    } catch { showToast("Error ejecutando optimización","err"); }
+    finally { setOptimizing(false); }
+  };
+
+  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { const t = setInterval(fetchAll, 60000); return () => clearInterval(t); }, []);
+
+  const TABS = [
+    {id:"overview",    label:"📊 Overview"},
+    {id:"basedatos",   label:"🗄️ Base de Datos"},
+    {id:"conexiones",  label:"🔗 Conexiones"},
+    {id:"respaldos",   label:"💾 Respaldos"},
+    {id:"optimizacion",label:"🛠️ Optimización"},
+  ];
+
+  return (
+    <div className="mon">
+      <style>{CSS}</style>
+
+      {/* Banner */}
+      <div className="mon-banner">
+        <div className="mon-banner-left">
+          <div className="mon-banner-icon">📊</div>
+          <div>
+            <div className="mon-banner-title">Monitoreo</div>
+            <div className="mon-banner-sub">
+              MySQL · performance_schema + information_schema
+              {lastUpdate && <span style={{marginLeft:10}}>· actualizado: {lastUpdate.toLocaleTimeString("es-MX")}</span>}
+            </div>
+          </div>
+        </div>
+        <div className="mon-banner-right">
+          {!loading && !error && <div className="mon-pill"><div className="mon-dot"/>Sistema OK</div>}
+          <button onClick={fetchAll} disabled={loading} className="btn-ghost" style={{borderColor:"rgba(255,255,255,.3)",background:"rgba(255,255,255,.12)",color:"#fff"}}>
+            <span className={loading?"spinning":""}>↻</span>{loading?"Cargando…":"Actualizar"}
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="mon-tabs">
+        {TABS.map(t => (
+          <button key={t.id} className={`mon-tab${tab===t.id?" active":""}`} onClick={() => setTab(t.id)}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* Body */}
+      <div className="mon-body">
+        {error && <div className="a-err">⚠ {error}</div>}
+        {loading && !overview
+          ? <div className="loading"><span className="spinning" style={{color:"#2c5282",fontSize:"1.2rem"}}>↻</span>Consultando base de datos…</div>
+          : <>
+            {tab==="overview"    && overview  && <TabOverview    overview={overview}/>}
+            {tab==="basedatos"                && <TabBaseDatos   maint={maint} onOptimize={handleOptimize} optimizing={optimizing} lastOptimize={lastOptimize}/>}
+            {tab==="conexiones"               && <TabConexiones  procData={procData}/>}
+            {tab==="respaldos"                && <TabRespaldos   showToast={showToast}/>}
+            {tab==="optimizacion"             && <TabOptimizacion maint={maint} onOptimize={handleOptimize} optimizing={optimizing} lastOptimize={lastOptimize} optimLogs={optimLogs}/>}
+            {tab==="overview"   && !overview  && <div className="a-info">Cargando overview…</div>}
+          </>
+        }
+      </div>
+
+      <Toast toast={toast}/>
+      {optimizing && (
+        <div className="spin-overlay">
+          <div className="spin-box">
+            <div className="spinner"/>
+            <h3>Optimizando base de datos…</h3>
+            <p>Ejecutando ANALYZE + OPTIMIZE TABLE en todas las tablas InnoDB</p>
+            <p style={{ marginTop: 8, fontSize: ".78rem", color: "#a0aec0" }}>
+              Esto puede tardar varios segundos
+            </p>
+          </div>
         </div>
       )}
     </div>

@@ -1,12 +1,44 @@
 // ============================================================
-// Catalogo.js  —  responsive mejorado
+// Catalogo.js  —  con predicción de agotamiento de inventario
 // ============================================================
-import React, { useState, useEffect, useMemo, useContext } from "react";
+import React, { useState, useEffect, useMemo, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { ThemeContext } from "../../context/ThemeContext";
 
 const API_URL = "https://sl-back.vercel.app";
+
+// ── Mensajes dinámicos según alerta ─────────────────────────
+const MENSAJES_CRITICO = [
+  "¡Últimas unidades!",
+  "¡Se acaba hoy!",
+  "¡Casi agotado!",
+  "¡Corre, quedan pocas!",
+  "⚡ Stock crítico",
+];
+const MENSAJES_BAJO = [
+  "Pocas unidades",
+  "Stock limitado",
+  "Quedan muy pocas",
+  "Alta demanda",
+];
+const MENSAJES_MODERADO = [
+  "Disponible por ahora",
+  "Stock moderado",
+  "Vendiendo rápido",
+];
+
+const getMensaje = (arr, id) => arr[id % arr.length];
+
+const formatTiempo = (dias) => {
+  if (dias === null || dias === undefined) return null;
+  if (dias < 0.5) return "menos de 12 horas";
+  if (dias < 1)   return "menos de 1 día";
+  if (dias < 2)   return "1–2 días";
+  if (dias < 7)   return `~${Math.round(dias)} días`;
+  if (dias < 30)  return `~${Math.round(dias / 7)} semana${Math.round(dias / 7) > 1 ? "s" : ""}`;
+  return `~${Math.round(dias / 30)} mes${Math.round(dias / 30) > 1 ? "es" : ""}`;
+};
 
 const getCSS = (dark) => `
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap');
@@ -20,6 +52,8 @@ const getCSS = (dark) => `
   --border: ${dark ? "#334155" : "#e4e2dd"};
   --accent: #c8f03c;
   --danger: #e53e3e;
+  --warn:   #f59e0b;
+  --ok:     #10b981;
   --text:   ${dark ? "#e2e8f0" : "#0a1a2f"};
   font-family: 'Outfit', sans-serif;
   background: var(--cream);
@@ -81,6 +115,8 @@ const getCSS = (dark) => `
 .sl-badge { display:inline-block; padding:3px 9px; border-radius:3px; font-size:.68rem; font-weight:700; letter-spacing:.8px; text-transform:uppercase; }
 .sl-badge-out   { background:var(--danger); color:white; }
 .sl-badge-marca { background:var(--navy); color:white; }
+.sl-badge-hot   { background:#ff4d00; color:white; animation: sl-pulse-badge 1.8s ease-in-out infinite; }
+@keyframes sl-pulse-badge { 0%,100%{opacity:1} 50%{opacity:.65} }
 
 /* ── CARD BODY ── */
 .sl-card-body { padding:14px 16px 18px; flex:1; display:flex; flex-direction:column; gap:8px; }
@@ -94,6 +130,54 @@ const getCSS = (dark) => `
 .sl-chip { padding:2px 9px; border:1.5px solid var(--border); border-radius:3px; font-size:.72rem; font-weight:600; color:var(--text); background:transparent; }
 .sl-color-dot { width:16px; height:16px; border-radius:50%; border:2px solid ${dark ? "#334155" : "white"}; box-shadow:0 0 0 1.5px var(--border); display:inline-block; flex-shrink:0; }
 
+/* ── STOCK INDICATOR ── */
+.sl-stock-section { margin-top:2px; display:flex; flex-direction:column; gap:5px; }
+
+.sl-stock-bar-wrap { display:flex; flex-direction:column; gap:3px; }
+.sl-stock-bar-track { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.sl-stock-bar-fill { height:100%; border-radius:2px; transition:width .6s ease; }
+.sl-stock-bar-fill.critico  { background:var(--danger); }
+.sl-stock-bar-fill.bajo     { background:var(--warn); }
+.sl-stock-bar-fill.moderado { background:#3b82f6; }
+.sl-stock-bar-fill.ok       { background:var(--ok); }
+
+.sl-stock-msg {
+  display:flex;
+  align-items:center;
+  gap:5px;
+  font-size:.72rem;
+  font-weight:700;
+  letter-spacing:.3px;
+  border-radius:4px;
+  padding:3px 7px;
+}
+.sl-stock-msg.critico  { color:#fff; background:var(--danger); }
+.sl-stock-msg.bajo     { color:#92400e; background:#fef3c7; }
+.sl-stock-msg.moderado { color:${dark?"#bfdbfe":"#1e40af"}; background:${dark?"rgba(59,130,246,.15)":"#eff6ff"}; }
+.sl-stock-msg.sin_movimiento { color:var(--muted); }
+.sl-stock-msg.agotado  { color:var(--danger); }
+.sl-stock-msg .sl-dot  { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.sl-stock-msg.critico .sl-dot  { background:#fff; animation:sl-blink .7s step-start infinite; }
+.sl-stock-msg.bajo     .sl-dot { background:var(--warn); }
+.sl-stock-msg.moderado .sl-dot { background:#3b82f6; }
+@keyframes sl-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+.sl-stock-details { display:flex; justify-content:space-between; align-items:center; gap:4px; }
+.sl-stock-units  { font-size:.7rem; color:var(--muted); }
+.sl-stock-units strong { font-weight:700; color:var(--text); }
+.sl-stock-time  { font-size:.68rem; color:var(--muted); text-align:right; }
+.sl-stock-time.critico { color:var(--danger); font-weight:700; }
+.sl-stock-time.bajo    { color:var(--warn);   font-weight:600; }
+
+.sl-ventas-chip {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:.68rem; font-weight:700; color:var(--muted);
+  background:var(--cream); border:1px solid var(--border);
+  border-radius:3px; padding:2px 7px;
+  white-space:nowrap;
+}
+.sl-ventas-chip.hot { color:#ff4d00; border-color:#ff4d0033; background:${dark?"rgba(255,77,0,.08)":"#fff5f0"}; }
+
 /* ── SKELETON ── */
 .sl-skeleton-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:2px; }
 .sl-skeleton { background:var(--white); }
@@ -102,13 +186,11 @@ const getCSS = (dark) => `
 .sl-skel-line { height:13px; border-radius:3px; background:linear-gradient(90deg,${dark?"#1e293b":"#eeece8"} 25%,${dark?"#334155":"#e4e2dd"} 50%,${dark?"#1e293b":"#eeece8"} 75%); background-size:200% 100%; animation:sl-shimmer 1.5s infinite; }
 @keyframes sl-shimmer { to{background-position:-200% 0} }
 
-/* ── EMPTY ── */
+/* ── EMPTY / ERROR ── */
 .sl-empty { grid-column:1/-1; text-align:center; padding:80px 24px; }
 .sl-empty-icon { font-size:3rem; margin-bottom:12px; opacity:.35; }
 .sl-empty h3 { font-family:'Bebas Neue',sans-serif; font-size:2rem; letter-spacing:2px; color:var(--text); margin-bottom:6px; }
 .sl-empty p { color:var(--muted); font-size:.9rem; }
-
-/* ── ERROR ── */
 .sl-error { margin-bottom:24px; background:${dark?"#2d1515":"#fff5f5"}; border-left:4px solid var(--danger); padding:14px 18px; color:${dark?"#fca5a5":"#9b2c2c"}; font-size:.9rem; border-radius:4px; }
 
 /* ── RESPONSIVE ── */
@@ -141,6 +223,7 @@ const getCSS = (dark) => `
   .sl-card-body { padding:8px 10px 12px; }
   .sl-wrap { padding:12px 8px 40px; }
   .sl-card-overlay { display:none; }
+  .sl-stock-details { flex-direction:column; align-items:flex-start; gap:2px; }
 }
 `;
 
@@ -153,19 +236,121 @@ const COLOR_MAP = {
 };
 const parseLista = (v) => v ? v.split(",").map(s=>s.trim()).filter(Boolean) : [];
 
+// ── Componente de indicador de stock ────────────────────────
+function StockIndicator({ pred, productId, stockTotal, isHot }) {
+  const [msgIdx, setMsgIdx] = useState(0);
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    if (!pred) return;
+    if (pred.alerta === "critico") {
+      intervalRef.current = setInterval(() => {
+        setMsgIdx(i => (i + 1) % MENSAJES_CRITICO.length);
+      }, 2200);
+    } else if (pred.alerta === "bajo") {
+      intervalRef.current = setInterval(() => {
+        setMsgIdx(i => (i + 1) % MENSAJES_BAJO.length);
+      }, 3500);
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [pred?.alerta]);
+
+  if (!pred) {
+    if (stockTotal === 0) {
+      return (
+        <div className="sl-stock-section">
+          <div className="sl-stock-msg agotado">
+            <span className="sl-dot" style={{background:"#e53e3e"}}/>
+            Sin disponibilidad
+          </div>
+        </div>
+      );
+    }
+    return null; // Sin predicción y con stock: no mostrar nada
+  }
+
+  const { alerta, stock_actual, dias_restantes, ventas_periodo, tasa_diaria } = pred;
+  const tiempo = formatTiempo(dias_restantes);
+
+  const pct = alerta === "agotado" ? 0
+    : alerta === "sin_movimiento" ? 85
+    : Math.min(100, Math.round((dias_restantes / 60) * 100));
+
+  const mensajes = {
+    critico: MENSAJES_CRITICO,
+    bajo:    MENSAJES_BAJO,
+    moderado:MENSAJES_MODERADO,
+  };
+  const msgList = mensajes[alerta];
+  const msg = msgList ? msgList[msgIdx % msgList.length] : null;
+
+  return (
+    <div className="sl-stock-section">
+      {/* Barra de progreso — solo en alertas activas */}
+      {alerta !== "agotado" && alerta !== "sin_movimiento" && (
+        <div className="sl-stock-bar-wrap">
+          <div className="sl-stock-bar-track">
+            <div
+              className={`sl-stock-bar-fill ${alerta}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Mensaje de urgencia dinámico */}
+      {msg && (
+        <div className={`sl-stock-msg ${alerta}`}>
+          <span className="sl-dot" />
+          {msg}
+        </div>
+      )}
+      {alerta === "agotado" && (
+        <div className="sl-stock-msg agotado">
+          <span className="sl-dot" style={{background:"#e53e3e"}}/>
+          Agotado
+        </div>
+      )}
+      {alerta === "sin_movimiento" && stock_actual > 0 && (
+        <div className="sl-stock-msg sin_movimiento">
+          ○ {stock_actual} unidades disponibles
+        </div>
+      )}
+
+      {/* ✅ Unidades + tiempo estimado — SOLO en top ventas */}
+      {isHot && alerta !== "agotado" && alerta !== "sin_movimiento" && (
+        <div className="sl-stock-details">
+          <span className="sl-stock-units">
+            <strong>{stock_actual}</strong> {stock_actual === 1 ? "unidad" : "unidades"}
+          </span>
+          {tiempo && (
+            <span className={`sl-stock-time ${alerta}`}>
+              Se agota en {tiempo}
+            </span>
+          )}
+        </div>
+      )}
+
+
+    </div>
+  );
+}
+
 export default function Catalogo() {
   const navigate = useNavigate();
   const { addToCart, toggleMiniCart } = useCart();
   const { darkMode } = useContext(ThemeContext);
 
-  const [products,  setProducts]  = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState(null);
-  const [search,    setSearch]    = useState("");
-  const [categoria, setCategoria] = useState("");
-  const [marca,     setMarca]     = useState("");
-  const [maxPrice,  setMaxPrice]  = useState(9999);
+  const [products,     setProducts]     = useState([]);
+  const [predicciones, setPredicciones] = useState({});
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState(null);
+  const [search,       setSearch]       = useState("");
+  const [categoria,    setCategoria]    = useState("");
+  const [marca,        setMarca]        = useState("");
+  const [maxPrice,     setMaxPrice]     = useState(9999);
 
+  // Carga productos
   useEffect(() => {
     (async () => {
       try {
@@ -180,19 +365,59 @@ export default function Catalogo() {
     })();
   }, []);
 
+  // Carga predicciones (endpoint público, sin auth)
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/products/prediccion-publica`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const map = {};
+        data.forEach(row => {
+          const pid = row.product_id;
+          if (!map[pid]) {
+            map[pid] = { ...row };
+          } else {
+            map[pid].stock_actual   += row.stock_actual;
+            map[pid].ventas_periodo += row.ventas_periodo;
+            const prioridad = { critico:0, bajo:1, moderado:2, sin_movimiento:3, ok:4, agotado:5 };
+            if ((prioridad[row.alerta] ?? 99) < (prioridad[map[pid].alerta] ?? 99)) {
+              map[pid].alerta           = row.alerta;
+              map[pid].dias_restantes   = row.dias_restantes;
+              map[pid].fecha_agotamiento= row.fecha_agotamiento;
+            }
+          }
+        });
+
+        Object.values(map).forEach(p => {
+          p.tasa_diaria = parseFloat((p.ventas_periodo / 30).toFixed(4));
+        });
+
+        setPredicciones(map);
+      } catch (_) {}
+    })();
+  }, []);
+
   const categorias = useMemo(() => [...new Set(products.map(p=>p.categoria).filter(Boolean))].sort(), [products]);
   const marcas     = useMemo(() => [...new Set(products.map(p=>p.marca).filter(Boolean))].sort(), [products]);
   const maxReal    = useMemo(() => Math.max(...products.map(p=>p.precio), 999), [products]);
 
-  const filtered = useMemo(() => products.filter(p => {
+  const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return (
-      (!search    || p.nombre.toLowerCase().includes(q) || (p.marca||"").toLowerCase().includes(q)) &&
-      (!categoria || p.categoria === categoria) &&
-      (!marca     || p.marca === marca) &&
-      p.precio <= maxPrice
-    );
-  }), [products, search, categoria, marca, maxPrice]);
+    return products
+      .filter(p =>
+        (!search    || p.nombre.toLowerCase().includes(q) || (p.marca||"").toLowerCase().includes(q)) &&
+        (!categoria || p.categoria === categoria) &&
+        (!marca     || p.marca === marca) &&
+        p.precio <= maxPrice
+      )
+      .sort((a, b) => {
+        const ventasA = predicciones[a.id]?.ventas_periodo ?? -1;
+        const ventasB = predicciones[b.id]?.ventas_periodo ?? -1;
+        return ventasB - ventasA;
+      });
+  }, [products, predicciones, search, categoria, marca, maxPrice]);
 
   const limpiar = () => { setSearch(""); setCategoria(""); setMarca(""); setMaxPrice(maxReal); };
 
@@ -245,6 +470,7 @@ export default function Catalogo() {
                   <div className="sl-skel-line" style={{width:"65%"}} />
                   <div className="sl-skel-line" style={{width:"40%"}} />
                   <div className="sl-skel-line" />
+                  <div className="sl-skel-line" style={{width:"55%"}} />
                 </div>
               </div>
             ))}
@@ -261,9 +487,12 @@ export default function Catalogo() {
               </div>
             )}
             {filtered.map(p => {
-              const tallas  = parseLista(p.talla);
-              const colores = parseLista(p.colores);
+              const tallas   = parseLista(p.talla);
+              const colores  = parseLista(p.colores);
               const sinStock = p.stock_total === 0;
+              const pred     = predicciones[p.id] || null;
+              const isHot    = pred && pred.ventas_periodo >= 10;
+
               return (
                 <div className="sl-card" key={p.id}>
                   <div className="sl-card-img" onClick={()=>navigate(`/producto/${p.id}`)}>
@@ -271,7 +500,8 @@ export default function Catalogo() {
                       onError={e=>{e.target.src=`https://picsum.photos/seed/${p.id}/400/350`;}} />
                     <div className="sl-badge-wrap">
                       {sinStock && <span className="sl-badge sl-badge-out">Agotado</span>}
-                      {p.marca   && <span className="sl-badge sl-badge-marca">{p.marca}</span>}
+                      {isHot    && <span className="sl-badge sl-badge-hot">🔥 Top ventas</span>}
+                      {p.marca  && <span className="sl-badge sl-badge-marca">{p.marca}</span>}
                     </div>
                     <div className="sl-card-overlay">
                       <button className="sl-card-overlay-btn" disabled={sinStock} onClick={e=>handleAdd(e,p)}>
@@ -279,12 +509,22 @@ export default function Catalogo() {
                       </button>
                     </div>
                   </div>
+
                   <div className="sl-card-body" onClick={()=>navigate(`/producto/${p.id}`)}>
                     <div className="sl-card-row1">
                       <div className="sl-card-name">{p.nombre}</div>
                       <div className="sl-card-price">${Number(p.precio).toLocaleString("es-MX")}</div>
                     </div>
                     {p.descripcion && <p className="sl-card-desc">{p.descripcion}</p>}
+
+                    {/* ── INDICADOR DE STOCK — isHot se pasa como prop ── */}
+                    <StockIndicator
+                      pred={pred}
+                      productId={p.id}
+                      stockTotal={p.stock_total}
+                      isHot={isHot}
+                    />
+
                     {(tallas.length>0||colores.length>0) && (
                       <div className="sl-chips-section">
                         {tallas.length>0 && (

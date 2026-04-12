@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from "react-router-dom";
-import { MdDashboard, MdInventory, MdShoppingCart, MdPeople, MdStore, MdLocalOffer, MdAssessment, MdMenu, MdClose, MdEmail, MdPerson, MdAdminPanelSettings, MdLogout, MdBackup, MdMonitor } from "react-icons/md";
+import { MdDashboard, MdInventory, MdShoppingCart, MdPeople, MdStore, MdLocalOffer, MdAssessment, MdMenu, MdClose, MdEmail, MdPerson, MdAdminPanelSettings, MdLogout, MdMonitor } from "react-icons/md";
 
 import Dashboard   from "./pages/Dashboard/Dashboard";
 import Productos   from "./pages/Productos/Productos";
@@ -10,7 +10,6 @@ import Usuarios    from "./pages/Usuarios/Usuarios";
 import Promociones from "./pages/Promociones/Promociones";
 import Reportes    from "./pages/Reportes/Reportes";
 import Sucursales  from "./pages/Sucursales/Sucursales";
-import Respaldos   from "./Respaldos/Respaldos";
 import MonitorBD   from "./pages/Monitor/MonitorDB";
 import NotificacionesBell from "./Notificacionesbell";
 
@@ -36,7 +35,6 @@ export default function AdminLayout({ user, onLogout }) {
     { path: "/admin/pedidos",     icon: MdShoppingCart, label: "Pedidos"                  },
     { path: "/admin/usuarios",    icon: MdPeople,       label: "Usuarios"                 },
     { path: "/admin/sucursales",  icon: MdStore,        label: "Sucursales"               },
-    { path: "/admin/respaldos",   icon: MdBackup,       label: "Respaldos"                },
     { path: "/admin/promociones", icon: MdLocalOffer,   label: "Promociones"              },
     { path: "/admin/reportes",    icon: MdAssessment,   label: "Reportes"                 },
     { path: "/admin/monitor",     icon: MdMonitor,      label: "Monitor BD"               },
@@ -66,7 +64,7 @@ export default function AdminLayout({ user, onLogout }) {
           </div>
           <div className="menu-section">
             <div className="menu-section-title">Gestión</div>
-            {menuItems.slice(1,7).map(item => (
+            {menuItems.slice(1,6).map(item => (
               <Link key={item.path} to={item.path} className={`menu-item ${isActive(item.path,item.exact)?"active":""}`} onClick={() => window.innerWidth<=768 && setSidebarOpen(false)}>
                 <item.icon /><span>{item.label}</span>
               </Link>
@@ -74,7 +72,7 @@ export default function AdminLayout({ user, onLogout }) {
           </div>
           <div className="menu-section">
             <div className="menu-section-title">Marketing & Análisis</div>
-            {menuItems.slice(7,9).map(item => (
+            {menuItems.slice(6,8).map(item => (
               <Link key={item.path} to={item.path} className={`menu-item ${isActive(item.path,item.exact)?"active":""}`} onClick={() => window.innerWidth<=768 && setSidebarOpen(false)}>
                 <item.icon /><span>{item.label}</span>
               </Link>
@@ -102,7 +100,6 @@ export default function AdminLayout({ user, onLogout }) {
           </div>
 
           <div className="topbar-right">
-            {/* 🔔 Campana de notificaciones — pedidos nuevos */}
             <NotificacionesBell onVerPedido={() => navigate("/admin/pedidos")} />
 
             <div className="admin-profile-wrapper" ref={profileRef}>
@@ -149,9 +146,8 @@ export default function AdminLayout({ user, onLogout }) {
             <Route path="/productos"   element={<Productos />}   />
             <Route path="/inventario"  element={<Inventario />}  />
             <Route path="/pedidos"     element={<Pedidos />}     />
-            <Route path="/usuarios"    element={<Usuarios />}    />
+            <Route path="/usuarios"    element={<Usuarios />}    />  {/* ← Corregido */}
             <Route path="/sucursales"  element={<Sucursales />}  />
-            <Route path="/respaldos"   element={<Respaldos />}   />
             <Route path="/promociones" element={<Promociones />} />
             <Route path="/reportes"    element={<Reportes />}    />
             <Route path="/monitor"     element={<MonitorBD />}   />

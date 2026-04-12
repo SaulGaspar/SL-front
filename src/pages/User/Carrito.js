@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { useCart } from "../../context/CartContext";
 import { useNavigate } from "react-router-dom";
+import DireccionCheckout from "./Direcciones";
 
-const fmtMXN = n => new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN"}).format(n||0);
+const fmtMXN = n => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n || 0);
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap');
@@ -94,9 +95,7 @@ const CSS = `
 .crt-remove:hover { color:#e53e3e; background:#fff5f5; }
 
 /* Empty */
-.crt-empty {
-  padding:80px 24px; text-align:center;
-}
+.crt-empty { padding:80px 24px; text-align:center; }
 .crt-empty-icon {
   width:80px; height:80px; background:#f0f4f8; border-radius:20px;
   display:flex; align-items:center; justify-content:center;
@@ -110,8 +109,11 @@ const CSS = `
   font-weight:700; cursor:pointer; font-family:'Outfit',sans-serif;
 }
 
+/* ── COLUMNA DERECHA ── */
+.crt-right-col { display:flex; flex-direction:column; gap:0; position:sticky; top:20px; }
+
 /* Resumen lateral */
-.crt-summary { background:white; border-radius:16px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,.07); position:sticky; top:20px; }
+.crt-summary { background:white; border-radius:16px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,.07); }
 .crt-summary-head {
   background:linear-gradient(135deg,#0a1a2f,#1e3a5f);
   padding:20px 24px;
@@ -152,7 +154,16 @@ const CSS = `
   transition:all .2s;
 }
 .crt-pay-btn:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(30,58,95,.3); }
-.crt-pay-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+.crt-pay-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
+
+/* Aviso sin dirección */
+.crt-no-addr-warn {
+  display:flex; align-items:center; gap:8px;
+  background:#fff8e6; border:1px solid #fbd38d;
+  border-radius:9px; padding:10px 14px;
+  font-size:.78rem; font-weight:600; color:#744210;
+  margin-top:8px;
+}
 
 .crt-secure { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:12px; font-size:.74rem; color:#a0aec0; }
 
@@ -161,7 +172,7 @@ const CSS = `
 
 @media(max-width:900px) {
   .crt-body { grid-template-columns:1fr; }
-  .crt-summary { position:static; }
+  .crt-right-col { position:static; }
   .crt-header h1 { font-size:1.8rem; }
 }
 `;
@@ -169,6 +180,9 @@ const CSS = `
 export default function Carrito() {
   const { cart, updateQty, removeItem } = useCart();
   const navigate = useNavigate();
+
+  // Estado de la dirección seleccionada
+  const [direccion, setDireccion] = useState(null);
 
   const getPrice = i => Number(i.precio || i.price || 0);
   const getQty   = i => Number(i.qty || i.cantidad || 1);
@@ -179,11 +193,17 @@ export default function Carrito() {
 
   const handlePago = () => {
     const token = localStorage.getItem("token");
-    if (token) {
-      navigate("/pago", { state: { total } });
-    } else {
+    if (!token) {
       navigate("/login", { state: { from: "/carrito" } });
+      return;
     }
+    if (!direccion) return; // no debería pasar, el botón está deshabilitado
+    navigate("/pago", {
+      state: {
+        total,
+        direccion, // ← la dirección viaja al checkout de pago
+      },
+    });
   };
 
   return (
@@ -197,13 +217,13 @@ export default function Carrito() {
             <h1>Tu carrito</h1>
             <div className="crt-header-sub">
               {cart.length > 0
-                ? `${cart.reduce((s,i)=>s+getQty(i),0)} artículo${cart.reduce((s,i)=>s+getQty(i),0)!==1?"s":""}`
+                ? `${cart.reduce((s, i) => s + getQty(i), 0)} artículo${cart.reduce((s, i) => s + getQty(i), 0) !== 1 ? "s" : ""}`
                 : "Carrito vacío"}
             </div>
           </div>
           {cart.length > 0 && (
             <div className="crt-count-pill">
-              {cart.length} producto{cart.length!==1?"s":""}
+              {cart.length} producto{cart.length !== 1 ? "s" : ""}
             </div>
           )}
         </div>
@@ -211,15 +231,15 @@ export default function Carrito() {
 
       <div className="crt-body">
 
-        {/* Lista de productos */}
+        {/* ── COLUMNA IZQUIERDA: productos ── */}
         <div className="crt-panel">
           <div className="crt-panel-head">
             <span className="crt-panel-title">Productos</span>
             {subtotal >= 1500 ? (
               <span className="crt-free-ship">🚚 Envío gratis</span>
             ) : (
-              <span style={{fontSize:".76rem",color:"#a0aec0"}}>
-                Agrega {fmtMXN(1500-subtotal)} más para envío gratis
+              <span style={{ fontSize: ".76rem", color: "#a0aec0" }}>
+                Agrega {fmtMXN(1500 - subtotal)} más para envío gratis
               </span>
             )}
           </div>
@@ -229,7 +249,7 @@ export default function Carrito() {
               <div className="crt-empty-icon">🛍️</div>
               <h3>Tu carrito está vacío</h3>
               <p>Explora nuestro catálogo y encuentra lo que buscas</p>
-              <button className="crt-empty-btn" onClick={()=>navigate("/catalogo")}>
+              <button className="crt-empty-btn" onClick={() => navigate("/catalogo")}>
                 Ver catálogo
               </button>
             </div>
@@ -237,28 +257,28 @@ export default function Carrito() {
             cart.map((item, i) => (
               <div key={i} className="crt-item">
                 <img
-                  src={item.imagen||item.img}
-                  alt={item.nombre||item.title}
+                  src={item.imagen || item.img}
+                  alt={item.nombre || item.title}
                   className="crt-item-img"
-                  onError={e=>{e.target.src="https://via.placeholder.com/90";}}
+                  onError={e => { e.target.src = "https://via.placeholder.com/90"; }}
                 />
                 <div className="crt-item-info">
-                  <div className="crt-item-name">{item.nombre||item.title||"Producto"}</div>
+                  <div className="crt-item-name">{item.nombre || item.title || "Producto"}</div>
                   <div className="crt-item-meta">
-                    {(item.talla||item.size) && <span>📐 {item.talla||item.size}</span>}
-                    {item.color && <span>🎨 {item.color}</span>}
-                    {item.marca && <span>🏷️ {item.marca}</span>}
+                    {(item.talla || item.size)  && <span>📐 {item.talla || item.size}</span>}
+                    {item.color                 && <span>🎨 {item.color}</span>}
+                    {item.marca                 && <span>🏷️ {item.marca}</span>}
                   </div>
                   <div className="crt-item-price">{fmtMXN(getPrice(item))} c/u</div>
                 </div>
                 <div className="crt-item-right">
-                  <div className="crt-item-subtotal">{fmtMXN(getPrice(item)*getQty(item))}</div>
+                  <div className="crt-item-subtotal">{fmtMXN(getPrice(item) * getQty(item))}</div>
                   <div className="crt-qty">
-                    <button className="crt-qty-btn" onClick={()=>updateQty(item,Math.max(1,getQty(item)-1))}>−</button>
+                    <button className="crt-qty-btn" onClick={() => updateQty(item, Math.max(1, getQty(item) - 1))}>−</button>
                     <span className="crt-qty-val">{getQty(item)}</span>
-                    <button className="crt-qty-btn" onClick={()=>updateQty(item,getQty(item)+1)}>+</button>
+                    <button className="crt-qty-btn" onClick={() => updateQty(item, getQty(item) + 1)}>+</button>
                   </div>
-                  <button className="crt-remove" onClick={()=>removeItem(item)}>
+                  <button className="crt-remove" onClick={() => removeItem(item)}>
                     ✕ Eliminar
                   </button>
                 </div>
@@ -267,51 +287,78 @@ export default function Carrito() {
           )}
         </div>
 
-        {/* Resumen */}
+        {/* ── COLUMNA DERECHA: dirección + resumen ── */}
         {cart.length > 0 && (
-          <div className="crt-summary">
-            <div className="crt-summary-head">
-              <h3>Resumen</h3>
-              <p>Detalle de tu compra</p>
-            </div>
-            <div className="crt-summary-body">
-              <div className="crt-row">
-                <span className="crt-row-lbl">Subtotal</span>
-                <span className="crt-row-val">{fmtMXN(subtotal)}</span>
+          <div className="crt-right-col">
+
+            {/* ── DIRECCIÓN DE ENVÍO ── */}
+            <DireccionCheckout
+              direccionActual={direccion}
+              onDireccionSelect={setDireccion}
+            />
+
+            {/* ── RESUMEN ── */}
+            <div className="crt-summary">
+              <div className="crt-summary-head">
+                <h3>Resumen</h3>
+                <p>Detalle de tu compra</p>
               </div>
-              <div className="crt-row">
-                <span className="crt-row-lbl">Envío</span>
-                <span className={`crt-row-val ${shipping===0?"green":""}`}>
-                  {shipping===0?"¡Gratis!":fmtMXN(shipping)}
-                </span>
-              </div>
-              {shipping > 0 && (
-                <div style={{fontSize:".74rem",color:"#a0aec0",marginTop:-4,marginBottom:4}}>
-                  Envío gratis en compras mayores a {fmtMXN(1500)}
+              <div className="crt-summary-body">
+
+                <div className="crt-row">
+                  <span className="crt-row-lbl">Subtotal</span>
+                  <span className="crt-row-val">{fmtMXN(subtotal)}</span>
                 </div>
-              )}
+                <div className="crt-row">
+                  <span className="crt-row-lbl">Envío</span>
+                  <span className={`crt-row-val ${shipping === 0 ? "green" : ""}`}>
+                    {shipping === 0 ? "¡Gratis!" : fmtMXN(shipping)}
+                  </span>
+                </div>
+                {shipping > 0 && (
+                  <div style={{ fontSize: ".74rem", color: "#a0aec0", marginTop: -4, marginBottom: 4 }}>
+                    Envío gratis en compras mayores a {fmtMXN(1500)}
+                  </div>
+                )}
 
-              <div className="crt-divider"/>
+                <div className="crt-divider" />
 
-              <div className="crt-total-row">
-                <span className="crt-total-lbl">Total</span>
-                <span className="crt-total-val">{fmtMXN(total)}</span>
-              </div>
+                <div className="crt-total-row">
+                  <span className="crt-total-lbl">Total</span>
+                  <span className="crt-total-val">{fmtMXN(total)}</span>
+                </div>
 
-              <button className="crt-pay-btn" onClick={handlePago} disabled={cart.length===0}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
-                </svg>
-                Proceder al pago
-              </button>
+                {/* Botón pagar — deshabilitado si no hay dirección */}
+                <button
+                  className="crt-pay-btn"
+                  onClick={handlePago}
+                  disabled={cart.length === 0 || !direccion}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" />
+                  </svg>
+                  Proceder al pago
+                </button>
 
-              <div className="crt-secure">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                Pago 100% seguro · SSL cifrado
+                {/* Aviso si falta dirección */}
+                {!direccion && (
+                  <div className="crt-no-addr-warn">
+                    ⚠️ Agrega una dirección de envío para continuar
+                  </div>
+                )}
+
+                <div className="crt-secure">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  Pago 100% seguro · SSL cifrado
+                </div>
               </div>
             </div>
+
           </div>
         )}
+
       </div>
     </div>
   );
