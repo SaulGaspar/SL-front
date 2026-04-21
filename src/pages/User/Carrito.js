@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useCart } from "../../context/CartContext";
 import { useNavigate } from "react-router-dom";
-import DireccionCheckout from "./Direcciones";
+// ← Se elimina el import de DireccionCheckout
 
 const fmtMXN = n => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n || 0);
 
@@ -18,7 +18,6 @@ const CSS = `
 
 .crt { font-family:'Outfit',sans-serif; min-height:100vh; background:#f0f2f5; }
 
-/* Hero header */
 .crt-header {
   background:linear-gradient(135deg,#0a1a2f 0%,#1e3a5f 100%);
   padding:32px 0 28px;
@@ -39,10 +38,8 @@ const CSS = `
   padding:5px 14px; border-radius:20px; letter-spacing:.5px;
 }
 
-/* Layout */
 .crt-body { max-width:1100px; margin:0 auto; padding:0 24px 60px; display:grid; grid-template-columns:1fr 360px; gap:28px; align-items:start; }
 
-/* Items panel */
 .crt-panel { background:white; border-radius:16px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,.07); }
 .crt-panel-head {
   padding:18px 24px; border-bottom:1px solid #f0f4f8;
@@ -50,7 +47,6 @@ const CSS = `
 }
 .crt-panel-title { font-size:.88rem; font-weight:700; color:#1e3a5f; text-transform:uppercase; letter-spacing:.8px; }
 
-/* Item row */
 .crt-item {
   display:flex; align-items:center; gap:18px;
   padding:20px 24px; border-bottom:1px solid #f5f7fa;
@@ -70,7 +66,6 @@ const CSS = `
 .crt-item-meta span { display:flex; align-items:center; gap:4px; }
 .crt-item-price { font-size:.9rem; font-weight:700; color:#1e3a5f; margin-top:6px; font-family:'Outfit',monospace; }
 
-/* Qty control */
 .crt-qty {
   display:flex; align-items:center; gap:0;
   background:#f0f4f8; border-radius:8px; overflow:hidden;
@@ -94,7 +89,6 @@ const CSS = `
 }
 .crt-remove:hover { color:#e53e3e; background:#fff5f5; }
 
-/* Empty */
 .crt-empty { padding:80px 24px; text-align:center; }
 .crt-empty-icon {
   width:80px; height:80px; background:#f0f4f8; border-radius:20px;
@@ -109,10 +103,8 @@ const CSS = `
   font-weight:700; cursor:pointer; font-family:'Outfit',sans-serif;
 }
 
-/* ── COLUMNA DERECHA ── */
 .crt-right-col { display:flex; flex-direction:column; gap:0; position:sticky; top:20px; }
 
-/* Resumen lateral */
 .crt-summary { background:white; border-radius:16px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,.07); }
 .crt-summary-head {
   background:linear-gradient(135deg,#0a1a2f,#1e3a5f);
@@ -131,20 +123,6 @@ const CSS = `
 .crt-total-lbl { font-size:1rem; font-weight:700; color:#1e3a5f; }
 .crt-total-val { font-family:'Outfit',monospace; font-size:1.5rem; font-weight:700; color:#1e3a5f; }
 
-/* Promo */
-.crt-promo { display:flex; gap:8px; margin:16px 0; }
-.crt-promo input {
-  flex:1; padding:10px 13px; border:1.5px solid #e2e8f0; border-radius:8px;
-  font-size:.85rem; font-family:'Outfit',sans-serif;
-}
-.crt-promo input:focus { outline:none; border-color:#c8f03c; }
-.crt-promo-btn {
-  padding:10px 14px; background:#1e3a5f; color:white; border:none;
-  border-radius:8px; font-size:.82rem; font-weight:700; cursor:pointer; font-family:'Outfit',sans-serif;
-}
-.crt-promo-btn:hover { background:#2c5282; }
-
-/* Botón pagar */
 .crt-pay-btn {
   width:100%; padding:16px; border:none; border-radius:12px;
   font-family:'Outfit',sans-serif; font-size:1rem; font-weight:700;
@@ -156,19 +134,8 @@ const CSS = `
 .crt-pay-btn:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(30,58,95,.3); }
 .crt-pay-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
 
-/* Aviso sin dirección */
-.crt-no-addr-warn {
-  display:flex; align-items:center; gap:8px;
-  background:#fff8e6; border:1px solid #fbd38d;
-  border-radius:9px; padding:10px 14px;
-  font-size:.78rem; font-weight:600; color:#744210;
-  margin-top:8px;
-}
-
-.crt-secure { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:12px; font-size:.74rem; color:#a0aec0; }
-
-/* Envío gratis badge */
 .crt-free-ship { background:#c6f6d5; color:#276749; font-size:.74rem; font-weight:700; padding:3px 10px; border-radius:20px; }
+.crt-secure { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:12px; font-size:.74rem; color:#a0aec0; }
 
 @media(max-width:900px) {
   .crt-body { grid-template-columns:1fr; }
@@ -180,9 +147,6 @@ const CSS = `
 export default function Carrito() {
   const { cart, updateQty, removeItem } = useCart();
   const navigate = useNavigate();
-
-  // Estado de la dirección seleccionada
-  const [direccion, setDireccion] = useState(null);
 
   const getPrice = i => Number(i.precio || i.price || 0);
   const getQty   = i => Number(i.qty || i.cantidad || 1);
@@ -197,20 +161,13 @@ export default function Carrito() {
       navigate("/login", { state: { from: "/carrito" } });
       return;
     }
-    if (!direccion) return; // no debería pasar, el botón está deshabilitado
-    navigate("/pago", {
-      state: {
-        total,
-        direccion, // ← la dirección viaja al checkout de pago
-      },
-    });
+    navigate("/pago", { state: { total } });
   };
 
   return (
     <div className="crt">
       <style>{CSS}</style>
 
-      {/* Header */}
       <div className="crt-header">
         <div className="crt-header-inner">
           <div>
@@ -231,7 +188,7 @@ export default function Carrito() {
 
       <div className="crt-body">
 
-        {/* ── COLUMNA IZQUIERDA: productos ── */}
+        {/* ── COLUMNA IZQUIERDA ── */}
         <div className="crt-panel">
           <div className="crt-panel-head">
             <span className="crt-panel-title">Productos</span>
@@ -260,7 +217,7 @@ export default function Carrito() {
                   src={item.imagen || item.img}
                   alt={item.nombre || item.title}
                   className="crt-item-img"
-                  onError={e => { e.target.src = "https://via.placeholder.com/90"; }}
+                  onError={e => { e.target.src = "https://placehold.co/90x90"; }}
                 />
                 <div className="crt-item-info">
                   <div className="crt-item-name">{item.nombre || item.title || "Producto"}</div>
@@ -287,17 +244,9 @@ export default function Carrito() {
           )}
         </div>
 
-        {/* ── COLUMNA DERECHA: dirección + resumen ── */}
+        {/* ── COLUMNA DERECHA ── */}
         {cart.length > 0 && (
           <div className="crt-right-col">
-
-            {/* ── DIRECCIÓN DE ENVÍO ── */}
-            <DireccionCheckout
-              direccionActual={direccion}
-              onDireccionSelect={setDireccion}
-            />
-
-            {/* ── RESUMEN ── */}
             <div className="crt-summary">
               <div className="crt-summary-head">
                 <h3>Resumen</h3>
@@ -328,24 +277,16 @@ export default function Carrito() {
                   <span className="crt-total-val">{fmtMXN(total)}</span>
                 </div>
 
-                {/* Botón pagar — deshabilitado si no hay dirección */}
                 <button
                   className="crt-pay-btn"
                   onClick={handlePago}
-                  disabled={cart.length === 0 || !direccion}
+                  disabled={cart.length === 0}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                     <rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" />
                   </svg>
                   Proceder al pago
                 </button>
-
-                {/* Aviso si falta dirección */}
-                {!direccion && (
-                  <div className="crt-no-addr-warn">
-                    ⚠️ Agrega una dirección de envío para continuar
-                  </div>
-                )}
 
                 <div className="crt-secure">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -355,7 +296,6 @@ export default function Carrito() {
                 </div>
               </div>
             </div>
-
           </div>
         )}
 

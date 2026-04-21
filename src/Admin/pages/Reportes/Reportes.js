@@ -1,21 +1,13 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
-  MdRefresh, MdStore, MdInventory, MdPeople, MdAttachMoney,
-  MdCategory, MdBarChart, MdWarning, MdFilterList, MdTableRows,
-  MdTrendingDown, MdErrorOutline,
+  MdRefresh, MdStore, MdBarChart, MdWarning, MdTrendingDown,
+  MdCategory, MdInfoOutline,
 } from "react-icons/md";
 
 const API_URL = "https://sl-back.vercel.app";
 const auth    = () => ({ Authorization: `Bearer ${localStorage.getItem("token")}` });
 const fmt     = n  => Number(n || 0).toLocaleString("es-MX");
 const fmtMXN  = n  => new Intl.NumberFormat("es-MX", { style:"currency", currency:"MXN", maximumFractionDigits:0 }).format(n || 0);
-const fmtPct  = (cur, prev) => {
-  if (!prev || prev === 0) return null;
-  const pct = ((cur - prev) / prev) * 100;
-  return { val: Math.abs(pct).toFixed(1), up: pct >= 0 };
-};
-
-// ── CONSTANTES DE PREDICCIÓN ─────────────────────────────────────────────────
 
 const ALERTA_ORDER  = { agotado:0, critico:1, bajo:2, moderado:3, sin_movimiento:4, ok:5 };
 const ALERTA_LABEL  = { critico:"Crítico", bajo:"Bajo", moderado:"Moderado", ok:"OK", agotado:"Agotado", sin_movimiento:"Sin movimiento" };
@@ -24,19 +16,16 @@ const ALERTA_BG     = { critico:"#fee2e2", bajo:"#fef3c7", moderado:"#dbeafe", o
 
 const PALETTE = ["#2563eb","#16a34a","#d97706","#9333ea","#0891b2","#dc2626","#65a30d","#c026d3","#0284c7","#b45309"];
 
-// ── ESTILOS ──────────────────────────────────────────────────────────────────
-
+// ── ESTILOS ───────────────────────────────────────────────────────────────────
 const S = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
-
 .rep * { box-sizing:border-box; font-family:'DM Sans',sans-serif; }
 
-/* PAGE HEADER */
 .page-header { margin-bottom:24px; }
 .page-header h2 { font-size:1.5rem; font-weight:700; color:#0f172a; margin:0 0 4px; }
 .page-header p  { font-size:.875rem; color:#64748b; margin:0; }
 
-/* TABS */
+/* TABS PRINCIPALES */
 .rep-tabs-nav {
   display:flex; gap:0; background:white; border-radius:12px;
   box-shadow:0 1px 4px rgba(0,0,0,.06); margin-bottom:22px;
@@ -75,7 +64,7 @@ const S = `
   border:none; padding:8px 18px; border-radius:8px; font-weight:600;
   cursor:pointer; font-family:inherit; font-size:.85rem; transition:background .2s; align-self:flex-end;
 }
-.rep-apply:hover    { background:#2c5282; }
+.rep-apply:hover { background:#2c5282; }
 .rep-apply:disabled { opacity:.5; cursor:not-allowed; }
 
 /* KPIs */
@@ -111,9 +100,7 @@ const S = `
 
 /* TABLA PREDICCIÓN */
 .pred-table-wrap { overflow-x:auto; }
-.pred-table {
-  width:100%; border-collapse:collapse; font-size:.8rem;
-}
+.pred-table { width:100%; border-collapse:collapse; font-size:.8rem; }
 .pred-table th {
   padding:10px 12px; text-align:left; font-size:.67rem; font-weight:700;
   color:#64748b; text-transform:uppercase; letter-spacing:.4px;
@@ -122,19 +109,17 @@ const S = `
 }
 .pred-table th.sortable { cursor:pointer; user-select:none; }
 .pred-table th.sortable:hover { color:#1e3a5f; background:#f0f5ff; }
-.pred-table td {
-  padding:10px 12px; border-bottom:1px solid #f8fafc; color:#334155; vertical-align:middle;
-}
+.pred-table td { padding:10px 12px; border-bottom:1px solid #f8fafc; color:#334155; vertical-align:middle; }
 .pred-table tbody tr:hover { background:#f8fafc; }
 .pred-table tbody tr:last-child td { border-bottom:none; }
 
 /* ALERTA BADGE */
 .alerta-badge {
-  display:inline-flex; align-items:center; gap:4px; padding:2px 8px;
+  display:inline-flex; align-items:center; gap:4px; padding:3px 9px;
   border-radius:5px; font-size:.68rem; font-weight:700; white-space:nowrap;
 }
 
-/* BARRA PROGRESO */
+/* BARRA DE STOCK */
 .stock-bar { margin-top:4px; height:3px; background:#e2e8f0; border-radius:2px; overflow:hidden; }
 .stock-bar-fill { height:100%; border-radius:2px; transition:width .3s; }
 
@@ -144,20 +129,7 @@ const S = `
 .dias-val.warning { color:#d97706; }
 .dias-val.ok      { color:#16a34a; }
 
-/* FILTROS PREDICCIÓN */
-.pred-filters {
-  display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;
-  padding:12px 18px; background:#f8fafc; border-bottom:1px solid #e2e8f0;
-}
-.pred-filter-group { display:flex; flex-direction:column; gap:3px; }
-.pred-filter-group label { font-size:.67rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.4px; }
-.pred-filter-group select {
-  padding:6px 10px; border:1.5px solid #e2e8f0; border-radius:7px;
-  font-size:.8rem; font-family:inherit; color:#1e293b; background:white; min-width:130px;
-}
-.pred-filter-group select:focus { outline:none; border-color:#2563eb; }
-
-/* SUCURSAL TABS */
+/* TABS DE SUCURSAL */
 .suc-tabs { display:flex; gap:6px; flex-wrap:wrap; padding:12px 18px; background:#f8fafc; border-bottom:1px solid #e2e8f0; }
 .suc-tab {
   padding:5px 14px; border-radius:20px; border:1.5px solid #e2e8f0;
@@ -173,23 +145,60 @@ const S = `
 }
 .suc-tab:not(.active) .suc-badge { background:#fee2e2; color:#991b1b; }
 
+/* FILTROS PREDICCIÓN */
+.pred-filters {
+  display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;
+  padding:12px 18px; background:#f8fafc; border-bottom:1px solid #e2e8f0;
+}
+.pred-filter-group { display:flex; flex-direction:column; gap:3px; }
+.pred-filter-group label { font-size:.67rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.4px; }
+.pred-filter-group select {
+  padding:6px 10px; border:1.5px solid #e2e8f0; border-radius:7px;
+  font-size:.8rem; font-family:inherit; color:#1e293b; background:white; min-width:130px;
+}
+.pred-filter-group select:focus { outline:none; border-color:#2563eb; }
+
+/* POPOVER DE AGOTAMIENTO — fixed para no cortarse nunca */
+.agot-wrap { position:relative; display:inline-block; }
+.agot-btn {
+  display:flex; align-items:center; gap:5px; background:none; border:none;
+  cursor:pointer; padding:0; font-family:'DM Sans',sans-serif; text-align:left;
+}
+.agot-btn:hover .agot-icon { color:#2563eb; }
+.agot-icon { color:#cbd5e1; transition:color .15s; flex-shrink:0; }
+
+.agot-popover {
+  position:fixed;
+  background:#0f172a; color:white; border-radius:10px; padding:12px 14px;
+  width:240px; font-size:.78rem; line-height:1.5; z-index:99999;
+  box-shadow:0 8px 32px rgba(0,0,0,.35);
+  animation: fadeIn .15s ease;
+  pointer-events:none;
+}
+/* Flecha apuntando HACIA ARRIBA (el popover aparece debajo del trigger) */
+.agot-popover::before {
+  content:''; position:absolute; bottom:100%; left:50%; transform:translateX(-50%);
+  border:7px solid transparent; border-bottom-color:#0f172a;
+}
+.agot-popover-title { font-weight:700; font-size:.8rem; margin-bottom:6px; color:#e2e8f0; }
+.agot-popover-row   { display:flex; justify-content:space-between; gap:8px; margin-bottom:3px; }
+.agot-popover-label { color:#94a3b8; }
+.agot-popover-val   { font-family:'JetBrains Mono',monospace; font-weight:600; color:white; }
+.agot-divider { margin:8px 0; border:none; border-top:1px solid #1e293b; }
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+
 /* MISC */
 .spinning { animation:spin .8s linear infinite; }
-@keyframes spin { from{transform:rotate(0)}to{transform:rotate(360deg)} }
+@keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
 .rep-empty { text-align:center; color:#94a3b8; padding:40px; font-size:.84rem; }
 .mono { font-family:'JetBrains Mono',monospace; font-size:.78rem; }
 
-@media(max-width:1024px){
-  .rep-kpis { grid-template-columns:1fr 1fr; }
-  .rep-grid2 { grid-template-columns:1fr; }
-}
-@media(max-width:640px){
-  .rep-kpis { grid-template-columns:1fr; }
-}
+@media(max-width:1024px){ .rep-kpis{grid-template-columns:1fr 1fr;} .rep-grid2{grid-template-columns:1fr;} }
+@media(max-width:640px){  .rep-kpis{grid-template-columns:1fr;} }
 `;
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
-
 function HBarChart({ data, labelKey, valueKey, isMXN=true, maxItems=8 }) {
   if (!data?.length) return <div className="rep-empty">Sin datos</div>;
   const max = Math.max(...data.map(d => Number(d[valueKey]||0)), 1);
@@ -204,7 +213,7 @@ function HBarChart({ data, labelKey, valueKey, isMXN=true, maxItems=8 }) {
             <div className="hbar-lbl" title={lbl}>{lbl}</div>
             <div className="hbar-track">
               <div className="hbar-fill" style={{ width:`${pct}%`, background:PALETTE[i%PALETTE.length] }}>
-                {pct>15 ? (isMXN ? fmtMXN(val) : fmt(val)) : ""}
+                {pct > 15 ? (isMXN ? fmtMXN(val) : fmt(val)) : ""}
               </div>
             </div>
             <div className="hbar-val">{isMXN ? fmtMXN(val) : fmt(val)}</div>
@@ -223,18 +232,22 @@ function AlertaBadge({ alerta }) {
   );
 }
 
-function formatSemanas(sem) {
-  if (sem === null || sem === undefined) return "—";
-  if (sem < 0.5)  return "< 3 días";
-  if (sem < 1)    return "< 1 sem";
-  if (sem < 2)    return `~${(sem*7).toFixed(0)} días`;
-  if (sem < 8)    return `~${sem.toFixed(1)} sem`;
-  if (sem < 30)   return `~${(sem/4.33).toFixed(1)} mes`;
-  return `~${(sem/4.33/12).toFixed(1)} años`;
+function semanasATexto(sem) {
+  if (sem === null || sem === undefined) return null;
+  if (sem < 0.5)  return { corto:"< 3 días",    largo:"menos de 3 días" };
+  if (sem < 1)    return { corto:"< 1 semana",  largo:"menos de 1 semana" };
+  const dias  = Math.round(sem * 7);
+  if (sem < 2)    return { corto:`~${dias} días`,    largo:`aproximadamente ${dias} días` };
+  if (sem < 5)    return { corto:`~${sem.toFixed(1)} sem`, largo:`aproximadamente ${sem.toFixed(1)} semanas (~${dias} días)` };
+  if (sem < 20)   return { corto:`~${(sem/4.33).toFixed(1)} mes`,  largo:`aproximadamente ${(sem/4.33).toFixed(1)} meses (~${dias} días)` };
+  const anios = (sem/4.33/12).toFixed(1);
+  return { corto:`~${anios} años`, largo:`aproximadamente ${anios} años` };
 }
 
 function StockBar({ stock, minStock, alerta }) {
-  const pct = minStock > 0 ? Math.min(100, Math.round((stock/Math.max(stock*2, minStock*2))*100)) : 50;
+  const pct = minStock > 0
+    ? Math.min(100, Math.round((stock / Math.max(stock * 1.5, minStock * 1.5)) * 100))
+    : 50;
   return (
     <div>
       <span className="mono" style={{ color:ALERTA_COLORS[alerta], fontWeight:700 }}>{stock}</span>
@@ -245,51 +258,162 @@ function StockBar({ stock, minStock, alerta }) {
   );
 }
 
-// ── TAB: PREDICCIÓN DE AGOTAMIENTO ────────────────────────────────────────────
+// ── POPOVER DE AGOTAMIENTO ────────────────────────────────────────────────────
+function AgotamientoCell({ d }) {
+  const [open, setOpen] = useState(false);
+  const [pos,  setPos]  = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
 
+  // Cerrar al hacer clic fuera
+  useEffect(() => {
+    if (!open) return;
+    const handler = e => {
+      if (btnRef.current && !btnRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // Cerrar al hacer scroll
+  useEffect(() => {
+    if (!open) return;
+    const handler = () => setOpen(false);
+    window.addEventListener("scroll", handler, true);
+    return () => window.removeEventListener("scroll", handler, true);
+  }, [open]);
+
+  const handleClick = () => {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      // Calcula posición: debajo del botón, centrado horizontalmente
+      setPos({
+        top:  r.bottom + 10,
+        left: r.left + r.width / 2,
+      });
+    }
+    setOpen(o => !o);
+  };
+
+  const agot  = semanasATexto(d.semanas_agotamiento);
+  const crit  = semanasATexto(d.semanas_a_critico);
+  const yaC   = d.stock_actual <= (d.min_stock || 0);
+
+  const diasAgot  = d.semanas_agotamiento ? d.semanas_agotamiento * 7 : null;
+  const agotClass = !diasAgot ? "ok" : diasAgot <= 30 ? "danger" : diasAgot <= 90 ? "warning" : "ok";
+
+  if (!agot) {
+    return <span style={{ color:"#94a3b8", fontSize:".75rem" }}>—</span>;
+  }
+
+  return (
+    <div className="agot-wrap" ref={btnRef}>
+      <button
+        className="agot-btn"
+        onClick={handleClick}
+        title="Ver detalle de predicción"
+      >
+        <div>
+          <span className={`dias-val ${agotClass}`}>{agot.corto}</span>
+          {d.semanas_agotamiento && (
+            <div style={{ fontSize:".67rem", color:"#94a3b8", marginTop:1 }}>
+              ~{Math.round(d.semanas_agotamiento * 7)} días totales
+            </div>
+          )}
+        </div>
+        <MdInfoOutline size={14} className="agot-icon" />
+      </button>
+
+      {open && (
+        <div
+          className="agot-popover"
+          style={{
+            top:  pos.top,
+            left: pos.left,
+            transform: "translateX(-50%)",
+          }}
+        >
+          <div className="agot-popover-title">📦 {d.producto?.trim() || "Producto"}</div>
+
+          <div className="agot-popover-row">
+            <span className="agot-popover-label">Sucursal:</span>
+            <span className="agot-popover-val">{d.sucursal}</span>
+          </div>
+          <div className="agot-popover-row">
+            <span className="agot-popover-label">Stock actual:</span>
+            <span className="agot-popover-val">{d.stock_actual} uds.</span>
+          </div>
+          <div className="agot-popover-row">
+            <span className="agot-popover-label">Mínimo req.:</span>
+            <span className="agot-popover-val">{d.min_stock || "—"} uds.</span>
+          </div>
+          <div className="agot-popover-row">
+            <span className="agot-popover-label">Ventas/día:</span>
+            <span className="agot-popover-val">{d.tasa_diaria} uds.</span>
+          </div>
+
+          <hr className="agot-divider" />
+
+          {/* Nivel crítico */}
+          <div className="agot-popover-row">
+            <span className="agot-popover-label">Llega a mínimo en:</span>
+            <span className="agot-popover-val" style={{ color: yaC ? "#f87171" : "#fbbf24" }}>
+              {yaC ? "⚠ Ya alcanzado" : (crit ? crit.corto : "—")}
+            </span>
+          </div>
+
+          {/* Agotamiento total */}
+          <div className="agot-popover-row">
+            <span className="agot-popover-label">Se agota en:</span>
+            <span className="agot-popover-val" style={{ color: agotClass === "danger" ? "#f87171" : agotClass === "warning" ? "#fbbf24" : "#4ade80" }}>
+              {agot.largo}
+            </span>
+          </div>
+
+          {d.semanas_agotamiento && (
+            <div className="agot-popover-row">
+              <span className="agot-popover-label">Fecha aprox.:</span>
+              <span className="agot-popover-val" style={{ fontSize:".72rem" }}>
+                {new Date(Date.now() + d.semanas_agotamiento * 7 * 86400000)
+                  .toLocaleDateString("es-MX", { day:"numeric", month:"short", year:"numeric" })}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── TAB: PREDICCIÓN ───────────────────────────────────────────────────────────
 function TabAgotamiento({ branches }) {
-  const [data,      setData]      = useState([]);
-  const [loading,   setLoading]   = useState(false);
-  const [sucursal,  setSucursal]  = useState("all");
+  const [data,       setData]       = useState([]);
+  const [loading,    setLoading]    = useState(false);
+  const [sucursal,   setSucursal]   = useState("all");
   const [filtAlerta, setFiltAlerta] = useState("");
-  const [filtCat,   setFiltCat]   = useState("");
-  const [sortCol,   setSortCol]   = useState("alerta");
-  const [sortDir,   setSortDir]   = useState("asc");
+  const [filtCat,    setFiltCat]    = useState("");
+  const [sortCol,    setSortCol]    = useState("alerta");
+  const [sortDir,    setSortDir]    = useState("asc");
 
-  // ── Carga desde el endpoint corregido (/prediccion-agotamiento) ────────────
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (sucursal !== "all") params.set("branch", sucursal);
-      if (filtAlerta)         params.set("alerta", filtAlerta);
-      if (filtCat)            params.set("categoria", filtCat);
-
-      const res = await fetch(
-        `${API_URL}/api/admin/reports/prediccion-agotamiento?${params}`,
-        { headers: auth() }
-      );
+      const p = new URLSearchParams();
+      if (sucursal !== "all") p.set("branch",    sucursal);
+      if (filtAlerta)         p.set("alerta",     filtAlerta);
+      if (filtCat)            p.set("categoria",  filtCat);
+      const res = await fetch(`${API_URL}/api/admin/reports/prediccion-agotamiento?${p}`, { headers:auth() });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = await res.json();
-      if (!Array.isArray(raw)) throw new Error("Respuesta inválida");
-
-      // Los datos ya vienen por producto+sucursal desde el backend.
-      // NO se agrega ni se suma nada aquí.
-      setData(raw);
-    } catch (e) {
-      console.error("Error cargando predicción:", e);
-      setData([]);
-    } finally {
-      setLoading(false);
-    }
+      setData(Array.isArray(raw) ? raw : []);
+    } catch(e) { console.error(e); setData([]); }
+    finally { setLoading(false); }
   }, [sucursal, filtAlerta, filtCat]);
 
   useEffect(() => { load(); }, [load]);
 
-  // ── Contadores para KPIs (todos los datos sin filtro de sucursal/alerta) ──
-  const [totales, setTotales] = useState({ critico:0, agotado:0, bajo:0, sin_movimiento:0, total:0 });
+  const [totales, setTotales] = useState({ critico:0, agotado:0, bajo:0, sin_movimiento:0 });
   useEffect(() => {
-    fetch(`${API_URL}/api/admin/reports/prediccion-agotamiento`, { headers: auth() })
+    fetch(`${API_URL}/api/admin/reports/prediccion-agotamiento`, { headers:auth() })
       .then(r => r.ok ? r.json() : [])
       .then(raw => {
         if (!Array.isArray(raw)) return;
@@ -298,19 +422,15 @@ function TabAgotamiento({ branches }) {
           agotado:        raw.filter(d => d.alerta === "agotado").length,
           bajo:           raw.filter(d => d.alerta === "bajo").length,
           sin_movimiento: raw.filter(d => d.alerta === "sin_movimiento").length,
-          total:          raw.length,
         });
-      })
-      .catch(() => {});
+      }).catch(() => {});
   }, []);
 
-  // ── Categorías disponibles ─────────────────────────────────────────────────
   const categorias = useMemo(
     () => [...new Set(data.map(d => d.categoria).filter(Boolean))].sort(),
     [data]
   );
 
-  // ── Alertas por sucursal (para badges en los tabs) ─────────────────────────
   const alertasPorSuc = useMemo(() => {
     const map = {};
     data.forEach(d => {
@@ -320,41 +440,38 @@ function TabAgotamiento({ branches }) {
     return map;
   }, [data]);
 
-  // ── Ordenamiento ──────────────────────────────────────────────────────────
   const sorted = useMemo(() => {
-    const arr = [...data];
-    arr.sort((a, b) => {
+    return [...data].sort((a, b) => {
       let va, vb;
       switch(sortCol) {
-        case "alerta":      va = ALERTA_ORDER[a.alerta]??9;    vb = ALERTA_ORDER[b.alerta]??9;    break;
-        case "stock":       va = a.stock_actual;               vb = b.stock_actual;               break;
-        case "semanas":     va = a.semanas_a_critico??9999;    vb = b.semanas_a_critico??9999;    break;
-        case "ventas":      va = a.ventas_30d;                 vb = b.ventas_30d;                 break;
-        case "producto":    va = a.producto||"";               vb = b.producto||"";               break;
-        case "sucursal":    va = a.sucursal||"";               vb = b.sucursal||"";               break;
-        default:            va = 0; vb = 0;
+        case "alerta":   va = ALERTA_ORDER[a.alerta]??9;  vb = ALERTA_ORDER[b.alerta]??9; break;
+        case "stock":    va = a.stock_actual;              vb = b.stock_actual;            break;
+        case "semanas":  va = a.semanas_a_critico??9999;  vb = b.semanas_a_critico??9999; break;
+        case "ventas":   va = a.ventas_30d;               vb = b.ventas_30d;              break;
+        case "producto": va = a.producto||"";             vb = b.producto||"";            break;
+        case "sucursal": va = a.sucursal||"";             vb = b.sucursal||"";            break;
+        default:         va = 0; vb = 0;
       }
       if (typeof va === "string") return sortDir==="asc" ? va.localeCompare(vb) : vb.localeCompare(va);
       return sortDir === "asc" ? va - vb : vb - va;
     });
-    return arr;
   }, [data, sortCol, sortDir]);
 
   const toggleSort = col => {
     if (sortCol === col) setSortDir(d => d==="asc"?"desc":"asc");
     else { setSortCol(col); setSortDir("asc"); }
   };
-  const sortIcon = col => sortCol===col ? (sortDir==="asc"?" ↑":" ↓") : "";
+  const sortIcon = col => sortCol === col ? (sortDir === "asc" ? " ↑" : " ↓") : "";
 
   return (
     <>
-      {/* ── KPIs ── */}
+      {/* KPIs */}
       <div className="rep-kpis">
         {[
-          { label:"Críticos",       sub:"Stock en o bajo mínimo",   val:totales.critico,        color:"red"    },
-          { label:"Agotados",       sub:"Stock = 0 unidades",        val:totales.agotado,        color:"red"    },
-          { label:"Bajo stock",     sub:"Crítico en ≤ 4 semanas",    val:totales.bajo,           color:"orange" },
-          { label:"Sin movimiento", sub:"0 ventas en 30 días",       val:totales.sin_movimiento, color:"blue"   },
+          { label:"Críticos",       sub:"Stock en o bajo mínimo",  val:totales.critico,        color:"red"    },
+          { label:"Agotados",       sub:"Stock = 0 unidades",       val:totales.agotado,        color:"red"    },
+          { label:"Bajo stock",     sub:"Crítico en ≤ 4 semanas",   val:totales.bajo,           color:"orange" },
+          { label:"Sin movimiento", sub:"0 ventas en 30 días",      val:totales.sin_movimiento, color:"blue"   },
         ].map((k, i) => (
           <div key={i} className={`rep-kpi ${k.color}`}>
             <div className="rep-kpi-lbl">{k.label}</div>
@@ -364,7 +481,7 @@ function TabAgotamiento({ branches }) {
         ))}
       </div>
 
-      {/* ── Panel principal ── */}
+      {/* Panel */}
       <div className="rep-panel">
         <div className="rep-panel-head">
           <div className="rep-panel-title">
@@ -373,32 +490,28 @@ function TabAgotamiento({ branches }) {
           </div>
           <div style={{ display:"flex", gap:8, alignItems:"center" }}>
             <span className="rep-badge">{sorted.length} registros</span>
-            <button className="rep-apply" onClick={load} disabled={loading} style={{ padding:"6px 14px", fontSize:".78rem" }}>
-              <MdRefresh size={14} className={loading?"spinning":""} />
+            <button className="rep-apply" onClick={load} disabled={loading}
+              style={{ padding:"6px 14px", fontSize:".78rem" }}>
+              <MdRefresh size={14} className={loading ? "spinning" : ""} />
               {loading ? "Cargando…" : "Actualizar"}
             </button>
           </div>
         </div>
 
-        {/* TABS POR SUCURSAL */}
+        {/* Tabs de sucursal */}
         <div className="suc-tabs">
-          <button
-            className={`suc-tab${sucursal==="all"?" active":""}`}
-            onClick={() => setSucursal("all")}
-          >
+          <button className={`suc-tab${sucursal==="all"?" active":""}`} onClick={() => setSucursal("all")}>
             Todas las sucursales
-            {(totales.critico+totales.agotado) > 0 && (
-              <span className="suc-badge">{totales.critico+totales.agotado}</span>
+            {(totales.critico + totales.agotado) > 0 && (
+              <span className="suc-badge">{totales.critico + totales.agotado}</span>
             )}
           </button>
           {branches.map(b => {
             const cnt = alertasPorSuc[b.id] || 0;
             return (
-              <button
-                key={b.id}
+              <button key={b.id}
                 className={`suc-tab${sucursal===String(b.id)?" active":""}`}
-                onClick={() => setSucursal(String(b.id))}
-              >
+                onClick={() => setSucursal(String(b.id))}>
                 {b.nombre || b.id}
                 {cnt > 0 && <span className="suc-badge">{cnt}</span>}
               </button>
@@ -406,7 +519,7 @@ function TabAgotamiento({ branches }) {
           })}
         </div>
 
-        {/* FILTROS ADICIONALES */}
+        {/* Filtros adicionales */}
         <div className="pred-filters">
           <div className="pred-filter-group">
             <label>Estado de alerta</label>
@@ -429,7 +542,7 @@ function TabAgotamiento({ branches }) {
           </div>
         </div>
 
-        {/* TABLA */}
+        {/* Tabla */}
         {loading ? (
           <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, padding:52, color:"#94a3b8" }}>
             <MdRefresh size={22} className="spinning" />
@@ -448,32 +561,39 @@ function TabAgotamiento({ branches }) {
                   <th>Mín. req.</th>
                   <th className="sortable" onClick={() => toggleSort("ventas")}>Ventas/30d{sortIcon("ventas")}</th>
                   <th>Tasa diaria</th>
-                  <th>k (sem⁻¹)</th>
-                  <th className="sortable" onClick={() => toggleSort("semanas")}>Sems. a crítico{sortIcon("semanas")}</th>
-                  <th>Agotamiento total</th>
-                  <th>Modelo</th>
+                  <th className="sortable" onClick={() => toggleSort("semanas")}>
+                    Sems. a crítico{sortIcon("semanas")}
+                  </th>
+                  <th title="Haz clic en el valor para ver detalle">
+                    Agotamiento total ⓘ
+                  </th>
                   <th className="sortable" onClick={() => toggleSort("alerta")}>Estado{sortIcon("alerta")}</th>
                 </tr>
               </thead>
               <tbody>
                 {sorted.length === 0 ? (
                   <tr>
-                    <td colSpan={13} className="rep-empty">
-                      {loading ? "Cargando…" : "Sin productos con los filtros seleccionados"}
+                    <td colSpan={11} className="rep-empty">
+                      Sin productos con los filtros seleccionados
                     </td>
                   </tr>
                 ) : (
                   sorted.map((d, i) => {
-                    const rowBg = d.alerta==="agotado"   ? "#fff1f2"
-                                : d.alerta==="critico"   ? "#fff8f8"
-                                : d.alerta==="bajo"      ? "#fffbf0"
+                    const rowBg = d.alerta==="agotado" ? "#fff1f2"
+                                : d.alerta==="critico" ? "#fff8f8"
+                                : d.alerta==="bajo"    ? "#fffbf0"
                                 : "transparent";
+
                     const nombreProducto = d.producto?.trim() || `Producto ${d.product_id}`;
-                    const semC = d.semanas_a_critico;
-                    const diasC = semC !== null ? semC * 7 : null;
-                    const diasClass = diasC===null ? "ok" : diasC<=7 ? "danger" : diasC<=30 ? "warning" : "ok";
+                    const semC    = d.semanas_a_critico;
+                    const diasC   = semC !== null ? Math.round(semC * 7) : null;
+                    const criticoTexto = semanasATexto(semC);
+                    const critClass = !diasC ? "ok" : diasC <= 7 ? "danger" : diasC <= 30 ? "warning" : "ok";
+
                     return (
                       <tr key={`${d.product_id}_${d.branch_id}`} style={{ background:rowBg }}>
+
+                        {/* # */}
                         <td style={{ color:"#94a3b8", fontSize:".72rem", fontWeight:700 }}>{i+1}</td>
 
                         {/* Producto */}
@@ -496,7 +616,7 @@ function TabAgotamiento({ branches }) {
                         {/* Categoría */}
                         <td>
                           <span style={{ background:"#f1f5f9", padding:"2px 7px", borderRadius:4, fontSize:".7rem" }}>
-                            {d.categoria||"—"}
+                            {d.categoria || "—"}
                           </span>
                         </td>
 
@@ -506,7 +626,7 @@ function TabAgotamiento({ branches }) {
                         </td>
 
                         {/* Mín req */}
-                        <td style={{ color:"#64748b" }} className="mono">{d.min_stock||"—"}</td>
+                        <td className="mono" style={{ color:"#64748b" }}>{d.min_stock || "—"}</td>
 
                         {/* Ventas/30d */}
                         <td className="mono">{fmt(d.ventas_30d)}</td>
@@ -514,47 +634,27 @@ function TabAgotamiento({ branches }) {
                         {/* Tasa diaria */}
                         <td className="mono">{d.tasa_diaria} uds/día</td>
 
-                        {/* k */}
-                        <td>
-                          <span className="mono" style={{ color:"#2563eb" }}>{d.k || "—"}</span>
-                        </td>
-
                         {/* Semanas a crítico */}
                         <td>
-                          {d.stock_actual <= d.min_stock ? (
+                          {d.stock_actual <= (d.min_stock || 0) ? (
                             <span style={{ color:"#dc2626", fontWeight:700, fontSize:".78rem" }}>⚠ Ya alcanzado</span>
-                          ) : d.semanas_a_critico !== null ? (
+                          ) : criticoTexto ? (
                             <div>
-                              <span className={`dias-val ${diasClass}`}>{formatSemanas(d.semanas_a_critico)}</span>
-                              <div style={{ fontSize:".68rem", color:"#94a3b8", marginTop:1 }}>
-                                ~{Math.round(d.semanas_a_critico*7)} días
-                              </div>
+                              <span className={`dias-val ${critClass}`}>{criticoTexto.corto}</span>
+                              {diasC && (
+                                <div style={{ fontSize:".67rem", color:"#94a3b8", marginTop:1 }}>
+                                  ~{diasC} días
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <span style={{ color:"#94a3b8" }}>Sin movimiento</span>
                           )}
                         </td>
 
-                        {/* Agotamiento total */}
+                        {/* Agotamiento total — con popover al hacer clic */}
                         <td>
-                          {d.semanas_agotamiento ? (
-                            <div>
-                              <span className="mono" style={{ fontSize:".78rem" }}>{formatSemanas(d.semanas_agotamiento)}</span>
-                              <div style={{ fontSize:".68rem", color:"#94a3b8" }}>
-                                ~{Math.round(d.semanas_agotamiento*7)} días
-                              </div>
-                            </div>
-                          ) : "—"}
-                        </td>
-
-                        {/* Modelo */}
-                        <td>
-                          <span className="mono" style={{ fontSize:".7rem", color:"#334155" }}>
-                            {d.stock_actual > 0 && d.k
-                              ? `S(t)=${d.stock_actual}·e^(-${d.k}t)`
-                              : "—"
-                            }
-                          </span>
+                          <AgotamientoCell d={d} />
                         </td>
 
                         {/* Estado */}
@@ -572,8 +672,7 @@ function TabAgotamiento({ branches }) {
   );
 }
 
-// ── TAB: VENTAS Y REPORTES ────────────────────────────────────────────────────
-
+// ── TAB: VENTAS ───────────────────────────────────────────────────────────────
 function TabReportes({ branches }) {
   const today = new Date().toISOString().slice(0,10);
   const ago30 = new Date(Date.now() - 30*86400000).toISOString().slice(0,10);
@@ -606,15 +705,14 @@ function TabReportes({ branches }) {
   useEffect(() => { load(); }, []);
 
   const kpis = summary ? [
-    { label:"Ingresos",       val:fmtMXN(summary.current?.ingresos),        color:"blue",   sub:"período seleccionado" },
-    { label:"Pedidos",        val:fmt(summary.current?.total_pedidos),       color:"green",  sub:`entregados: ${fmt(summary.current?.entregados)}` },
-    { label:"Ticket prom.",   val:fmtMXN(summary.current?.ticket_promedio),  color:"orange", sub:"promedio por pedido" },
-    { label:"Clientes únicos",val:fmt(summary.current?.clientes_unicos),     color:"blue",   sub:"en el período" },
+    { label:"Ingresos",        val:fmtMXN(summary.current?.ingresos),       color:"blue",   sub:"período seleccionado" },
+    { label:"Pedidos",         val:fmt(summary.current?.total_pedidos),      color:"green",  sub:`entregados: ${fmt(summary.current?.entregados)}` },
+    { label:"Ticket prom.",    val:fmtMXN(summary.current?.ticket_promedio), color:"orange", sub:"promedio por pedido" },
+    { label:"Clientes únicos", val:fmt(summary.current?.clientes_unicos),    color:"blue",   sub:"en el período" },
   ] : [];
 
   return (
     <>
-      {/* Filtros */}
       <div className="rep-filters">
         <div className="rep-fg"><label>Desde</label><input type="date" value={from} onChange={e=>setFrom(e.target.value)}/></div>
         <div className="rep-fg"><label>Hasta</label><input type="date" value={to}   onChange={e=>setTo(e.target.value)}/></div>
@@ -626,12 +724,10 @@ function TabReportes({ branches }) {
           </select>
         </div>
         <button className="rep-apply" onClick={load} disabled={loading}>
-          <MdRefresh size={15} className={loading?"spinning":""}/>
-          {loading ? "Cargando…" : "Aplicar"}
+          <MdRefresh size={15} className={loading?"spinning":""}/> {loading ? "Cargando…" : "Aplicar"}
         </button>
       </div>
 
-      {/* KPIs */}
       {summary && (
         <div className="rep-kpis">
           {kpis.map(k => (
@@ -644,7 +740,6 @@ function TabReportes({ branches }) {
         </div>
       )}
 
-      {/* Gráficas */}
       <div className="rep-grid2">
         <div className="rep-panel">
           <div className="rep-panel-head">
@@ -673,32 +768,25 @@ function TabReportes({ branches }) {
   );
 }
 
-// ── COMPONENTE PRINCIPAL ──────────────────────────────────────────────────────
-
+// ── PRINCIPAL ─────────────────────────────────────────────────────────────────
 export default function Reportes() {
   const [tab,      setTab]      = useState("ventas");
   const [branches, setBranches] = useState([]);
   const [alertas,  setAlertas]  = useState({ critico:0, agotado:0 });
 
   useEffect(() => {
-    // Cargar sucursales
     fetch(`${API_URL}/api/admin/branches`, { headers:auth() })
-      .then(r => r.ok ? r.json() : [])
-      .then(setBranches)
-      .catch(() => {});
+      .then(r => r.ok ? r.json() : []).then(setBranches).catch(() => {});
 
-    // Cargar contadores de alertas para el badge del tab
     fetch(`${API_URL}/api/admin/reports/prediccion-agotamiento`, { headers:auth() })
       .then(r => r.ok ? r.json() : [])
       .then(raw => {
         if (!Array.isArray(raw)) return;
-        // Cada fila ya es producto·sucursal — no hay que agrupar
         setAlertas({
           critico: raw.filter(d => d.alerta === "critico").length,
           agotado: raw.filter(d => d.alerta === "agotado").length,
         });
-      })
-      .catch(() => {});
+      }).catch(() => {});
   }, []);
 
   const totalAlerta = alertas.critico + alertas.agotado;
@@ -712,16 +800,10 @@ export default function Reportes() {
       </div>
 
       <div className="rep-tabs-nav">
-        <button
-          className={`rep-tab-btn${tab==="ventas"?" active":""}`}
-          onClick={() => setTab("ventas")}
-        >
+        <button className={`rep-tab-btn${tab==="ventas"?" active":""}`} onClick={() => setTab("ventas")}>
           <MdBarChart/> Ventas y reportes
         </button>
-        <button
-          className={`rep-tab-btn${tab==="inventario"?" active":""}`}
-          onClick={() => setTab("inventario")}
-        >
+        <button className={`rep-tab-btn${tab==="inventario"?" active":""}`} onClick={() => setTab("inventario")}>
           <MdWarning/>
           Predicción de agotamiento
           {totalAlerta > 0 && <span className="rep-tab-badge">{totalAlerta}</span>}
