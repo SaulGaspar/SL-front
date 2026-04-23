@@ -20,7 +20,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Data states
   const [orderStats, setOrderStats] = useState(null);
   const [userStats, setUserStats] = useState(null);
   const [invStats, setInvStats] = useState(null);
@@ -44,7 +43,6 @@ export default function Dashboard() {
     return res.json();
   };
 
-  // Versión segura: retorna null si el endpoint falla, no rompe el resto
   const apiFetchSafe = async (url) => {
     try { return await apiFetch(url); }
     catch (e) { console.warn(`⚠️ Endpoint falló (se omite): ${url} —`, e.message); return null; }
@@ -62,7 +60,6 @@ export default function Dashboard() {
       if (filters.to) params.append("to", filters.to);
       if (filters.branch !== "all") params.append("branch", filters.branch);
 
-      // Promise.allSettled: todos se ejecutan aunque alguno falle
       const [dashboard, orders, users, inv, products, lowStock, recent] = await Promise.all([
         apiFetchSafe(`${BASE}/dashboard?${params}`),
         apiFetchSafe(`${BASE}/orders/stats/summary`),
@@ -70,7 +67,7 @@ export default function Dashboard() {
         apiFetchSafe(`${BASE}/inventory/stats`),
         apiFetchSafe(`${BASE}/products/stats/summary`),
         apiFetchSafe(`${BASE}/inventory?low_stock=true`),
-        apiFetchSafe(`${BASE}/orders`),   // sin ?limit=5, lo limitamos en el front
+        apiFetchSafe(`${BASE}/orders`),
       ]);
 
       if (dashboard) {
@@ -85,7 +82,6 @@ export default function Dashboard() {
       if (lowStock) setLowStockItems((Array.isArray(lowStock) ? lowStock : []).slice(0, 6));
       if (recent)   setRecentOrders((Array.isArray(recent) ? recent : []).slice(0, 6));
 
-      // Si el endpoint principal del dashboard falló, es un error real
       if (!dashboard) setError("No se pudo cargar el dashboard principal. Revisa los logs del servidor.");
     } catch (err) {
       setError(err.message || "Error cargando dashboard");
@@ -96,7 +92,6 @@ export default function Dashboard() {
 
   const handleFilter = () => fetchAll();
 
-  // ── Loading ────────────────────────────────────────
   if (loading) return (
     <div style={S.center}>
       <div style={S.spinner} />
@@ -104,7 +99,6 @@ export default function Dashboard() {
     </div>
   );
 
-  // ── Error ──────────────────────────────────────────
   if (error) return (
     <div style={S.errorBox}>
       <MdWarning size={36} color="#e53e3e" />
@@ -114,7 +108,6 @@ export default function Dashboard() {
     </div>
   );
 
-  // Tu BD usa columna 'status' (no 'estado')
   const statusColor = { pendiente: "#f6ad55", procesando: "#63b3ed", enviado: "#76e4f7", entregado: "#68d391", cancelado: "#fc8181" };
   const statusIcon  = { pendiente: <MdAccessTime />, procesando: <MdRefresh />, enviado: <MdLocalShipping />, entregado: <MdCheckCircle />, cancelado: <MdCancel /> };
 
@@ -122,7 +115,6 @@ export default function Dashboard() {
     <div>
       <style>{CSS}</style>
 
-      {/* Header */}
       <div className="page-header">
         <h2>Dashboard</h2>
         <p>Resumen general de SportLike</p>
@@ -158,7 +150,8 @@ export default function Dashboard() {
           </div>
           <div className="db-kpi-body">
             <span className="db-kpi-label">Ingresos totales</span>
-            <span className="db-kpi-value">{fmt(orderStats?.ingresos_totales)}</span>
+            {/* ← clamp: se achica si el número es largo */}
+            <span className="db-kpi-value db-kpi-value--money">{fmt(orderStats?.ingresos_totales)}</span>
             <span className="db-kpi-sub">Ticket promedio: {fmt(orderStats?.ticket_promedio)}</span>
           </div>
         </div>
@@ -200,9 +193,7 @@ export default function Dashboard() {
           <div className="db-kpi-body">
             <span className="db-kpi-label">Inventario</span>
             <span className="db-kpi-value">{fmtNum(invStats?.stock_total)} uds.</span>
-            <span className="db-kpi-sub">
-              Valor: {fmt(invStats?.valor_inventario)}
-            </span>
+            <span className="db-kpi-sub">Valor: {fmt(invStats?.valor_inventario)}</span>
           </div>
         </div>
 
@@ -313,10 +304,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Bottom row: Bajo stock + Top productos + Órdenes recientes ── */}
+      {/* ── Bottom row ── */}
       <div className="db-bottom-grid">
 
-        {/* Productos con stock bajo */}
         <div className="db-card">
           <div className="db-card-title" style={{ color: lowStockItems.length > 0 ? "#c05621" : undefined }}>
             <MdWarning style={{ color: "#f6ad55" }} /> Alertas de inventario
@@ -356,7 +346,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Top productos */}
         <div className="db-card">
           <div className="db-card-title"><MdBarChart /> Top productos</div>
           {topProducts.length === 0
@@ -378,7 +367,6 @@ export default function Dashboard() {
           }
         </div>
 
-        {/* Órdenes recientes */}
         <div className="db-card">
           <div className="db-card-title"><MdShoppingCart /> Órdenes recientes</div>
           {recentOrders.length === 0
@@ -413,12 +401,12 @@ export default function Dashboard() {
       <div className="db-section-title">Resumen de usuarios</div>
       <div className="db-users-row">
         {[
-          { label: "Total usuarios",    val: userStats?.total_usuarios, color: "#667eea", icon: <MdPeople /> },
-          { label: "Clientes",          val: userStats?.clientes,       color: "#48bb78", icon: <MdPeople /> },
-          { label: "Administradores",   val: userStats?.admins,         color: "#764ba2", icon: <MdPeople /> },
-          { label: "Verificados",       val: userStats?.verificados,    color: "#4facfe", icon: <MdCheckCircle /> },
-          { label: "Sin verificar",     val: userStats?.sin_verificar,  color: "#f6ad55", icon: <MdWarning /> },
-          { label: "Bloqueados",        val: userStats?.bloqueados,     color: "#fc8181", icon: <MdCancel /> },
+          { label: "Total usuarios",  val: userStats?.total_usuarios, color: "#667eea", icon: <MdPeople /> },
+          { label: "Clientes",        val: userStats?.clientes,       color: "#48bb78", icon: <MdPeople /> },
+          { label: "Administradores", val: userStats?.admins,         color: "#764ba2", icon: <MdPeople /> },
+          { label: "Verificados",     val: userStats?.verificados,    color: "#4facfe", icon: <MdCheckCircle /> },
+          { label: "Sin verificar",   val: userStats?.sin_verificar,  color: "#f6ad55", icon: <MdWarning /> },
+          { label: "Bloqueados",      val: userStats?.bloqueados,     color: "#fc8181", icon: <MdCancel /> },
         ].map(({ label, val, color, icon }) => (
           <div className="db-user-stat" key={label}>
             <span style={{ color, fontSize: "1.4rem" }}>{icon}</span>
@@ -431,7 +419,6 @@ export default function Dashboard() {
   );
 }
 
-// ─── Inline styles (elementos dinámicos) ──────────────────────────────────────
 const S = {
   center: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 400 },
   spinner: { width: 48, height: 48, border: "4px solid #e2e8f0", borderTop: "4px solid #667eea", borderRadius: "50%", animation: "spin 0.8s linear infinite" },
@@ -439,7 +426,6 @@ const S = {
   btnPrimary: { background: "linear-gradient(135deg,#667eea,#764ba2)", color: "white", border: "none", borderRadius: 8, padding: "10px 24px", cursor: "pointer", fontWeight: 600 },
 };
 
-// ─── CSS ──────────────────────────────────────────────────────────────────────
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -466,12 +452,21 @@ const CSS = `
   .db-kpi-card {
     background: white; border-radius: 14px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     display: flex; align-items: center; gap: 16px; transition: all 0.25s ease; border-left: 4px solid transparent;
+    min-width: 0;
   }
   .db-kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
   .db-kpi-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0; }
-  .db-kpi-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .db-kpi-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
   .db-kpi-label { font-size: 0.78rem; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-  .db-kpi-value { font-size: 1.6rem; font-weight: 700; color: #1e3a5f; line-height: 1.1; }
+  .db-kpi-value {
+    font-size: 1.6rem; font-weight: 700; color: #1e3a5f; line-height: 1.1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  /* Solo el valor monetario usa clamp para reducirse si es muy largo */
+  .db-kpi-value--money {
+    font-size: clamp(1rem, 2.2vw, 1.6rem);
+    white-space: nowrap;
+  }
   .db-kpi-sub { font-size: 0.78rem; color: #a0aec0; margin-top: 2px; }
 
   /* Estado órdenes */

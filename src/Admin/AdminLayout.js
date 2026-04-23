@@ -1,13 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from "react-router-dom";
-import { MdDashboard, MdInventory, MdShoppingCart, MdPeople, MdStore, MdLocalOffer, MdAssessment, MdMenu, MdClose, MdEmail, MdPerson, MdAdminPanelSettings, MdLogout, MdMonitor } from "react-icons/md";
+import { MdDashboard, MdInventory, MdShoppingCart, MdPeople, MdStore, MdAssessment, MdMenu, MdClose, MdEmail, MdPerson, MdAdminPanelSettings, MdLogout, MdMonitor } from "react-icons/md";
 
 import Dashboard   from "./pages/Dashboard/Dashboard";
 import Productos   from "./pages/Productos/Productos";
 import Inventario  from "./pages/Inventario/Inventario";
 import Pedidos     from "./pages/Pedidos/Pedidos";
 import Usuarios    from "./pages/Usuarios/Usuarios";
-import Promociones from "./pages/Promociones/Promociones";
 import Reportes    from "./pages/Reportes/Reportes";
 import Sucursales  from "./pages/Sucursales/Sucursales";
 import MonitorBD   from "./pages/Monitor/MonitorDB";
@@ -29,15 +28,13 @@ export default function AdminLayout({ user, onLogout }) {
   }, []);
 
   const menuItems = [
-    { path: "/admin",             icon: MdDashboard,    label: "Dashboard",   exact: true },
-    { path: "/admin/productos",   icon: MdInventory,    label: "Productos"                },
-    { path: "/admin/inventario",  icon: MdStore,        label: "Inventario"               },
-    { path: "/admin/pedidos",     icon: MdShoppingCart, label: "Pedidos"                  },
-    { path: "/admin/usuarios",    icon: MdPeople,       label: "Usuarios"                 },
-    { path: "/admin/sucursales",  icon: MdStore,        label: "Sucursales"               },
-    { path: "/admin/promociones", icon: MdLocalOffer,   label: "Promociones"              },
-    { path: "/admin/reportes",    icon: MdAssessment,   label: "Reportes"                 },
-    { path: "/admin/monitor",     icon: MdMonitor,      label: "Monitor BD"               },
+    { path: "/admin",            icon: MdDashboard,    label: "Dashboard",  exact: true },
+    { path: "/admin/productos",  icon: MdInventory,    label: "Productos"               },
+    { path: "/admin/inventario", icon: MdStore,        label: "Inventario"              },
+    { path: "/admin/pedidos",    icon: MdShoppingCart, label: "Pedidos"                 },
+    { path: "/admin/usuarios",   icon: MdPeople,       label: "Usuarios"                },
+    { path: "/admin/sucursales", icon: MdStore,        label: "Sucursales"              },
+    { path: "/admin/reportes",   icon: MdAssessment,   label: "Reportes"                },
   ];
 
   const isActive = (path, exact) => exact ? location.pathname === path : location.pathname.startsWith(path);
@@ -56,39 +53,39 @@ export default function AdminLayout({ user, onLogout }) {
         <nav className="sidebar-menu">
           <div className="menu-section">
             <div className="menu-section-title">Principal</div>
-            {menuItems.slice(0,1).map(item => (
-              <Link key={item.path} to={item.path} className={`menu-item ${isActive(item.path,item.exact)?"active":""}`} onClick={() => window.innerWidth<=768 && setSidebarOpen(false)}>
+            {menuItems.slice(0, 1).map(item => (
+              <Link key={item.path} to={item.path} className={`menu-item ${isActive(item.path, item.exact) ? "active" : ""}`} onClick={() => window.innerWidth <= 768 && setSidebarOpen(false)}>
                 <item.icon /><span>{item.label}</span>
               </Link>
             ))}
           </div>
           <div className="menu-section">
             <div className="menu-section-title">Gestión</div>
-            {menuItems.slice(1,6).map(item => (
-              <Link key={item.path} to={item.path} className={`menu-item ${isActive(item.path,item.exact)?"active":""}`} onClick={() => window.innerWidth<=768 && setSidebarOpen(false)}>
+            {menuItems.slice(1, 6).map(item => (
+              <Link key={item.path} to={item.path} className={`menu-item ${isActive(item.path, item.exact) ? "active" : ""}`} onClick={() => window.innerWidth <= 768 && setSidebarOpen(false)}>
                 <item.icon /><span>{item.label}</span>
               </Link>
             ))}
           </div>
           <div className="menu-section">
-            <div className="menu-section-title">Marketing & Análisis</div>
-            {menuItems.slice(6,8).map(item => (
-              <Link key={item.path} to={item.path} className={`menu-item ${isActive(item.path,item.exact)?"active":""}`} onClick={() => window.innerWidth<=768 && setSidebarOpen(false)}>
+            <div className="menu-section-title">Análisis</div>
+            {menuItems.slice(6, 7).map(item => (
+              <Link key={item.path} to={item.path} className={`menu-item ${isActive(item.path, item.exact) ? "active" : ""}`} onClick={() => window.innerWidth <= 768 && setSidebarOpen(false)}>
                 <item.icon /><span>{item.label}</span>
               </Link>
             ))}
           </div>
           <div className="menu-section">
             <div className="menu-section-title">Sistema</div>
-            <Link to="/admin/monitor" className={`menu-item monitor-item ${isActive("/admin/monitor")?"active":""}`} onClick={() => window.innerWidth<=768 && setSidebarOpen(false)}>
+            <Link to="/admin/monitor" className={`menu-item monitor-item ${isActive("/admin/monitor") ? "active" : ""}`} onClick={() => window.innerWidth <= 768 && setSidebarOpen(false)}>
               <MdMonitor /><span>Monitor BD</span>
-              <span className="monitor-dot" style={{marginLeft:"auto"}} />
+              <span className="monitor-dot" style={{ marginLeft: "auto" }} />
             </Link>
           </div>
         </nav>
       </aside>
 
-      <main className={`admin-main ${!sidebarOpen?"expanded":""}`}>
+      <main className={`admin-main ${!sidebarOpen ? "expanded" : ""}`}>
         <div className="admin-topbar">
           <div className="topbar-left">
             <button className="toggle-sidebar-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
@@ -103,7 +100,7 @@ export default function AdminLayout({ user, onLogout }) {
             <NotificacionesBell onVerPedido={() => navigate("/admin/pedidos")} />
 
             <div className="admin-profile-wrapper" ref={profileRef}>
-              <div className={`admin-user-info ${profileOpen?"open":""}`} onClick={() => setProfileOpen(p=>!p)}>
+              <div className={`admin-user-info ${profileOpen ? "open" : ""}`} onClick={() => setProfileOpen(p => !p)}>
                 <div className="admin-user-avatar">{user.nombre.charAt(0).toUpperCase()}</div>
                 <div className="admin-user-details">
                   <h5>{user.nombre} {user.apellidoP}</h5>
@@ -116,17 +113,17 @@ export default function AdminLayout({ user, onLogout }) {
                     <div className="dropdown-avatar-lg">{user.nombre.charAt(0).toUpperCase()}</div>
                     <div className="dropdown-header-info">
                       <h4>{user.nombre} {user.apellidoP}</h4>
-                      <span><MdAdminPanelSettings style={{verticalAlign:"middle",marginRight:4}}/>Administrador</span>
+                      <span><MdAdminPanelSettings style={{ verticalAlign: "middle", marginRight: 4 }} />Administrador</span>
                     </div>
                   </div>
                   <div className="dropdown-body">
                     <div className="dropdown-info-row">
                       <MdEmail />
-                      <div><div className="info-label">Correo</div><div className="info-value">{user.correo||user.email||"—"}</div></div>
+                      <div><div className="info-label">Correo</div><div className="info-value">{user.correo || user.email || "—"}</div></div>
                     </div>
                     <div className="dropdown-info-row">
                       <MdPerson />
-                      <div><div className="info-label">Usuario</div><div className="info-value">@{user.usuario||"—"}</div></div>
+                      <div><div className="info-label">Usuario</div><div className="info-value">@{user.usuario || "—"}</div></div>
                     </div>
                   </div>
                   <div className="dropdown-footer">
@@ -140,17 +137,16 @@ export default function AdminLayout({ user, onLogout }) {
           </div>
         </div>
 
-        <div className={`admin-content ${location.pathname==="/admin/monitor"?"is-monitor":""}`}>
+        <div className={`admin-content ${location.pathname === "/admin/monitor" ? "is-monitor" : ""}`}>
           <Routes>
-            <Route path="/"            element={<Dashboard />}   />
-            <Route path="/productos"   element={<Productos />}   />
-            <Route path="/inventario"  element={<Inventario />}  />
-            <Route path="/pedidos"     element={<Pedidos />}     />
-            <Route path="/usuarios"    element={<Usuarios />}    />  {/* ← Corregido */}
-            <Route path="/sucursales"  element={<Sucursales />}  />
-            <Route path="/promociones" element={<Promociones />} />
-            <Route path="/reportes"    element={<Reportes />}    />
-            <Route path="/monitor"     element={<MonitorBD />}   />
+            <Route path="/"           element={<Dashboard />}  />
+            <Route path="/productos"  element={<Productos />}  />
+            <Route path="/inventario" element={<Inventario />} />
+            <Route path="/pedidos"    element={<Pedidos />}    />
+            <Route path="/usuarios"   element={<Usuarios />}   />
+            <Route path="/sucursales" element={<Sucursales />} />
+            <Route path="/reportes"   element={<Reportes />}   />
+            <Route path="/monitor"    element={<MonitorBD />}  />
           </Routes>
         </div>
       </main>
