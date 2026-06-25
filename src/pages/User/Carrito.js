@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useCart } from "../../context/CartContext";
 import { useNavigate } from "react-router-dom";
-// ← Se elimina el import de DireccionCheckout
+import DireccionCheckout from "./DireccionCheckout";
 
 const fmtMXN = n => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n || 0);
 
@@ -103,7 +103,7 @@ const CSS = `
   font-weight:700; cursor:pointer; font-family:'Outfit',sans-serif;
 }
 
-.crt-right-col { display:flex; flex-direction:column; gap:0; position:sticky; top:20px; }
+.crt-right-col { display:flex; flex-direction:column; gap:16px; position:sticky; top:20px; }
 
 .crt-summary { background:white; border-radius:16px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,.07); }
 .crt-summary-head {
@@ -136,6 +136,10 @@ const CSS = `
 
 .crt-free-ship { background:#c6f6d5; color:#276749; font-size:.74rem; font-weight:700; padding:3px 10px; border-radius:20px; }
 .crt-secure { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:12px; font-size:.74rem; color:#a0aec0; }
+.crt-address-alert {
+  background:#fff5f5; border:1px solid #fc8181; border-radius:10px;
+  padding:10px 12px; color:#9b2c2c; font-size:.8rem; margin-bottom:12px;
+}
 
 @media(max-width:900px) {
   .crt-body { grid-template-columns:1fr; }
@@ -147,6 +151,8 @@ const CSS = `
 export default function Carrito() {
   const { cart, updateQty, removeItem } = useCart();
   const navigate = useNavigate();
+  const [direccionSeleccionada, setDireccionSeleccionada] = useState(null);
+  const [direccionRequerida, setDireccionRequerida] = useState(false);
 
   const getPrice = i => Number(i.precio || i.price || 0);
   const getQty   = i => Number(i.qty || i.cantidad || 1);
@@ -155,13 +161,28 @@ export default function Carrito() {
   const shipping = subtotal >= 1500 ? 0 : cart.length ? 75 : 0;
   const total    = subtotal + shipping;
 
+  const seleccionarDireccion = (dir) => {
+    setDireccionSeleccionada(dir);
+    setDireccionRequerida(false);
+  };
+
   const handlePago = () => {
     const token = localStorage.getItem("token");
     if (!token) {
       navigate("/login", { state: { from: "/carrito" } });
       return;
     }
-    navigate("/pago", { state: { total } });
+    if (!direccionSeleccionada?.id) {
+      setDireccionRequerida(true);
+      return;
+    }
+    navigate("/pago", {
+      state: {
+        total,
+        direccion_id: direccionSeleccionada.id,
+        direccion: direccionSeleccionada,
+      },
+    });
   };
 
   return (
@@ -247,6 +268,11 @@ export default function Carrito() {
         {/* ── COLUMNA DERECHA ── */}
         {cart.length > 0 && (
           <div className="crt-right-col">
+            <DireccionCheckout
+              onDireccionSelect={seleccionarDireccion}
+              direccionActual={direccionSeleccionada}
+            />
+
             <div className="crt-summary">
               <div className="crt-summary-head">
                 <h3>Resumen</h3>
@@ -277,15 +303,21 @@ export default function Carrito() {
                   <span className="crt-total-val">{fmtMXN(total)}</span>
                 </div>
 
+                {direccionRequerida && (
+                  <div className="crt-address-alert">
+                    Agrega o selecciona una dirección de envío antes de pagar.
+                  </div>
+                )}
+
                 <button
                   className="crt-pay-btn"
                   onClick={handlePago}
-                  disabled={cart.length === 0}
+                  disabled={cart.length === 0 || !direccionSeleccionada?.id}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                     <rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" />
                   </svg>
-                  Proceder al pago
+                  {direccionSeleccionada?.id ? "Proceder al pago" : "Agrega una dirección"}
                 </button>
 
                 <div className="crt-secure">
