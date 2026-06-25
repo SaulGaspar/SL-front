@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
+import DireccionCheckout from "./DireccionCheckOut";
 
 const API_URL = "https://sl-back.vercel.app";
 
@@ -217,10 +218,18 @@ export default function Pago() {
   const [sucursalAsignada, setSucursalAsignada] = useState("");
   const [multiSucursal, setMultiSucursal] = useState(false);
   const [pedidos, setPedidos] = useState([]);
+  const [direccionSeleccionada, setDireccionSeleccionada] = useState(null);
+  const [direccionRequerida, setDireccionRequerida] = useState(false);
+  const direccionRef = useRef(null);
 
   const set = (k, v) => {
     setForm(f => ({ ...f, [k]: v }));
     if (errors[k]) setErrors(e => ({ ...e, [k]: "" }));
+  };
+
+  const seleccionarDireccion = (dir) => {
+    setDireccionSeleccionada(dir);
+    setDireccionRequerida(false);
   };
 
   const validar = () => {
@@ -244,6 +253,14 @@ export default function Pago() {
 
   const handlePago = async (ev) => {
     ev.preventDefault();
+
+    if (!direccionSeleccionada?.id) {
+      setDireccionRequerida(true);
+      setApiError("");
+      direccionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
     if (!validar()) return;
     setLoading(true);
     setApiError("");
@@ -257,6 +274,7 @@ export default function Pago() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           total,
+          direccion_id: direccionSeleccionada.id,
           items: cart.map(i => ({
             product_id: i.id,
             cantidad:   getQty(i),
@@ -354,6 +372,19 @@ export default function Pago() {
               Pago seguro
             </h2>
 
+            <div ref={direccionRef}>
+              <DireccionCheckout
+                onDireccionSelect={seleccionarDireccion}
+                direccionActual={direccionSeleccionada}
+              />
+            </div>
+
+            {direccionRequerida && (
+              <div className="pago-alert">
+                Agrega o selecciona una dirección de envío antes de pagar.
+              </div>
+            )}
+
             {/* Card preview */}
             <div className="pago-card-preview">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -448,11 +479,16 @@ export default function Pago() {
               </div>
 
               {/* Botón pagar */}
-              <button type="submit" className="pago-btn pago-btn-pay" disabled={loading}>
+              <button type="submit" className="pago-btn pago-btn-pay" disabled={loading || !direccionSeleccionada?.id}>
                 {loading ? (
                   <>
                     <svg width="18" height="18" viewBox="0 0 24 24" className="spinning" fill="none" stroke="white" strokeWidth="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
                     Procesando...
+                  </>
+                ) : !direccionSeleccionada?.id ? (
+                  <>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Agrega una dirección para pagar
                   </>
                 ) : (
                   <>
