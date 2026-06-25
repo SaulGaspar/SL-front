@@ -17,6 +17,8 @@ const ESTADOS_MX = [
 
 const TIPO_ICONS = { casa: "🏠", trabajo: "🏢", otro: "📍" };
 const CP_LOOKUP_URL = cp => `https://api.zippopotam.us/mx/${cp}`;
+const REVERSE_GEOCODE_URL = (lat, lon) =>
+  `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1&accept-language=es`;
 
 const ESTADO_ALIASES = {
   "cdmx": "Ciudad de México",
@@ -40,6 +42,7 @@ const normalizarEstado = estado => {
 };
 
 const unicos = lista => [...new Set(lista.filter(Boolean).map(v => v.trim()).filter(Boolean))];
+const pick = (...valores) => valores.find(v => typeof v === "string" && v.trim())?.trim() || "";
 
 const EMPTY_FORM = {
   alias: "", tipo: "casa",
@@ -292,6 +295,32 @@ const CSS = `
 .dch-form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .dch-fg { display:flex; flex-direction:column; gap:5px; }
 .dch-fg.full { grid-column:1/-1; }
+.dch-location-btn {
+  width:100%;
+  border:none;
+  border-radius:9px;
+  background:#ebf3ff;
+  color:#2563eb;
+  padding:12px 14px;
+  font-family:'Outfit',sans-serif;
+  font-size:.86rem;
+  font-weight:700;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  transition:all .18s;
+}
+.dch-location-btn:hover { background:#dbeafe; color:#1e3a5f; }
+.dch-location-btn:disabled { opacity:.65; cursor:not-allowed; }
+.dch-location-note {
+  font-size:.72rem;
+  color:#718096;
+  line-height:1.35;
+  margin-top:-8px;
+}
+.dch-location-note.err { color:#e53e3e; }
 .dch-fg label {
   font-size:.7rem; font-weight:700; color:#4a5568;
   text-transform:uppercase; letter-spacing:.5px;
@@ -468,6 +497,9 @@ function FormularioDireccion({ inicial, onGuardar, onCancelar, saving }) {
   const [cpLoading, setCpLoading] = useState(false);
   const [cpError, setCpError] = useState("");
   const [coloniasCp, setColoniasCp] = useState([]);
+  const [ubicando, setUbicando] = useState(false);
+  const [ubicacionError, setUbicacionError] = useState("");
+  const [sinNumero, setSinNumero] = useState((inicial?.numero_ext || "").toUpperCase() === "SN");
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const mapQuery = [
@@ -531,12 +563,71 @@ function FormularioDireccion({ inicial, onGuardar, onCancelar, saving }) {
     };
   }, [form.cp]);
 
+  function aplicarSinNumero(checked) {
+    setSinNumero(checked);
+    setForm(f => ({ ...f, numero_ext: checked ? "SN" : "" }));
+    if (errors.numero_ext) setErrors(e => ({ ...e, numero_ext: "" }));
+  }
+
+  async function llenarConUbicacion(position) {
+    const { latitude, longitude } = position.coords;
+    const res = await fetch(REVERSE_GEOCODE_URL(latitude, longitude));
+    if (!res.ok) throw new Error("No se pudo obtener la dirección");
+
+    const data = await res.json();
+    const addr = data.address || {};
+    const calle = pick(addr.road, addr.pedestrian, addr.footway, addr.neighbourhood, addr.suburb);
+    const numero = pick(addr.house_number);
+    const colonia = pick(addr.suburb, addr.neighbourhood, addr.quarter, addr.residential, addr.hamlet);
+    const ciudad = pick(addr.city, addr.town, addr.village, addr.municipality, addr.county);
+    const estado = normalizarEstado(pick(addr.state));
+    const cp = pick(addr.postcode).replace(/\D/g, "").slice(0, 5);
+
+    setSinNumero(!numero);
+    setForm(actual => ({
+      ...actual,
+      calle: calle || actual.calle,
+      numero_ext: numero || "SN",
+      colonia: colonia || actual.colonia,
+      ciudad: ciudad || actual.ciudad,
+      estado: estado || actual.estado,
+      cp: cp || actual.cp,
+    }));
+  }
+
+  async function usarMiUbicacion() {
+    setUbicacionError("");
+
+    if (!navigator.geolocation) {
+      setUbicacionError("Tu navegador no permite detectar ubicación. Llena la dirección manualmente.");
+      return;
+    }
+
+    setUbicando(true);
+    navigator.geolocation.getCurrentPosition(
+      async position => {
+        try {
+          await llenarConUbicacion(position);
+        } catch {
+          setUbicacionError("Detectamos tu ubicación, pero no pudimos convertirla en dirección. Puedes llenarla manualmente.");
+        } finally {
+          setUbicando(false);
+        }
+      },
+      () => {
+        setUbicacionError("No pudimos usar tu ubicación. Revisa permisos del navegador o llena la dirección manualmente.");
+        setUbicando(false);
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+    );
+  }
+
   function validar() {
     const e = {};
     if (!form.nombre_receptor.trim()) e.nombre_receptor = true;
     if (!form.telefono.trim() || !/^\d{10}$/.test(form.telefono.replace(/\s/g, ""))) e.telefono = true;
     if (!form.calle.trim())      e.calle = true;
-    if (!form.numero_ext.trim()) e.numero_ext = true;
+    if (!sinNumero && !form.numero_ext.trim()) e.numero_ext = true;
     if (!form.colonia.trim())    e.colonia = true;
     if (!form.ciudad.trim())     e.ciudad = true;
     if (!form.estado)            e.estado = true;
@@ -554,6 +645,18 @@ function FormularioDireccion({ inicial, onGuardar, onCancelar, saving }) {
       <button className="dch-form-back" onClick={onCancelar}>
         ← Volver a mis direcciones
       </button>
+
+      <button className="dch-location-btn" type="button" onClick={usarMiUbicacion} disabled={ubicando}>
+        {ubicando ? <span className="dch-mini-spinner" /> : "⌖"}
+        {ubicando ? "Detectando ubicación..." : "Usar mi ubicación"}
+      </button>
+      {ubicacionError ? (
+        <div className="dch-location-note err">{ubicacionError}</div>
+      ) : (
+        <div className="dch-location-note">
+          Se completará la dirección aproximada con el permiso de ubicación del navegador.
+        </div>
+      )}
 
       <div className="dch-form-row">
         <div className="dch-fg">
@@ -574,16 +677,21 @@ function FormularioDireccion({ inicial, onGuardar, onCancelar, saving }) {
       </div>
 
       <div className="dch-fg full">
-        <label>Calle *</label>
+        <label>Dirección o lugar de entrega *</label>
         <input className={errors.calle ? "err" : ""} placeholder="Nombre de la calle"
           value={form.calle} onChange={e => set("calle", e.target.value)} />
       </div>
+
+      <label className="dch-check-row">
+        <input type="checkbox" checked={sinNumero} onChange={e => aplicarSinNumero(e.target.checked)} />
+        <span>Mi calle no tiene número</span>
+      </label>
 
       <div className="dch-form-row">
         <div className="dch-fg">
           <label>Núm. exterior *</label>
           <input className={errors.numero_ext ? "err" : ""} placeholder="123"
-            value={form.numero_ext} onChange={e => set("numero_ext", e.target.value)} />
+            value={form.numero_ext} disabled={sinNumero} onChange={e => set("numero_ext", e.target.value)} />
         </div>
         <div className="dch-fg">
           <label>Núm. interior</label>
