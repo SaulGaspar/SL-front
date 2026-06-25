@@ -16,6 +16,30 @@ const ESTADOS_MX = [
 ];
 
 const TIPO_ICONS = { casa: "🏠", trabajo: "🏢", otro: "📍" };
+const CP_LOOKUP_URL = cp => `https://api.zippopotam.us/mx/${cp}`;
+
+const ESTADO_ALIASES = {
+  "cdmx": "Ciudad de México",
+  "ciudad de mexico": "Ciudad de México",
+  "ciudad de méxico": "Ciudad de México",
+  "distrito federal": "Ciudad de México",
+  "estado de mexico": "Estado de México",
+  "estado de méxico": "Estado de México",
+  "michoacan": "Michoacán",
+  "michoacán de ocampo": "Michoacán",
+  "nuevo leon": "Nuevo León",
+  "queretaro": "Querétaro",
+  "san luis potosi": "San Luis Potosí",
+  "yucatan": "Yucatán",
+};
+
+const normalizarEstado = estado => {
+  const limpio = (estado || "").trim();
+  const key = limpio.toLowerCase();
+  return ESTADO_ALIASES[key] || ESTADOS_MX.find(e => e.toLowerCase() === key) || limpio;
+};
+
+const unicos = lista => [...new Set(lista.filter(Boolean).map(v => v.trim()).filter(Boolean))];
 
 const EMPTY_FORM = {
   alias: "", tipo: "casa",
@@ -285,6 +309,24 @@ const CSS = `
 .dch-fg input::placeholder { color:#cbd5e0; }
 .dch-fg input.err { border-color:#e53e3e; }
 .dch-fg select.err { border-color:#e53e3e; }
+.dch-help {
+  font-size:.72rem;
+  color:#718096;
+  line-height:1.35;
+}
+.dch-help.err { color:#e53e3e; }
+.dch-inline-hint {
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.dch-mini-spinner {
+  width:12px; height:12px;
+  border:2px solid rgba(30,58,95,.18);
+  border-top-color:#1e3a5f;
+  border-radius:50%;
+  animation:dch-spin .7s linear infinite;
+}
 
 .dch-tipo-row { display:flex; gap:8px; }
 .dch-tipo-btn {
@@ -318,6 +360,43 @@ const CSS = `
 }
 .dch-btn-save:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(30,58,95,.25); }
 .dch-btn-save:disabled { opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
+
+.dch-map-box {
+  border:1.5px solid #e2e8f0;
+  border-radius:12px;
+  overflow:hidden;
+  background:#fafbfc;
+}
+.dch-map-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 12px;
+  border-bottom:1px solid #edf2f7;
+}
+.dch-map-title {
+  font-size:.76rem;
+  font-weight:700;
+  color:#1e3a5f;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+}
+.dch-map-link {
+  color:#2563eb;
+  font-size:.76rem;
+  font-weight:700;
+  text-decoration:none;
+  white-space:nowrap;
+}
+.dch-map-link:hover { color:#1e3a5f; }
+.dch-map-frame {
+  width:100%;
+  height:180px;
+  border:0;
+  display:block;
+  background:#f0f4f8;
+}
 
 .dch-spinner {
   width:16px; height:16px;
@@ -386,8 +465,71 @@ function Toast({ msg, type, onClose }) {
 function FormularioDireccion({ inicial, onGuardar, onCancelar, saving }) {
   const [form, setForm] = useState(inicial || EMPTY_FORM);
   const [errors, setErrors] = useState({});
+  const [cpLoading, setCpLoading] = useState(false);
+  const [cpError, setCpError] = useState("");
+  const [coloniasCp, setColoniasCp] = useState([]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const mapQuery = [
+    form.calle,
+    form.numero_ext,
+    form.colonia,
+    form.ciudad,
+    form.estado,
+    form.cp,
+    "México",
+  ].filter(Boolean).join(", ");
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
+  const mapsEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`;
+  const puedeMostrarMapa = form.calle && form.numero_ext && form.colonia && form.ciudad && form.estado && form.cp;
+
+  useEffect(() => {
+    const cp = form.cp.replace(/\D/g, "");
+
+    if (cp.length !== 5) {
+      setCpLoading(false);
+      setCpError("");
+      setColoniasCp([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setCpLoading(true);
+      setCpError("");
+
+      try {
+        const res = await fetch(CP_LOOKUP_URL(cp), { signal: controller.signal });
+        if (!res.ok) throw new Error("CP no encontrado");
+
+        const data = await res.json();
+        const places = Array.isArray(data.places) ? data.places : [];
+        const colonias = unicos(places.map(p => p["place name"] || p.placeName || p.colonia));
+        const estado = normalizarEstado(places[0]?.state || data.state || data.estado);
+        const ciudad = data.city || data.municipality || data.municipio || places[0]?.["place name"] || "";
+
+        setColoniasCp(colonias);
+        setForm(actual => ({
+          ...actual,
+          estado: estado || actual.estado,
+          ciudad: ciudad || actual.ciudad,
+          colonia: actual.colonia || colonias[0] || "",
+        }));
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          setColoniasCp([]);
+          setCpError("No se encontró el CP. Puedes llenar los campos manualmente.");
+        }
+      } finally {
+        setCpLoading(false);
+      }
+    }, 350);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [form.cp]);
 
   function validar() {
     const e = {};
@@ -452,13 +594,26 @@ function FormularioDireccion({ inicial, onGuardar, onCancelar, saving }) {
       <div className="dch-form-row">
         <div className="dch-fg">
           <label>Colonia *</label>
-          <input className={errors.colonia ? "err" : ""} placeholder="Nombre de colonia"
-            value={form.colonia} onChange={e => set("colonia", e.target.value)} />
+          <input
+            className={errors.colonia ? "err" : ""}
+            placeholder="Busca o escribe tu colonia"
+            list="dch-colonias-cp"
+            value={form.colonia}
+            onChange={e => set("colonia", e.target.value)}
+          />
+          <datalist id="dch-colonias-cp">
+            {coloniasCp.map(colonia => <option key={colonia} value={colonia} />)}
+          </datalist>
+          {coloniasCp.length > 0 && (
+            <span className="dch-help">Selecciona una colonia sugerida o escribe otra.</span>
+          )}
         </div>
         <div className="dch-fg">
           <label>Código postal *</label>
           <input className={errors.cp ? "err" : ""} placeholder="12345" maxLength={5}
             value={form.cp} onChange={e => set("cp", e.target.value.replace(/\D/g, ""))} />
+          {cpLoading && <span className="dch-help dch-inline-hint"><span className="dch-mini-spinner" /> Buscando datos del CP...</span>}
+          {cpError && <span className="dch-help err">{cpError}</span>}
         </div>
       </div>
 
@@ -482,6 +637,23 @@ function FormularioDireccion({ inicial, onGuardar, onCancelar, saving }) {
         <input placeholder="Ej: Entre calles Juárez y Morelos, casa azul"
           value={form.referencias} onChange={e => set("referencias", e.target.value)} />
       </div>
+
+      {puedeMostrarMapa && (
+        <div className="dch-map-box">
+          <div className="dch-map-head">
+            <div className="dch-map-title">Ubicación aproximada</div>
+            <a className="dch-map-link" href={mapsUrl} target="_blank" rel="noreferrer">
+              Abrir en Maps
+            </a>
+          </div>
+          <iframe
+            className="dch-map-frame"
+            title="Ubicación de entrega"
+            src={mapsEmbedUrl}
+            loading="lazy"
+          />
+        </div>
+      )}
 
       <label className="dch-check-row">
         <input type="checkbox" checked={form.predeterminada} onChange={e => set("predeterminada", e.target.checked)} />
