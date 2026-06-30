@@ -30,6 +30,17 @@ const money = (value) =>
     value || 0
   );
 
+const normalizeImages = (value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "string" || !value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 export default function Devoluciones() {
   const [items, setItems] = useState([]);
   const [status, setStatus] = useState("all");
@@ -169,6 +180,24 @@ export default function Devoluciones() {
               <strong>{reasonLabels[selected.reason]}</strong>
               <p>{selected.details}</p>
             </div>
+            {normalizeImages(selected.evidence_images).length > 0 && (
+              <div className="admin-returns-evidence">
+                <strong>Evidencia fotográfica</strong>
+                <div>
+                  {normalizeImages(selected.evidence_images).map((image, index) => (
+                    <a
+                      href={image}
+                      target="_blank"
+                      rel="noreferrer"
+                      key={index}
+                      title="Abrir imagen"
+                    >
+                      <img src={image} alt={`Evidencia ${index + 1}`} />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
             <label>
               Nuevo estado
               <select value={review.status} onChange={(event) => setReview({ ...review, status: event.target.value })}>
@@ -229,6 +258,10 @@ const CSS = `
   .admin-returns-modal-head>button { border:1px solid #cbd5e0; background:white; border-radius:8px; width:36px; height:36px; display:grid; place-items:center; cursor:pointer; }
   .admin-returns-summary { background:#f8fafc; border-radius:10px; padding:13px; margin:18px 0; color:#475569; }
   .admin-returns-summary p { margin:5px 0 0; }
+  .admin-returns-evidence { margin:0 0 18px; color:#4a5568; font-size:.84rem; }
+  .admin-returns-evidence>div { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
+  .admin-returns-evidence img { width:112px; height:86px; object-fit:cover; border-radius:9px; border:1px solid #cbd5e0; transition:transform .16s; }
+  .admin-returns-evidence img:hover { transform:scale(1.04); }
   .admin-returns-modal label { display:flex; flex-direction:column; gap:6px; margin:13px 0; color:#4a5568; font-weight:700; font-size:.84rem; }
   .admin-returns-modal select,.admin-returns-modal textarea { border:1px solid #cbd5e0; border-radius:9px; padding:10px 12px; font:500 .92rem 'DM Sans',sans-serif; }
   .admin-returns-modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }

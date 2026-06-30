@@ -2,7 +2,7 @@
 // Catalogo.js  —  con predicción de agotamiento de inventario
 // ============================================================
 import React, { useState, useEffect, useMemo, useContext, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { ThemeContext } from "../../context/ThemeContext";
 
@@ -338,6 +338,7 @@ function StockIndicator({ pred, productId, stockTotal, isHot }) {
 
 export default function Catalogo() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { addToCart, toggleMiniCart } = useCart();
   const { darkMode } = useContext(ThemeContext);
 
@@ -349,6 +350,10 @@ export default function Catalogo() {
   const [categoria,    setCategoria]    = useState("");
   const [marca,        setMarca]        = useState("");
   const [maxPrice,     setMaxPrice]     = useState(9999);
+
+  useEffect(() => {
+    setSearch(new URLSearchParams(location.search).get("q") || "");
+  }, [location.search]);
 
   // Carga productos
   useEffect(() => {

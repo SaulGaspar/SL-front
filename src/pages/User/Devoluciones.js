@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MdAssignmentReturn, MdCheckCircle, MdRefresh } from "react-icons/md";
+import {
+  MdAssignmentReturn,
+  MdCheckCircle,
+  MdClose,
+  MdPhotoCamera,
+  MdRefresh,
+} from "react-icons/md";
 
 const API = "https://sl-back.vercel.app/api/returns";
 
@@ -25,11 +31,31 @@ const money = (value) =>
     value || 0
   );
 
+const normalizeImages = (value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "string" || !value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const fileToDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("No se pudo leer la imagen"));
+    reader.readAsDataURL(file);
+  });
+
 export default function Devoluciones() {
   const navigate = useNavigate();
   const [eligibleOrders, setEligibleOrders] = useState([]);
   const [requests, setRequests] = useState([]);
   const [form, setForm] = useState({ order_id: "", reason: "damaged", details: "" });
+  const [evidenceImages, setEvidenceImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
@@ -71,6 +97,37 @@ export default function Devoluciones() {
     load();
   }, []);
 
+  const addEvidence = async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+    setMessage(null);
+
+    if (evidenceImages.length + files.length > 3) {
+      setMessage({ type: "error", text: "Puedes agregar un máximo de 3 fotografías." });
+      return;
+    }
+
+    const invalid = files.find(
+      (file) =>
+        !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
+        file.size > 1.5 * 1024 * 1024
+    );
+    if (invalid) {
+      setMessage({
+        type: "error",
+        text: "Usa imágenes JPG, PNG o WEBP de máximo 1.5 MB cada una.",
+      });
+      return;
+    }
+
+    try {
+      const encoded = await Promise.all(files.map(fileToDataUrl));
+      setEvidenceImages((current) => [...current, ...encoded]);
+    } catch (error) {
+      setMessage({ type: "error", text: error.message });
+    }
+  };
+
   const submit = async (event) => {
     event.preventDefault();
     setSaving(true);
@@ -78,10 +135,11 @@ export default function Devoluciones() {
     try {
       const result = await request(API, {
         method: "POST",
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, evidence_images: evidenceImages }),
       });
       setMessage({ type: "success", text: result.message });
       setForm({ order_id: "", reason: "damaged", details: "" });
+      setEvidenceImages([]);
       await load();
     } catch (error) {
       setMessage({ type: "error", text: error.message });
@@ -150,6 +208,45 @@ export default function Devoluciones() {
               placeholder="Describe el estado del producto y la solución que solicitas."
             />
           </label>
+          <div className="returns-evidence">
+            <div className="returns-evidence-head">
+              <div>
+                <strong>Fotografías de evidencia</strong>
+                <small>Opcional · hasta 3 imágenes JPG, PNG o WEBP</small>
+              </div>
+              <label className="returns-upload">
+                <MdPhotoCamera />
+                Agregar fotos
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  onChange={addEvidence}
+                  disabled={evidenceImages.length >= 3}
+                />
+              </label>
+            </div>
+            {evidenceImages.length > 0 && (
+              <div className="returns-evidence-grid">
+                {evidenceImages.map((image, index) => (
+                  <figure key={`${image.slice(0, 30)}-${index}`}>
+                    <img src={image} alt={`Evidencia ${index + 1}`} />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEvidenceImages((current) =>
+                          current.filter((_, imageIndex) => imageIndex !== index)
+                        )
+                      }
+                      aria-label={`Eliminar evidencia ${index + 1}`}
+                    >
+                      <MdClose />
+                    </button>
+                  </figure>
+                ))}
+              </div>
+            )}
+          </div>
           <button disabled={saving || eligibleOrders.length === 0}>
             {saving ? "Registrando..." : "Enviar solicitud"}
           </button>
@@ -184,6 +281,17 @@ export default function Devoluciones() {
                     {statusLabels[item.status] || item.status}
                   </span>
                   <p>{reasonLabels[item.reason]}: {item.details}</p>
+                  {normalizeImages(item.evidence_images).length > 0 && (
+                    <div className="returns-request-evidence">
+                      {normalizeImages(item.evidence_images).map((image, index) => (
+                        <img
+                          src={image}
+                          alt={`Evidencia ${index + 1} de la solicitud ${item.id}`}
+                          key={index}
+                        />
+                      ))}
+                    </div>
+                  )}
                   <footer>
                     <span>{money(item.requested_amount)}</span>
                     <span>{item.sucursal_nombre || "SportLike"}</span>
@@ -222,6 +330,18 @@ const CSS = `
   .returns-form label { display:flex; flex-direction:column; gap:6px; color:#475569; font-size:.86rem; font-weight:800; }
   .returns-form select,.returns-form textarea { border:1px solid #cbd5e0; border-radius:9px; padding:10px 12px; font:500 .94rem 'DM Sans',sans-serif; }
   .returns-form select:focus,.returns-form textarea:focus { outline:none; border-color:#2c5282; box-shadow:0 0 0 3px rgba(44,82,130,.12); }
+  .returns-evidence { border:1px dashed #b8c7d9; background:#f8fafc; border-radius:12px; padding:13px; }
+  .returns-evidence-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .returns-evidence-head>div { display:flex; flex-direction:column; color:#0b2545; font-size:.86rem; }
+  .returns-evidence-head small { color:#718096; margin-top:2px; font-weight:500; }
+  .returns-upload { display:inline-flex!important; flex-direction:row!important; align-items:center; gap:6px!important; border:0; border-radius:9px; padding:9px 12px; background:#e8f2ff; color:#1e3a5f!important; cursor:pointer; white-space:nowrap; }
+  .returns-upload input { display:none; }
+  .returns-evidence-grid,.returns-request-evidence { display:flex; flex-wrap:wrap; gap:9px; margin-top:12px; }
+  .returns-evidence-grid figure { width:82px; height:70px; margin:0; position:relative; }
+  .returns-evidence-grid img,.returns-request-evidence img { width:82px; height:70px; object-fit:cover; border-radius:9px; border:1px solid #dbe4ef; }
+  .returns-evidence-grid button { position:absolute; top:-6px; right:-6px; border:0; border-radius:50%; width:23px; height:23px; display:grid; place-items:center; padding:0; background:#c53030; color:white; cursor:pointer; }
+  .returns-request-evidence { margin:0 0 12px; }
+  .returns-request-evidence img { width:66px; height:56px; }
   .returns-form>button { border:0; border-radius:10px; padding:12px 18px; color:white; background:#0b2545; font-weight:800; cursor:pointer; }
   .returns-form>button:disabled { opacity:.5; cursor:not-allowed; }
   .returns-form small { color:#975a16; }
@@ -242,4 +362,5 @@ const CSS = `
   .returns-status.rejected { background:#fed7d7; color:#9b2c2c; }
   .returns-notes { margin-top:12px; padding:9px 11px; border-radius:8px; background:#f8fafc; color:#475569; font-size:.82rem; }
   @media(max-width:820px){ .returns-layout{grid-template-columns:1fr;} }
+  @media(max-width:520px){ .returns-evidence-head{align-items:flex-start; flex-direction:column;} .returns-upload{width:100%; justify-content:center;} }
 `;

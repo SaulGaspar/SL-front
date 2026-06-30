@@ -46,7 +46,8 @@ const CSS = `
 .nb-search input { width:100%; padding:8px 14px 8px 36px; background:rgba(255,255,255,.07); border:1.5px solid var(--border); border-radius:8px; color:white; font-family:'Outfit',sans-serif; font-size:.85rem; transition:background .2s,border-color .2s; }
 .nb-search input::placeholder { color:var(--muted); }
 .nb-search input:focus { outline:none; background:rgba(255,255,255,.11); border-color:var(--accent); }
-.nb-search-ico { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:.9rem; pointer-events:none; }
+.nb-search-ico { position:absolute; left:7px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:.9rem; border:0; background:transparent; width:28px; height:28px; padding:0; cursor:pointer; display:grid; place-items:center; z-index:1; }
+.nb-search-ico:hover { color:var(--accent); }
 
 /* Icon buttons */
 .nb-icons { display:flex; align-items:center; gap:4px; flex-shrink:0; }
@@ -149,6 +150,7 @@ export default function Navbar({ user, onLogout }) {
   const [cfgOpen,    setCfgOpen]    = useState(false);
   const [cfg,        setCfg]        = useState(CFG_DEFAULTS);
   const [saved,      setSaved]      = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const cfgRef   = useRef(null);
   const location = useLocation();
@@ -170,12 +172,24 @@ export default function Navbar({ user, onLogout }) {
   useEffect(() => { setDrawerOpen(false); setCfgOpen(false); }, [location.pathname]);
 
   useEffect(() => {
+    if (location.pathname === "/catalogo") {
+      setSearchTerm(new URLSearchParams(location.search).get("q") || "");
+    }
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
     document.body.style.overflow = drawerOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [drawerOpen]);
 
   const nav    = p => location.pathname === p ? "nb-link active" : "nb-link";
   const toggle = k => setCfg(c => ({ ...c, [k]: !c[k] }));
+
+  const buscar = event => {
+    event.preventDefault();
+    const q = searchTerm.trim();
+    navigate(q ? `/catalogo?q=${encodeURIComponent(q)}` : "/catalogo");
+  };
 
   const guardar = () => {
     const { darkMode: dm, ...rest } = cfg;
@@ -211,11 +225,13 @@ export default function Navbar({ user, onLogout }) {
 
         {!isAdmin && (
           <div className="nb-strip">
-            <a className="nb-strip-link" href="/ayuda"><i className="bi bi-question-circle" /> Ayuda</a>
+            <Link className="nb-strip-link" to="/devoluciones"><i className="bi bi-arrow-return-left" /> Devoluciones</Link>
             <span className="nb-strip-sep">|</span>
-            <a className="nb-strip-link" href="/contacto"><i className="bi bi-envelope" /> Contacto</a>
+            <Link className="nb-strip-link" to="/ayuda"><i className="bi bi-question-circle" /> Ayuda</Link>
             <span className="nb-strip-sep">|</span>
-            <a className="nb-strip-link" href="/tiendas"><i className="bi bi-shop" /> Tiendas</a>
+            <Link className="nb-strip-link" to="/contacto"><i className="bi bi-envelope" /> Contacto</Link>
+            <span className="nb-strip-sep">|</span>
+            <Link className="nb-strip-link" to="/tiendas"><i className="bi bi-shop" /> Tiendas</Link>
           </div>
         )}
 
@@ -235,10 +251,17 @@ export default function Navbar({ user, onLogout }) {
           </ul>
 
           {!isAdmin && (
-            <div className="nb-search">
-              <span className="nb-search-ico"><i className="bi bi-search" /></span>
-              <input placeholder="Buscar productos, marcas…" />
-            </div>
+            <form className="nb-search" onSubmit={buscar}>
+              <button className="nb-search-ico" type="submit" aria-label="Buscar">
+                <i className="bi bi-search" />
+              </button>
+              <input
+                value={searchTerm}
+                onChange={event => setSearchTerm(event.target.value)}
+                placeholder="Buscar productos, marcas…"
+                aria-label="Buscar productos o marcas"
+              />
+            </form>
           )}
 
           <div className="nb-icons">
@@ -373,6 +396,7 @@ export default function Navbar({ user, onLogout }) {
               )}
               {!isAdmin && <Link className="nb-dlink" to="/carrito"><i className="bi bi-bag" /> Carrito</Link>}
               <div className="nb-dsection" style={{marginTop:8}}>Soporte</div>
+              <Link className="nb-dlink" to="/devoluciones"><i className="bi bi-arrow-return-left" /> Devoluciones</Link>
               <Link className="nb-dlink" to="/ayuda"><i className="bi bi-question-circle" /> Ayuda</Link>
               <Link className="nb-dlink" to="/contacto"><i className="bi bi-envelope" /> Contacto</Link>
               <Link className="nb-dlink" to="/tiendas"><i className="bi bi-shop" /> Tiendas</Link>
