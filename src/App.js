@@ -46,8 +46,9 @@ import Tiendas from "./pages/menu/Tiendas";
 
 const API_URL = "https://sl-back.vercel.app";
 
-// Rutas donde se oculta Navbar, Footer y botones flotantes
-const HIDDEN_NAV_ROUTES = ["/login", "/register", "/../UpdateInfoForm", "/../ForgotPassword"];
+// El login conserva la barra superior, pero no muestra elementos de compra.
+const HIDDEN_NAV_ROUTES = ["/forgot-password", "/reset-password"];
+const AUTH_LAYOUT_ROUTES = ["/login", "/register", "/forgot-password", "/reset-password"];
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -57,6 +58,7 @@ export default function App() {
 
   // true cuando la ruta actual es login o register
   const hideNav = HIDDEN_NAV_ROUTES.includes(location.pathname);
+  const authLayout = AUTH_LAYOUT_ROUTES.includes(location.pathname);
 
   function handleLogout() {
     localStorage.removeItem("token");
@@ -118,10 +120,10 @@ export default function App() {
 
               {/* Se ocultan en /login y /register */}
               {!hideNav && <Navbar user={user} onLogout={handleLogout} />}
-              {!hideNav && <CartFloatingButton />}
-              {!hideNav && <MiniCart />}
+              {!authLayout && <CartFloatingButton />}
+              {!authLayout && <MiniCart />}
 
-              <div className={`flex-grow-1 ${!hideNav ? "container-fluid px-4 py-4" : ""}`}>
+              <div className={`flex-grow-1 ${!authLayout ? "container-fluid px-4 py-4" : ""}`}>
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/catalogo" element={<Catalogo />} />
@@ -170,7 +172,7 @@ export default function App() {
                 </Routes>
               </div>
 
-              {/* Footer también se oculta */}
+              {/* En el login se conservan el Navbar y el Footer */}
               {!hideNav && <Footer />}
             </div>
           }
