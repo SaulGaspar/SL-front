@@ -27,6 +27,7 @@ import Register from "./pages/Register";
 import Profile from "./pages/User/Profile";
 import ChangePassword from "./pages/User/ChangePassword";
 import MisPedidos from "./pages/User/Mispedidos";
+import Devoluciones from "./pages/User/Devoluciones";
 
 import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/User/ForgotPassword";
@@ -158,6 +159,10 @@ export default function App() {
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/google-callback" element={<GoogleCallback onLogin={setUser} />} />
                   <Route path="/orders" element={<MisPedidos />} />
+                  <Route
+                    path="/devoluciones"
+                    element={localStorage.getItem("token") ? <Devoluciones /> : <Navigate to="/login" />}
+                  />
 
                   <Route path="/400" element={<Error400 />} />
                   <Route path="/500" element={<Error500 />} />

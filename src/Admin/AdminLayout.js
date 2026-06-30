@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from "react-router-dom";
-import { MdDashboard, MdInventory, MdShoppingCart, MdPeople, MdStore, MdAssessment, MdMenu, MdClose, MdEmail, MdPerson, MdAdminPanelSettings, MdLogout, MdMonitor } from "react-icons/md";
+import { MdDashboard, MdInventory, MdShoppingCart, MdPeople, MdStore, MdAssessment, MdMenu, MdClose, MdEmail, MdPerson, MdAdminPanelSettings, MdLogout, MdMonitor, MdLocalOffer, MdAssignmentReturn } from "react-icons/md";
 
 import Dashboard   from "./pages/Dashboard/Dashboard";
 import Productos   from "./pages/Productos/Productos";
@@ -10,6 +10,8 @@ import Usuarios    from "./pages/Usuarios/Usuarios";
 import Reportes    from "./pages/Reportes/Reportes";
 import Sucursales  from "./pages/Sucursales/Sucursales";
 import MonitorBD   from "./pages/Monitor/MonitorDB";
+import Promociones from "./pages/Promociones/Promociones";
+import Devoluciones from "./pages/Devoluciones/Devoluciones";
 import NotificacionesBell from "./Notificacionesbell";
 
 export default function AdminLayout({ user, onLogout }) {
@@ -34,6 +36,8 @@ export default function AdminLayout({ user, onLogout }) {
     { path: "/admin/pedidos",    icon: MdShoppingCart, label: "Pedidos"                 },
     { path: "/admin/usuarios",   icon: MdPeople,       label: "Usuarios"                },
     { path: "/admin/sucursales", icon: MdStore,        label: "Sucursales"              },
+    { path: "/admin/promociones",icon: MdLocalOffer,   label: "Promociones"             },
+    { path: "/admin/devoluciones",icon: MdAssignmentReturn,label: "Devoluciones"        },
     { path: "/admin/reportes",   icon: MdAssessment,   label: "Reportes"                },
   ];
 
@@ -61,7 +65,7 @@ export default function AdminLayout({ user, onLogout }) {
           </div>
           <div className="menu-section">
             <div className="menu-section-title">Gestión</div>
-            {menuItems.slice(1, 6).map(item => (
+            {menuItems.slice(1, 8).map(item => (
               <Link key={item.path} to={item.path} className={`menu-item ${isActive(item.path, item.exact) ? "active" : ""}`} onClick={() => window.innerWidth <= 768 && setSidebarOpen(false)}>
                 <item.icon /><span>{item.label}</span>
               </Link>
@@ -69,7 +73,7 @@ export default function AdminLayout({ user, onLogout }) {
           </div>
           <div className="menu-section">
             <div className="menu-section-title">Análisis</div>
-            {menuItems.slice(6, 7).map(item => (
+            {menuItems.slice(8, 9).map(item => (
               <Link key={item.path} to={item.path} className={`menu-item ${isActive(item.path, item.exact) ? "active" : ""}`} onClick={() => window.innerWidth <= 768 && setSidebarOpen(false)}>
                 <item.icon /><span>{item.label}</span>
               </Link>
@@ -145,6 +149,8 @@ export default function AdminLayout({ user, onLogout }) {
             <Route path="/pedidos"    element={<Pedidos />}    />
             <Route path="/usuarios"   element={<Usuarios />}   />
             <Route path="/sucursales" element={<Sucursales />} />
+            <Route path="/promociones" element={<Promociones />} />
+            <Route path="/devoluciones" element={<Devoluciones />} />
             <Route path="/reportes"   element={<Reportes />}   />
             <Route path="/monitor"    element={<MonitorBD />}  />
           </Routes>
