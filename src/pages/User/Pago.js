@@ -1,521 +1,509 @@
-import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 
 const API_URL = "https://sl-back.vercel.app";
+const PENDING_KEY = "sportlike_pending_checkout";
+const LAST_ORDER_KEY = "sportlike_last_paid_order";
 
-// ── Helpers ───────────────────────────────────────────────────────────────
-const fmtMXN = n =>
-  new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n || 0);
+const fmtMXN = (value) =>
+  new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+  }).format(Number(value) || 0);
 
-const fmtTarjeta = v =>
-  v.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
+function readSession(key) {
+  try {
+    return JSON.parse(sessionStorage.getItem(key) || "null");
+  } catch {
+    return null;
+  }
+}
 
-const fmtExp = v => {
-  const d = v.replace(/\D/g, "").slice(0, 4);
-  return d.length > 2 ? d.slice(0, 2) + "/" + d.slice(2) : d;
-};
+function getPrice(item) {
+  return Number(item.precio || item.price || 0);
+}
 
-const tipoTarjeta = n => {
-  const s = n.replace(/\s/g, "");
-  if (/^4/.test(s)) return "visa";
-  if (/^5[1-5]/.test(s)) return "mastercard";
-  if (/^3[47]/.test(s)) return "amex";
-  return null;
-};
+function getQty(item) {
+  return Number(item.qty || item.cantidad || 1);
+}
+
+function normalizeOrderItems(cart) {
+  const merged = new Map();
+  for (const item of cart) {
+    const productId = Number(item.id || item.product_id);
+    const quantity = getQty(item);
+    if (!productId || !Number.isInteger(quantity) || quantity <= 0) continue;
+    merged.set(productId, (merged.get(productId) || 0) + quantity);
+  }
+  return [...merged.entries()].map(([product_id, cantidad]) => ({
+    product_id,
+    cantidad,
+  }));
+}
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
-.pago * { box-sizing: border-box; font-family: 'DM Sans', sans-serif; }
-
-.pago-wrap {
-  min-height: 100vh; padding: 40px 20px;
-  background: #f5f7fa;
-  display: flex; flex-direction: column; align-items: center;
-}
-
-.pago-grid {
-  display: grid;
-  grid-template-columns: 1fr 420px;
-  gap: 28px;
-  width: 100%;
-  max-width: 900px;
-  align-items: start;
-}
-
-/* Resumen */
-.pago-resumen {
-  background: white; border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0,0,0,.06);
-  padding: 28px; position: sticky; top: 24px;
-}
-.pago-resumen h3 {
-  margin: 0 0 20px; font-size: 1rem; font-weight: 700;
-  color: #1e3a5f; text-transform: uppercase; letter-spacing: .5px;
-}
-.pago-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 0; border-bottom: 1px solid #f0f4f8;
-}
-.pago-item:last-of-type { border-bottom: none; }
-.pago-item-img {
-  width: 52px; height: 52px; border-radius: 10px;
-  object-fit: cover; background: #f0f4f8; flex-shrink: 0;
-}
-.pago-item-info { flex: 1; min-width: 0; }
-.pago-item-name { font-size: .88rem; font-weight: 600; color: #1e3a5f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pago-item-sub  { font-size: .76rem; color: #a0aec0; margin-top: 2px; }
-.pago-item-price { font-family: 'JetBrains Mono', monospace; font-size: .9rem; font-weight: 700; color: #276749; white-space: nowrap; }
-.pago-total-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 16px 0 0; margin-top: 12px; border-top: 2px solid #e2e8f0;
-}
-.pago-total-lbl { font-size: .88rem; color: #718096; font-weight: 600; }
-.pago-total-val { font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; font-weight: 700; color: #1e3a5f; }
-
-/* Formulario */
-.pago-form-card {
-  background: white; border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0,0,0,.06); padding: 28px;
-}
-.pago-form-card h2 {
-  margin: 0 0 24px; font-size: 1.2rem; font-weight: 700; color: #1e3a5f;
-  display: flex; align-items: center; gap: 10px;
-}
-.pago-lock { width: 20px; height: 20px; }
-
-/* Card visual */
-.pago-card-preview {
-  background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 60%, #553c9a 100%);
-  border-radius: 14px; padding: 22px 24px; margin-bottom: 24px;
-  color: white; position: relative; overflow: hidden; min-height: 130px;
-}
-.pago-card-preview::before {
-  content: ''; position: absolute; top: -40px; right: -40px;
-  width: 160px; height: 160px; border-radius: 50%;
-  background: rgba(255,255,255,.06);
-}
-.pago-card-preview::after {
-  content: ''; position: absolute; bottom: -60px; right: 20px;
-  width: 200px; height: 200px; border-radius: 50%;
-  background: rgba(255,255,255,.04);
-}
-.pago-card-num {
-  font-family: 'JetBrains Mono', monospace; font-size: 1.1rem;
-  letter-spacing: 3px; margin: 12px 0 16px; opacity: .9;
-}
-.pago-card-bottom { display: flex; justify-content: space-between; align-items: flex-end; }
-.pago-card-lbl { font-size: .65rem; opacity: .6; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
-.pago-card-val { font-size: .88rem; font-weight: 600; opacity: .9; }
-.pago-card-tipo { font-size: 1.6rem; opacity: .8; align-self: flex-start; }
-
-/* Grupos de formulario */
-.pago-fg { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
-.pago-fg label { font-size: .8rem; font-weight: 700; color: #4a5568; text-transform: uppercase; letter-spacing: .4px; }
-.pago-fg input {
-  padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px;
-  font-size: .95rem; font-family: 'DM Sans', sans-serif; color: #1e3a5f;
-  transition: border-color .15s, box-shadow .15s;
-  outline: none; width: 100%;
-}
-.pago-fg input:focus { border-color: #2b6cb0; box-shadow: 0 0 0 3px rgba(43,108,176,.1); }
-.pago-fg input.err { border-color: #e53e3e; box-shadow: 0 0 0 3px rgba(229,62,62,.1); }
-.pago-fg input.ok  { border-color: #38a169; }
-.pago-err { font-size: .76rem; color: #e53e3e; margin-top: 3px; }
-
-.pago-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-
-/* Separador */
-.pago-sep {
-  display: flex; align-items: center; gap: 10px; margin: 8px 0 20px;
-  font-size: .76rem; color: #a0aec0;
-}
-.pago-sep::before, .pago-sep::after {
-  content: ''; flex: 1; height: 1px; background: #e2e8f0;
-}
-
-/* Botón */
-.pago-btn {
-  width: 100%; padding: 15px; border: none; border-radius: 12px;
-  font-size: 1rem; font-weight: 700; cursor: pointer;
-  font-family: 'DM Sans', sans-serif; transition: all .2s;
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-}
-.pago-btn-pay {
-  background: #1e3a5f; color: white;
-}
-.pago-btn-pay:hover:not(:disabled) { background: #2c5282; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(30,58,95,.25); }
-.pago-btn-pay:disabled { opacity: .6; cursor: not-allowed; }
-.pago-btn-back {
-  background: #f7fafc; color: #4a5568; border: 1.5px solid #e2e8f0;
-  margin-top: 10px;
-}
-.pago-btn-back:hover { background: #edf2f7; }
-
-/* Success */
-.pago-success {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 12px; padding: 40px 20px; text-align: center;
-}
-.pago-success-icon {
-  width: 72px; height: 72px; border-radius: 50%;
-  background: #c6f6d5; display: flex; align-items: center;
-  justify-content: center; font-size: 2rem;
-}
-.pago-success h3 { margin: 0; color: #276749; font-size: 1.3rem; }
-.pago-success p  { margin: 0; color: #718096; font-size: .9rem; }
-.pago-order-num {
-  font-family: 'JetBrains Mono', monospace; font-size: 1.1rem;
-  font-weight: 700; color: #1e3a5f; background: #ebf8ff;
-  padding: 8px 20px; border-radius: 20px;
-}
-
-/* Alert */
-.pago-alert {
-  background: #fff5f5; border: 1px solid #fc8181; border-radius: 10px;
-  padding: 12px 16px; color: #9b2c2c; font-size: .85rem; margin-bottom: 16px;
-}
-
-/* Badges de seguridad */
-.pago-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
-.pago-badge {
-  display: flex; align-items: center; gap: 5px;
-  font-size: .72rem; color: #718096; background: #f7fafc;
-  border: 1px solid #e2e8f0; padding: 4px 10px; border-radius: 20px;
-}
-
-.spinning { animation: spin .8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-@media (max-width: 760px) {
-  .pago-grid { grid-template-columns: 1fr; }
-  .pago-resumen { position: static; order: 2; }
-  .pago-form-card { order: 1; }
-}
+  .mp-page * { box-sizing:border-box; }
+  .mp-page { min-height:calc(100vh - 150px); background:#f3f6fa; padding:38px 20px 70px; color:#0b2545; }
+  .mp-wrap { width:min(1080px,100%); margin:0 auto; }
+  .mp-breadcrumb { display:flex; gap:8px; align-items:center; margin-bottom:20px; font-size:.82rem; color:#8795a8; }
+  .mp-breadcrumb button { border:0; padding:0; background:transparent; color:#2468a2; cursor:pointer; font-weight:700; }
+  .mp-grid { display:grid; grid-template-columns:minmax(0,1fr) 390px; gap:24px; align-items:start; }
+  .mp-card { background:white; border:1px solid #e0e7ef; border-radius:18px; box-shadow:0 12px 36px rgba(13,39,68,.08); }
+  .mp-checkout { padding:32px; overflow:hidden; position:relative; }
+  .mp-checkout::after { content:""; position:absolute; width:240px; height:240px; border-radius:50%; right:-110px; top:-105px; background:rgba(0,158,227,.07); pointer-events:none; }
+  .mp-kicker { display:inline-flex; align-items:center; gap:8px; color:#087db6; background:#eaf8ff; border-radius:999px; padding:6px 11px; font-size:.72rem; font-weight:800; letter-spacing:.6px; }
+  .mp-title { margin:17px 0 8px; font-size:1.65rem; font-weight:850; color:#0b2545; }
+  .mp-subtitle { margin:0; color:#65758a; line-height:1.65; max-width:610px; }
+  .mp-brand { margin:28px 0 24px; min-height:122px; border-radius:16px; padding:24px; color:white; background:linear-gradient(135deg,#009ee3,#0878bd); display:flex; align-items:center; justify-content:space-between; gap:24px; position:relative; overflow:hidden; }
+  .mp-brand::after { content:""; width:190px; height:190px; border:28px solid rgba(255,255,255,.1); border-radius:50%; position:absolute; right:-55px; top:-57px; }
+  .mp-brand-name { position:relative; z-index:1; }
+  .mp-brand-name strong { display:block; font-size:1.55rem; letter-spacing:-.5px; }
+  .mp-brand-name span { display:block; opacity:.86; margin-top:4px; font-size:.86rem; }
+  .mp-handshake { position:relative; z-index:1; width:62px; height:62px; border-radius:50%; background:white; color:#009ee3; display:grid; place-items:center; font-size:1.65rem; flex-shrink:0; }
+  .mp-benefits { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:25px; }
+  .mp-benefit { background:#f7f9fc; border:1px solid #e5ebf2; border-radius:11px; padding:13px; color:#53657a; font-size:.78rem; font-weight:650; }
+  .mp-benefit i { color:#009ee3; margin-right:6px; }
+  .mp-pay { width:100%; border:0; border-radius:11px; padding:14px 18px; background:#009ee3; color:white; font-size:1rem; font-weight:850; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:9px; transition:transform .16s,background .16s; }
+  .mp-pay:hover { background:#087db6; transform:translateY(-1px); }
+  .mp-pay:disabled { opacity:.55; cursor:not-allowed; transform:none; }
+  .mp-back { width:100%; border:1px solid #ccd7e4; border-radius:11px; padding:12px; margin-top:10px; background:white; color:#38516d; font-weight:750; cursor:pointer; }
+  .mp-note { display:flex; gap:9px; margin-top:18px; color:#7b8a9d; font-size:.77rem; line-height:1.5; }
+  .mp-note i { color:#2f855a; margin-top:1px; }
+  .mp-summary { padding:25px; position:sticky; top:22px; }
+  .mp-summary h2 { margin:0 0 18px; font-size:1rem; text-transform:uppercase; letter-spacing:.5px; }
+  .mp-items { display:flex; flex-direction:column; gap:12px; max-height:330px; overflow:auto; padding-right:3px; }
+  .mp-item { display:grid; grid-template-columns:50px minmax(0,1fr) auto; gap:10px; align-items:center; padding-bottom:12px; border-bottom:1px solid #edf1f5; }
+  .mp-item img,.mp-item-placeholder { width:50px; height:50px; object-fit:cover; border-radius:9px; background:#eef2f6; }
+  .mp-item-placeholder { display:grid; place-items:center; color:#8aa0b7; }
+  .mp-item-name { font-size:.84rem; font-weight:750; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mp-item-detail { color:#8a98aa; font-size:.74rem; margin-top:3px; }
+  .mp-item-price { color:#1f6b49; font-size:.82rem; font-weight:800; white-space:nowrap; }
+  .mp-row { display:flex; justify-content:space-between; gap:15px; margin-top:14px; color:#6b7b8e; font-size:.86rem; }
+  .mp-total { border-top:2px solid #e4eaf1; padding-top:15px; margin-top:15px; color:#0b2545; font-weight:800; }
+  .mp-total strong { font-size:1.3rem; }
+  .mp-alert { border-radius:11px; padding:12px 14px; margin:0 0 18px; font-size:.86rem; font-weight:700; }
+  .mp-alert.error { background:#fff4f4; border:1px solid #f4a6a6; color:#a62b2b; }
+  .mp-state { width:min(560px,100%); margin:25px auto; padding:42px; text-align:center; }
+  .mp-state-icon { width:74px; height:74px; margin:0 auto 18px; border-radius:50%; display:grid; place-items:center; font-size:2rem; }
+  .mp-state-icon.success { background:#d9f7e7; color:#24744e; }
+  .mp-state-icon.pending { background:#fff4cc; color:#976500; }
+  .mp-state-icon.failure { background:#ffe0e0; color:#ad2f2f; }
+  .mp-state h1 { font-size:1.55rem; margin:0 0 9px; }
+  .mp-state p { color:#6e7d90; line-height:1.65; margin:0 0 22px; }
+  .mp-reference { display:inline-block; border-radius:999px; background:#edf5ff; color:#235987; padding:7px 14px; font-size:.8rem; font-weight:750; margin-bottom:20px; }
+  .mp-spinner { width:18px; height:18px; border:2px solid rgba(255,255,255,.45); border-top-color:white; border-radius:50%; animation:mp-spin .75s linear infinite; }
+  @keyframes mp-spin { to { transform:rotate(360deg); } }
+  @media(max-width:860px){ .mp-grid{grid-template-columns:1fr;} .mp-summary{position:static;} }
+  @media(max-width:560px){ .mp-page{padding:22px 12px 50px;} .mp-checkout,.mp-summary,.mp-state{padding:23px 18px;} .mp-benefits{grid-template-columns:1fr;} .mp-brand{min-height:110px;} }
 `;
 
 export default function Pago() {
   const location = useLocation();
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { cart, clearCart } = useCart();
+  const confirmingRef = useRef(false);
 
-  const getPrice = i => Number(i.precio || i.price || 0) || parseFloat(i.precio || i.price || 0) || 0;
-  const getQty   = i => Number(i.qty || i.cantidad || 1);
-  const total    = location.state?.total || cart.reduce((s, i) => s + getPrice(i) * getQty(i), 0);
-  const direccionId = location.state?.direccion_id || location.state?.direccion?.id;
+  const [pendingCheckout, setPendingCheckout] = useState(() => readSession(PENDING_KEY));
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [order, setOrder] = useState(null);
 
-  // Redirigir si no está logueado
+  const result = searchParams.get("mp_result");
+  const paymentId =
+    searchParams.get("payment_id") || searchParams.get("collection_id");
+  const paymentStatus =
+    searchParams.get("status") || searchParams.get("collection_status");
+
+  const checkoutCart =
+    cart.length > 0 ? cart : pendingCheckout?.displayItems || [];
+  const productsSubtotal = checkoutCart.reduce(
+    (sum, item) => sum + getPrice(item) * getQty(item),
+    0
+  );
+  const shipping = productsSubtotal >= 1500 ? 0 : checkoutCart.length ? 75 : 0;
+  const calculatedTotal = productsSubtotal + shipping;
+  const total =
+    Number(location.state?.total) ||
+    Number(pendingCheckout?.total) ||
+    calculatedTotal;
+  const addressId =
+    location.state?.direccion_id ||
+    location.state?.direccion?.id ||
+    pendingCheckout?.direccion_id;
+
+  const orderItems = useMemo(
+    () =>
+      pendingCheckout?.items?.length
+        ? pendingCheckout.items
+        : normalizeOrderItems(cart),
+    [cart, pendingCheckout]
+  );
+
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) navigate("/login", { state: { from: "/pago", ...location.state } });
-    else if (!direccionId) navigate("/carrito", { replace: true });
-  }, [direccionId, location.state, navigate]);
-
-  const [form, setForm]     = useState({ nombre: "", tarjeta: "", exp: "", cvv: "" });
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [apiError, setApiError] = useState("");
-  const [pedidoId, setPedidoId] = useState(null);
-  const [sucursalAsignada, setSucursalAsignada] = useState("");
-  const [multiSucursal, setMultiSucursal] = useState(false);
-  const [pedidos, setPedidos] = useState([]);
-
-  const set = (k, v) => {
-    setForm(f => ({ ...f, [k]: v }));
-    if (errors[k]) setErrors(e => ({ ...e, [k]: "" }));
-  };
-
-  const validar = () => {
-    const e = {};
-    if (!form.nombre.trim() || form.nombre.trim().length < 4)
-      e.nombre = "Mínimo 4 caracteres";
-    if (!/^\d{16}$/.test(form.tarjeta.replace(/\s/g, "")))
-      e.tarjeta = "16 dígitos requeridos";
-    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(form.exp))
-      e.exp = "Formato MM/AA";
-    else {
-      const [mm, yy] = form.exp.split("/");
-      const exp = new Date(2000 + +yy, +mm - 1);
-      if (exp < new Date()) e.exp = "Tarjeta vencida";
-    }
-    if (!/^\d{3,4}$/.test(form.cvv))
-      e.cvv = "CVV inválido";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handlePago = async (ev) => {
-    ev.preventDefault();
-
-    if (!direccionId) {
-      navigate("/carrito", { replace: true });
+    if (!token) {
+      navigate("/login", { state: { from: "/pago", ...location.state } });
       return;
     }
 
-    if (!validar()) return;
+    if (!result && !addressId) {
+      navigate("/carrito", { replace: true });
+    }
+  }, [addressId, location.state, navigate, result]);
+
+  useEffect(() => {
+    if (result !== "success" || paymentStatus !== "approved" || !paymentId) return;
+    if (confirmingRef.current) return;
+
+    const lastOrder = readSession(LAST_ORDER_KEY);
+    if (lastOrder?.paymentId && String(lastOrder.paymentId) === String(paymentId)) {
+      setOrder(lastOrder);
+      return;
+    }
+
+    if (!pendingCheckout?.direccion_id || !orderItems.length) {
+      setError(
+        "El pago fue aprobado, pero no encontramos los datos locales del carrito. Consulta el pago con soporte antes de volver a intentarlo."
+      );
+      return;
+    }
+
+    confirmingRef.current = true;
     setLoading(true);
-    setApiError("");
+    setError("");
+
+    fetch(`${API_URL}/api/payments/complete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({
+        payment_id: paymentId,
+        direccion_id: pendingCheckout.direccion_id,
+        items: orderItems,
+      }),
+    })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "No se pudo generar el pedido");
+        return data;
+      })
+      .then((data) => {
+        const completed = { ...data, paymentId };
+        sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify(completed));
+        sessionStorage.removeItem(PENDING_KEY);
+        setPendingCheckout(null);
+        setOrder(completed);
+        clearCart();
+      })
+      .catch((requestError) => {
+        setError(requestError.message);
+        confirmingRef.current = false;
+      })
+      .finally(() => setLoading(false));
+  }, [
+    clearCart,
+    orderItems,
+    paymentId,
+    paymentStatus,
+    pendingCheckout,
+    result,
+  ]);
+
+  const startCheckout = async () => {
+    if (!addressId) {
+      navigate("/carrito");
+      return;
+    }
+    if (!cart.length || !orderItems.length) {
+      setError("Tu carrito está vacío.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
 
     try {
-      const token = localStorage.getItem("token");
-
-      // 1. Crear el pedido en orders
-      const orderRes = await fetch(`${API_URL}/api/orders`, {
+      const response = await fetch(`${API_URL}/api/payments/preference`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
         body: JSON.stringify({
-          total,
-          direccion_id: direccionId,
-          items: cart.map(i => ({
-            product_id: i.id,
-            cantidad:   getQty(i),
-            subtotal:   getPrice(i) * getQty(i),
-          })),
+          direccion_id: addressId,
+          items: orderItems,
         }),
       });
-
-      if (!orderRes.ok) {
-        const err = await orderRes.json();
-        const msg = err.productos?.length
-          ? `Sin stock suficiente: ${err.productos.join(", ")}`
-          : err.detalle || err.error || "Error al crear el pedido";
-        throw new Error(msg);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || "No se pudo iniciar Mercado Pago");
+      }
+      if (!data.checkout_url) {
+        throw new Error("Mercado Pago no devolvió una URL de pago");
       }
 
-      const data = await orderRes.json();
-      const { orderId } = data;
-      setPedidoId(orderId);
-      setSucursalAsignada(data.sucursal || "");
-      setMultiSucursal(data.multiSucursal || false);
-      setPedidos(data.pedidos || []);
-
-      // 2. Vaciar carrito
-      clearCart();
-
-      // 3. Redirigir después de 3s
-      setTimeout(() => navigate("/"), 3000);
-
-    } catch (err) {
-      setApiError(err.message || "Error procesando el pago. Intenta de nuevo.");
-    } finally {
+      const pending = {
+        direccion_id: addressId,
+        items: orderItems,
+        displayItems: cart,
+        total: data.total,
+        preference_id: data.preference_id,
+      };
+      sessionStorage.setItem(PENDING_KEY, JSON.stringify(pending));
+      sessionStorage.removeItem(LAST_ORDER_KEY);
+      setPendingCheckout(pending);
+      window.location.assign(data.checkout_url);
+    } catch (requestError) {
+      setError(requestError.message || "No se pudo iniciar el pago");
       setLoading(false);
     }
   };
 
-  const tipo = tipoTarjeta(form.tarjeta);
-  const tipoEmoji = { visa: "💳 VISA", mastercard: "💳 MC", amex: "💳 AMEX" };
-
-  // ── Pantalla de éxito ────────────────────────────────────────────────────
-  if (pedidoId) {
+  if (loading && result === "success") {
     return (
-      <div className="pago">
+      <main className="mp-page">
         <style>{CSS}</style>
-        <div className="pago-wrap">
-          <div style={{ background: "white", borderRadius: 16, padding: 48, maxWidth: 400, width: "100%", boxShadow: "0 2px 12px rgba(0,0,0,.06)", textAlign:"center" }}>
-            <div style={{width:72,height:72,borderRadius:"50%",background:"#c6f6d5",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.8rem",margin:"0 auto 20px"}}>✓</div>
-            <h3 style={{margin:"0 0 8px",color:"#1e3a5f",fontSize:"1.3rem",fontWeight:700}}>¡Pedido confirmado!</h3>
-            <p style={{margin:"0 0 24px",color:"#718096",fontSize:".9rem",lineHeight:1.6}}>
-              Tu compra fue procesada correctamente.<br/>Puedes ver el estado en <strong>Mis pedidos</strong>.
-            </p>
-            <button
-              onClick={() => navigate("/orders")}
-              style={{background:"#1e3a5f",color:"white",border:"none",borderRadius:10,padding:"12px 28px",fontWeight:700,fontSize:".9rem",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",marginBottom:10,width:"100%"}}
-            >
-              Ver mis pedidos
-            </button>
-            <button
-              onClick={() => navigate("/")}
-              style={{background:"#f7fafc",color:"#4a5568",border:"1.5px solid #e2e8f0",borderRadius:10,padding:"12px 28px",fontWeight:600,fontSize:".9rem",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",width:"100%"}}
-            >
-              Seguir comprando
-            </button>
+        <section className="mp-card mp-state">
+          <div className="mp-state-icon pending">
+            <i className="bi bi-hourglass-split" />
           </div>
-        </div>
-      </div>
+          <h1>Confirmando tu pago</h1>
+          <p>Estamos verificando la operación con Mercado Pago y creando tu pedido.</p>
+          <button className="mp-pay" disabled>
+            <span className="mp-spinner" /> Verificando...
+          </button>
+        </section>
+      </main>
+    );
+  }
+
+  if (order) {
+    return (
+      <main className="mp-page">
+        <style>{CSS}</style>
+        <section className="mp-card mp-state">
+          <div className="mp-state-icon success">
+            <i className="bi bi-check-lg" />
+          </div>
+          <h1>¡Pago aprobado y pedido confirmado!</h1>
+          <p>
+            Mercado Pago confirmó la operación. Ya puedes consultar el seguimiento
+            desde la sección Mis pedidos.
+          </p>
+          <span className="mp-reference">Referencia: {order.pedidoRef}</span>
+          <button className="mp-pay" onClick={() => navigate("/orders")}>
+            Ver mis pedidos
+          </button>
+          <button className="mp-back" onClick={() => navigate("/")}>
+            Seguir comprando
+          </button>
+        </section>
+      </main>
+    );
+  }
+
+  if (result === "success" && error) {
+    return (
+      <main className="mp-page">
+        <style>{CSS}</style>
+        <section className="mp-card mp-state">
+          <div className="mp-state-icon pending">
+            <i className="bi bi-exclamation-lg" />
+          </div>
+          <h1>Pago recibido; pedido en revisión</h1>
+          <p>
+            Mercado Pago informó una aprobación, pero no pudimos terminar el registro
+            del pedido. No vuelvas a pagar. Conserva el identificador y comunícate con
+            SportLike.
+          </p>
+          <span className="mp-reference">Pago: {paymentId || "sin referencia"}</span>
+          <div className="mp-alert error">{error}</div>
+          <button className="mp-pay" onClick={() => navigate("/orders")}>
+            Consultar mis pedidos
+          </button>
+          <button className="mp-back" onClick={() => navigate("/contacto")}>
+            Contactar a SportLike
+          </button>
+        </section>
+      </main>
+    );
+  }
+
+  if (result === "pending" || paymentStatus === "pending") {
+    return (
+      <main className="mp-page">
+        <style>{CSS}</style>
+        <section className="mp-card mp-state">
+          <div className="mp-state-icon pending">
+            <i className="bi bi-clock-history" />
+          </div>
+          <h1>Pago pendiente</h1>
+          <p>
+            Mercado Pago está esperando la acreditación. Si elegiste un medio
+            offline, sigue las instrucciones del comprobante.
+          </p>
+          <button className="mp-pay" onClick={() => navigate("/orders")}>
+            Consultar mis pedidos
+          </button>
+          <button className="mp-back" onClick={() => navigate("/")}>
+            Volver al inicio
+          </button>
+        </section>
+      </main>
+    );
+  }
+
+  if (result === "failure" || (result && paymentStatus === "rejected")) {
+    return (
+      <main className="mp-page">
+        <style>{CSS}</style>
+        <section className="mp-card mp-state">
+          <div className="mp-state-icon failure">
+            <i className="bi bi-x-lg" />
+          </div>
+          <h1>No se completó el pago</h1>
+          <p>
+            Mercado Pago rechazó o canceló la operación. No se creó ningún pedido
+            ni se descontó inventario.
+          </p>
+          <button className="mp-pay" onClick={() => navigate("/pago", { state: location.state })}>
+            Intentar nuevamente
+          </button>
+          <button className="mp-back" onClick={() => navigate("/carrito")}>
+            Volver al carrito
+          </button>
+        </section>
+      </main>
     );
   }
 
   return (
-    <div className="pago">
+    <main className="mp-page">
       <style>{CSS}</style>
-      <div className="pago-wrap">
+      <div className="mp-wrap">
+        <nav className="mp-breadcrumb">
+          <button onClick={() => navigate("/")}>Inicio</button>
+          <span>/</span>
+          <button onClick={() => navigate("/carrito")}>Carrito</button>
+          <span>/</span>
+          <strong>Pago</strong>
+        </nav>
 
-        {/* Migas */}
-        <div style={{ width: "100%", maxWidth: 900, marginBottom: 20 }}>
-          <nav style={{ fontSize: ".82rem", color: "#a0aec0", display: "flex", gap: 8, alignItems: "center" }}>
-            <a href="/" style={{ color: "#2b6cb0", textDecoration: "none" }}>Inicio</a>
-            <span>/</span>
-            <a href="/carrito" style={{ color: "#2b6cb0", textDecoration: "none" }}>Carrito</a>
-            <span>/</span>
-            <span style={{ color: "#4a5568", fontWeight: 600 }}>Pago</span>
-          </nav>
-        </div>
+        <div className="mp-grid">
+          <section className="mp-card mp-checkout">
+            <span className="mp-kicker">
+              <i className="bi bi-shield-check" /> CHECKOUT PRO
+            </span>
+            <h1 className="mp-title">Paga de forma segura con Mercado Pago</h1>
+            <p className="mp-subtitle">
+              Continuarás en el entorno protegido de Mercado Pago para elegir tarjeta,
+              saldo disponible u otros medios habilitados. SportLike no almacena los
+              datos de tu tarjeta.
+            </p>
 
-        <div className="pago-grid">
-
-          {/* ── Formulario ── */}
-          <div className="pago-form-card">
-            <h2>
-              <svg className="pago-lock" viewBox="0 0 24 24" fill="none" stroke="#276749" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-              Pago seguro
-            </h2>
-
-            {/* Card preview */}
-            <div className="pago-card-preview">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div style={{ width: 36, height: 26, background: "rgba(255,255,255,.25)", borderRadius: 4 }}/>
-                {tipo && <span className="pago-card-tipo">{tipoEmoji[tipo]}</span>}
+            <div className="mp-brand">
+              <div className="mp-brand-name">
+                <strong>Mercado Pago</strong>
+                <span>Pago protegido y confirmación automática</span>
               </div>
-              <div className="pago-card-num">
-                {form.tarjeta
-                  ? form.tarjeta.padEnd(19, "·").slice(0, 19)
-                  : "···· ····· ···· ····"}
-              </div>
-              <div className="pago-card-bottom">
-                <div>
-                  <div className="pago-card-lbl">Titular</div>
-                  <div className="pago-card-val">{form.nombre || "NOMBRE APELLIDO"}</div>
-                </div>
-                <div>
-                  <div className="pago-card-lbl">Vence</div>
-                  <div className="pago-card-val">{form.exp || "MM/AA"}</div>
-                </div>
+              <div className="mp-handshake">
+                <i className="bi bi-hand-thumbs-up-fill" />
               </div>
             </div>
 
-            <div className="pago-sep">Datos de la tarjeta</div>
-
-            {apiError && <div className="pago-alert">{apiError}</div>}
-
-            <form onSubmit={handlePago} noValidate>
-              {/* Nombre */}
-              <div className="pago-fg">
-                <label>Nombre en la tarjeta</label>
-                <input
-                  type="text"
-                  className={errors.nombre ? "err" : form.nombre.length >= 4 ? "ok" : ""}
-                  value={form.nombre}
-                  onChange={e => set("nombre", e.target.value.toUpperCase())}
-                  placeholder="JUAN PÉREZ"
-                  autoComplete="cc-name"
-                />
-                {errors.nombre && <span className="pago-err">{errors.nombre}</span>}
+            <div className="mp-benefits">
+              <div className="mp-benefit">
+                <i className="bi bi-lock-fill" /> Datos protegidos
               </div>
-
-              {/* Número de tarjeta */}
-              <div className="pago-fg">
-                <label>Número de tarjeta</label>
-                <input
-                  type="text"
-                  className={errors.tarjeta ? "err" : /^\d{16}$/.test(form.tarjeta.replace(/\s/g,"")) ? "ok" : ""}
-                  value={form.tarjeta}
-                  onChange={e => set("tarjeta", fmtTarjeta(e.target.value))}
-                  placeholder="1234 5678 9012 3456"
-                  maxLength={19}
-                  autoComplete="cc-number"
-                  inputMode="numeric"
-                  style={{ fontFamily: "'JetBrains Mono', monospace", letterSpacing: 2 }}
-                />
-                {errors.tarjeta && <span className="pago-err">{errors.tarjeta}</span>}
+              <div className="mp-benefit">
+                <i className="bi bi-credit-card" /> Diversos medios
               </div>
-
-              {/* Exp + CVV */}
-              <div className="pago-row">
-                <div className="pago-fg">
-                  <label>Expiración</label>
-                  <input
-                    type="text"
-                    className={errors.exp ? "err" : /^\d{2}\/\d{2}$/.test(form.exp) ? "ok" : ""}
-                    value={form.exp}
-                    onChange={e => set("exp", fmtExp(e.target.value))}
-                    placeholder="MM/AA"
-                    maxLength={5}
-                    autoComplete="cc-exp"
-                    inputMode="numeric"
-                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                  />
-                  {errors.exp && <span className="pago-err">{errors.exp}</span>}
-                </div>
-                <div className="pago-fg">
-                  <label>CVV</label>
-                  <input
-                    type="password"
-                    className={errors.cvv ? "err" : /^\d{3,4}$/.test(form.cvv) ? "ok" : ""}
-                    value={form.cvv}
-                    onChange={e => set("cvv", e.target.value.replace(/\D/g,"").slice(0,4))}
-                    placeholder="···"
-                    maxLength={4}
-                    autoComplete="cc-csc"
-                    inputMode="numeric"
-                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                  />
-                  {errors.cvv && <span className="pago-err">{errors.cvv}</span>}
-                </div>
+              <div className="mp-benefit">
+                <i className="bi bi-arrow-return-left" /> Regreso automático
               </div>
-
-              {/* Botón pagar */}
-              <button type="submit" className="pago-btn pago-btn-pay" disabled={loading}>
-                {loading ? (
-                  <>
-                    <svg width="18" height="18" viewBox="0 0 24 24" className="spinning" fill="none" stroke="white" strokeWidth="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
-                    Procesando...
-                  </>
-                ) : (
-                  <>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    Pagar {fmtMXN(total)}
-                  </>
-                )}
-              </button>
-
-              <button type="button" className="pago-btn pago-btn-back" onClick={() => navigate("/carrito")}>
-                Volver al carrito
-              </button>
-
-              {/* Badges de seguridad */}
-              <div className="pago-badges">
-                {["SSL cifrado", "Pago seguro", "Datos protegidos"].map(b => (
-                  <div key={b} className="pago-badge">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#276749" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    {b}
-                  </div>
-                ))}
-              </div>
-            </form>
-          </div>
-
-          {/* ── Resumen del pedido ── */}
-          <div className="pago-resumen">
-            <h3>Resumen del pedido</h3>
-            {cart.map((item, i) => (
-              <div key={i} className="pago-item">
-                {item.imagen
-                  ? <img src={item.imagen||item.img} alt={item.nombre||item.title} className="pago-item-img"/>
-                  : <div className="pago-item-img" style={{ display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.4rem" }}>👟</div>
-                }
-                <div className="pago-item-info">
-                  <div className="pago-item-name">{item.nombre || item.title || item.name || "Producto"}</div>
-                  <div className="pago-item-sub">
-                    {getQty(item) > 1 && `${getQty(item)} × `}{fmtMXN(getPrice(item))}
-                    {(item.talla||item.size) && ` · ${item.talla||item.size}`}
-                    {item.color && ` · ${item.color}`}
-                  </div>
-                </div>
-                <div className="pago-item-price">{fmtMXN(getPrice(item) * getQty(item))}</div>
-              </div>
-            ))}
-
-            <div className="pago-total-row">
-              <span className="pago-total-lbl">Total a pagar</span>
-              <span className="pago-total-val">{fmtMXN(total)}</span>
             </div>
-          </div>
 
+            {error && <div className="mp-alert error">{error}</div>}
+
+            <button
+              className="mp-pay"
+              onClick={startCheckout}
+              disabled={loading || !checkoutCart.length}
+            >
+              {loading ? (
+                <>
+                  <span className="mp-spinner" /> Conectando...
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-box-arrow-up-right" />
+                  Pagar {fmtMXN(total)} con Mercado Pago
+                </>
+              )}
+            </button>
+            <button className="mp-back" onClick={() => navigate("/carrito")}>
+              Volver al carrito
+            </button>
+
+            <div className="mp-note">
+              <i className="bi bi-info-circle-fill" />
+              <span>
+                El pedido se crea y el inventario se descuenta únicamente después de
+                que el backend comprueba que Mercado Pago aprobó el pago.
+              </span>
+            </div>
+          </section>
+
+          <aside className="mp-card mp-summary">
+            <h2>Resumen del pedido</h2>
+            <div className="mp-items">
+              {checkoutCart.map((item, index) => (
+                <article className="mp-item" key={`${item.id || item.product_id}-${index}`}>
+                  {item.imagen || item.img ? (
+                    <img
+                      src={item.imagen || item.img}
+                      alt={item.nombre || item.title || "Producto"}
+                    />
+                  ) : (
+                    <div className="mp-item-placeholder">
+                      <i className="bi bi-bag" />
+                    </div>
+                  )}
+                  <div>
+                    <div className="mp-item-name">
+                      {item.nombre || item.title || item.name || "Producto"}
+                    </div>
+                    <div className="mp-item-detail">
+                      {getQty(item)} × {fmtMXN(getPrice(item))}
+                      {(item.talla || item.size) && ` · ${item.talla || item.size}`}
+                      {item.color && ` · ${item.color}`}
+                    </div>
+                  </div>
+                  <div className="mp-item-price">
+                    {fmtMXN(getPrice(item) * getQty(item))}
+                  </div>
+                </article>
+              ))}
+            </div>
+            <div className="mp-row">
+              <span>Subtotal</span>
+              <strong>{fmtMXN(productsSubtotal)}</strong>
+            </div>
+            <div className="mp-row">
+              <span>Envío</span>
+              <strong>{shipping === 0 ? "Gratis" : fmtMXN(shipping)}</strong>
+            </div>
+            <div className="mp-row mp-total">
+              <span>Total</span>
+              <strong>{fmtMXN(total)}</strong>
+            </div>
+          </aside>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
