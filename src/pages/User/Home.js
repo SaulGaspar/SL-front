@@ -509,14 +509,6 @@ const css = `
     letter-spacing: -.035em;
   }
 
-  .sl-category-count {
-    display: block;
-    margin-top: 4px;
-    color: rgba(11,31,51,.58);
-    font-size: .74rem;
-    font-weight: 650;
-  }
-
   .sl-circle-arrow {
     width: 40px;
     height: 40px;
@@ -819,6 +811,259 @@ const css = `
     .sl-cta-inner { padding: 38px 26px; border-radius: 24px; }
   }
 
+  /* ── ACABADO PROFESIONAL ── */
+  .sl-home {
+    --sl-ink: #0a1a2f;
+    --sl-muted: #667386;
+    --sl-paper: #f6f7f5;
+    --sl-card: #ffffff;
+    --sl-line: rgba(10, 26, 47, .11);
+    --sl-acid: #bde632;
+    --sl-blue: #244fdb;
+  }
+
+  .sl-hero {
+    min-height: min(780px, calc(100svh - 72px));
+    padding: clamp(82px, 9vw, 118px) 0 92px;
+  }
+
+  .sl-hero::before {
+    background:
+      linear-gradient(115deg, rgba(36,79,219,.055), transparent 42%),
+      linear-gradient(rgba(10,26,47,.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(10,26,47,.028) 1px, transparent 1px);
+    background-size: auto, 72px 72px, 72px 72px;
+  }
+
+  .sl-hero::after { display: none; }
+
+  .sl-hero-grid {
+    grid-template-columns: minmax(0, 1.08fr) minmax(410px, .92fr);
+    gap: clamp(54px, 7vw, 96px);
+  }
+
+  .sl-eyebrow {
+    margin-bottom: 20px;
+    color: var(--sl-blue);
+    font-size: .73rem;
+    letter-spacing: .14em;
+  }
+
+  .sl-eyebrow::before {
+    width: 26px;
+    height: 2px;
+    background: var(--sl-blue);
+  }
+
+  .sl-hero-title {
+    max-width: 720px;
+    font-size: clamp(3.45rem, 6.1vw, 5.85rem);
+    line-height: .96;
+    letter-spacing: -.058em;
+  }
+
+  .sl-hero-title em {
+    margin-top: .05em;
+    color: var(--sl-blue);
+  }
+
+  .sl-hero-title em::after { display: none; }
+
+  .sl-hero-sub {
+    max-width: 610px;
+    margin-top: 28px;
+    font-size: clamp(1rem, 1.5vw, 1.12rem);
+    line-height: 1.72;
+  }
+
+  .sl-btn {
+    min-height: 52px;
+    padding-inline: 25px;
+    border-radius: 12px;
+  }
+
+  .sl-btn-primary {
+    background: var(--sl-blue);
+    box-shadow: 0 12px 28px rgba(36,79,219,.22);
+  }
+
+  .sl-btn-secondary {
+    background: var(--sl-card);
+    border-color: var(--sl-line);
+  }
+
+  .sl-proof { margin-top: 24px; }
+
+  .sl-showcase-wrap { padding: 8px; }
+
+  .sl-showcase {
+    min-height: 520px;
+    padding: 30px;
+    border-color: rgba(10,26,47,.09);
+    border-radius: 26px;
+    background: linear-gradient(145deg, #edf1f6 0%, #dfe6ef 100%);
+    box-shadow: 0 28px 70px rgba(10,26,47,.14);
+    transform: none;
+  }
+
+  .sl-showcase::before {
+    content: "";
+    width: 270px;
+    height: 270px;
+    right: -80px;
+    top: -90px;
+    border: 48px solid rgba(36,79,219,.1);
+    border-radius: 50%;
+    transform: none;
+  }
+
+  .sl-showcase::after {
+    width: 210px;
+    height: 210px;
+    left: -90px;
+    bottom: -115px;
+    background: var(--sl-acid);
+    opacity: .75;
+  }
+
+  .sl-shoe {
+    width: 122%;
+    left: -9%;
+    top: 26%;
+    transform: rotate(-7deg);
+    filter: drop-shadow(0 28px 20px rgba(10,26,47,.22));
+  }
+
+  .sl-float-card {
+    right: -18px;
+    top: 38px;
+    border-radius: 14px;
+    box-shadow: 0 14px 34px rgba(10,26,47,.13);
+  }
+
+  .sl-trust {
+    background: var(--sl-card);
+    color: var(--sl-ink);
+    border-top: 1px solid var(--sl-line);
+    border-bottom: 1px solid var(--sl-line);
+  }
+
+  .sl-trust-grid { min-height: 108px; }
+
+  .sl-trust-item {
+    border-right-color: var(--sl-line);
+  }
+
+  .sl-trust-icon {
+    border-radius: 12px;
+    background: rgba(36,79,219,.09);
+    color: var(--sl-blue);
+  }
+
+  .sl-trust-sub { color: var(--sl-muted); }
+
+  .sl-section { padding: clamp(88px, 9vw, 118px) 0; }
+
+  .sl-label { color: var(--sl-blue); }
+
+  .sl-title {
+    font-size: clamp(2.25rem, 4.3vw, 3.75rem);
+    line-height: 1.02;
+    letter-spacing: -.05em;
+  }
+
+  .sl-category-grid { gap: 18px; }
+
+  .sl-category,
+  .sl-category:nth-child(n) {
+    min-height: 218px;
+    border-radius: 20px;
+    background: var(--sl-card);
+  }
+
+  .sl-category:hover {
+    border-color: rgba(36,79,219,.24);
+    box-shadow: 0 18px 42px rgba(10,26,47,.09);
+  }
+
+  .sl-category-icon {
+    border: 0;
+    border-radius: 14px;
+    background: #f0f3f7;
+    color: var(--sl-blue);
+    transform: none;
+  }
+
+  .sl-circle-arrow {
+    background: var(--sl-blue);
+  }
+
+  .sl-story-grid {
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  }
+
+  .sl-principle { padding: 32px 0; }
+
+  .sl-principle-num { color: var(--sl-blue); }
+
+  .sl-process-visual {
+    min-height: 560px;
+    border-radius: 24px;
+    background: #0a1a2f;
+  }
+
+  .sl-process-visual::before {
+    width: 330px;
+    height: 330px;
+    right: -120px;
+    bottom: -120px;
+    border-width: 58px;
+    opacity: .9;
+  }
+
+  .sl-process-visual::after { display: none; }
+
+  .sl-sport-tag {
+    border-color: rgba(255,255,255,.18);
+  }
+
+  .sl-step-num {
+    border-radius: 12px;
+    background: rgba(36,79,219,.1);
+    color: var(--sl-blue);
+  }
+
+  .sl-cta-inner {
+    min-height: 310px;
+    border-radius: 26px;
+    background: #0a1a2f;
+  }
+
+  .sl-cta-inner::before {
+    border-color: var(--sl-acid);
+    opacity: .9;
+  }
+
+  .sl-cta-title {
+    max-width: 760px;
+    font-size: clamp(2.45rem, 4.8vw, 4.35rem);
+  }
+
+  @media (max-width: 991.98px) {
+    .sl-hero-grid { grid-template-columns: 1fr; }
+    .sl-showcase-wrap { width: min(580px, 100%); }
+    .sl-trust-item:nth-child(-n+2) { border-bottom-color: var(--sl-line); }
+  }
+
+  @media (max-width: 767.98px) {
+    .sl-hero { padding-top: 68px; }
+    .sl-hero-title { font-size: clamp(3rem, 14vw, 4.5rem); }
+    .sl-showcase { min-height: 420px; }
+    .sl-float-card { right: -4px; }
+    .sl-category,
+    .sl-category:nth-child(n) { min-height: 190px; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .sl-home *,
     .sl-home *::before,
@@ -860,26 +1105,26 @@ const TRUST = [
 ];
 
 const CATEGORIES = [
-  { icon: "shoe", name: "Calzado", count: "124 productos" },
-  { icon: "shirt", name: "Ropa", count: "86 productos" },
-  { icon: "dumbbell", name: "Entrenamiento", count: "52 productos" },
-  { icon: "bag", name: "Accesorios", count: "68 productos" },
-  { icon: "ball", name: "Balones", count: "34 productos" },
-  { icon: "bottle", name: "Nutrición", count: "41 productos" },
+  { icon: "shoe", name: "Calzado" },
+  { icon: "shirt", name: "Ropa" },
+  { icon: "dumbbell", name: "Entrenamiento" },
+  { icon: "bag", name: "Accesorios" },
+  { icon: "ball", name: "Balones" },
+  { icon: "bottle", name: "Nutrición" },
 ];
 
 const PRINCIPLES = [
   {
-    title: "Lo bueno se elige, no se acumula",
-    text: "Cada producto entra por rendimiento, durabilidad y comodidad. Menos ruido, mejores opciones.",
+    title: "Selección con propósito",
+    text: "Elegimos cada producto por su rendimiento, durabilidad y comodidad para ofrecer opciones que realmente aportan valor.",
   },
   {
-    title: "Hablar claro también es servicio",
-    text: "Precios visibles, entregas con seguimiento y cambios sencillos. Comprar deporte no debería cansarte.",
+    title: "Servicio claro y confiable",
+    text: "Precios transparentes, entregas con seguimiento y cambios sencillos durante todo el proceso de compra.",
   },
   {
-    title: "Tu ritmo es el que importa",
-    text: "Entrenes todos los días o apenas estés empezando, aquí encuentras equipo que acompaña tu momento.",
+    title: "Equipo para cada objetivo",
+    text: "Desde quienes comienzan hasta quienes compiten, contamos con alternativas para cada nivel y disciplina.",
   },
 ];
 
@@ -907,17 +1152,17 @@ export default function Home() {
       <section className="sl-hero">
         <div className="sl-container sl-hero-grid">
           <div className="sl-hero-copy">
-            <span className="sl-eyebrow">Hecho para moverte</span>
+            <span className="sl-eyebrow">Tienda deportiva en línea</span>
             <h1 className="sl-hero-title">
-              Todo empieza con <em>un paso.</em>
+              Equípate para <em>llegar más lejos.</em>
             </h1>
             <p className="sl-hero-sub">
-              Equipo bien elegido para entrenar, jugar y disfrutar el movimiento.
-              Encuentra lo que te hace falta y sigue a tu ritmo.
+              Productos deportivos seleccionados por su calidad, rendimiento y diseño.
+              Todo lo que necesitas para entrenar con confianza.
             </p>
             <div className="sl-actions">
               <a href="/catalogo" className="sl-btn sl-btn-primary">
-                Explorar catálogo <Icon name="arrow" size={19} />
+                Comprar ahora <Icon name="arrow" size={19} />
               </a>
               <a href="/promociones" className="sl-btn sl-btn-secondary">
                 Ver promociones
@@ -925,14 +1170,14 @@ export default function Home() {
             </div>
             <div className="sl-proof">
               <span><Icon name="check" size={17} /> Envíos a todo México</span>
-              <span><Icon name="check" size={17} /> Productos auténticos</span>
+              <span><Icon name="check" size={17} /> Compra segura</span>
             </div>
           </div>
 
           <div className="sl-showcase-wrap" aria-label="Producto destacado">
             <div className="sl-showcase">
               <div className="sl-showcase-top">
-                <span className="sl-showcase-kicker">Selección de la semana</span>
+                <span className="sl-showcase-kicker">Producto destacado</span>
                 <span className="sl-showcase-index">01</span>
               </div>
               <svg className="sl-shoe" viewBox="0 0 620 330" role="img" aria-label="Tenis deportivo Flux">
@@ -954,7 +1199,7 @@ export default function Home() {
               </svg>
               <div className="sl-product-meta">
                 <div>
-                  <div className="sl-product-name">Flux Runner</div>
+                  <div className="sl-product-name">Aero Motion</div>
                   <div className="sl-product-type">Running diario · Unisex</div>
                 </div>
                 <div className="sl-product-price">$2,199</div>
@@ -987,7 +1232,7 @@ export default function Home() {
           <div className="sl-heading-row">
             <div>
               <span className="sl-label">Encuentra tu equipo</span>
-              <h2 className="sl-title">Muévete como más te gusta.</h2>
+              <h2 className="sl-title">Todo para tu disciplina.</h2>
             </div>
             <p className="sl-heading-note">
               Una selección para cada disciplina, desde el primer entrenamiento
@@ -1003,7 +1248,6 @@ export default function Home() {
                 <span className="sl-category-bottom">
                   <span>
                     <span className="sl-category-name">{category.name}</span>
-                    <span className="sl-category-count">{category.count}</span>
                   </span>
                   <span className="sl-circle-arrow"><Icon name="arrow" size={18} /></span>
                 </span>
@@ -1016,11 +1260,11 @@ export default function Home() {
       <section className="sl-section">
         <div className="sl-container sl-story-grid">
           <div className="sl-story-sticky">
-            <span className="sl-label">Nuestra manera de hacer las cosas</span>
-            <h2 className="sl-title">Buen equipo. Cero complicaciones.</h2>
+            <span className="sl-label">Compromiso SportLike</span>
+            <h2 className="sl-title">Rendimiento, calidad y confianza.</h2>
             <p className="sl-story-copy">
-              SportLike nació para hacer más fácil una decisión sencilla:
-              elegir algo que te dé ganas de salir y moverte.
+              Seleccionamos productos que cumplen con las exigencias del deporte
+              y ofrecemos una experiencia de compra clara de principio a fin.
             </p>
           </div>
           <div className="sl-principles">
@@ -1040,14 +1284,14 @@ export default function Home() {
       <section className="sl-section sl-section-white">
         <div className="sl-container sl-process">
           <div className="sl-process-visual">
-            <h2 className="sl-process-big">Más de 500 formas de ponerte en movimiento.</h2>
+            <h2 className="sl-process-big">Equipo para cada disciplina y cada objetivo.</h2>
             <div className="sl-sport-tags">
               {SPORTS.map((sport) => <span className="sl-sport-tag" key={sport}>{sport}</span>)}
             </div>
           </div>
           <div className="sl-process-copy">
-            <span className="sl-label">Así de simple</span>
-            <h2 className="sl-title">Elige. Recibe. Estrena.</h2>
+            <span className="sl-label">Una experiencia sencilla</span>
+            <h2 className="sl-title">Compra fácil y segura.</h2>
             <div className="sl-steps">
               {STEPS.map((step, index) => (
                 <article className="sl-step" key={step.title}>
@@ -1067,8 +1311,8 @@ export default function Home() {
         <div className="sl-container">
           <div className="sl-cta-inner">
             <div className="sl-cta-copy">
-              <h2 className="sl-cta-title">Tu próxima meta empieza aquí.</h2>
-              <p>Explora la colección y encuentra ese impulso que te faltaba.</p>
+              <h2 className="sl-cta-title">Prepárate para tu siguiente reto.</h2>
+              <p>Explora nuestro catálogo y encuentra el equipo adecuado para alcanzar tus objetivos.</p>
             </div>
             <a href="/catalogo" className="sl-btn">
               Ver todo el catálogo <Icon name="arrow" size={19} />
