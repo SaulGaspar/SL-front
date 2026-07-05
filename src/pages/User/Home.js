@@ -1,417 +1,895 @@
 import React, { useEffect } from "react";
 
 const css = `
-  /* ── HERO ── */
-  .sl-hero {
-    position: relative;
-    min-height: 78vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 70px 24px 60px;
+  .sl-home {
+    --sl-ink: #0b1f33;
+    --sl-muted: #637083;
+    --sl-paper: #f5f7f2;
+    --sl-card: #ffffff;
+    --sl-line: rgba(11, 31, 51, 0.12);
+    --sl-acid: #c7f22b;
+    --sl-blue: #3157f5;
+    --sl-orange: #ff6938;
+    background: var(--sl-paper);
+    color: var(--sl-ink);
     overflow: hidden;
   }
+
+  body[data-bs-theme="dark"] .sl-home {
+    --sl-ink: #f4f7fb;
+    --sl-muted: #a8b2c1;
+    --sl-paper: #09131f;
+    --sl-card: #101d2b;
+    --sl-line: rgba(255, 255, 255, 0.12);
+  }
+
+  .sl-home *,
+  .sl-home *::before,
+  .sl-home *::after { box-sizing: border-box; }
+
+  .sl-container {
+    width: min(1180px, calc(100% - 40px));
+    margin-inline: auto;
+  }
+
+  .sl-hero {
+    position: relative;
+    min-height: min(820px, calc(100svh - 72px));
+    display: grid;
+    align-items: center;
+    padding: clamp(70px, 9vw, 120px) 0 86px;
+    isolation: isolate;
+  }
+
   .sl-hero::before {
     content: "";
     position: absolute;
+    z-index: -2;
     inset: 0;
-    background: radial-gradient(ellipse 90% 55% at 50% 0%,
-      rgba(79,124,255,0.14) 0%, transparent 70%);
-    pointer-events: none;
+    background:
+      linear-gradient(rgba(11,31,51,.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(11,31,51,.045) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,.7), transparent 88%);
   }
-  body[data-bs-theme="dark"] .sl-hero::before {
-    background: radial-gradient(ellipse 90% 55% at 50% 0%,
-      rgba(96,165,250,0.13) 0%, transparent 70%);
-  }
-  .sl-hero-inner { position: relative; z-index: 1; }
 
-  .sl-hero-eyebrow {
+  body[data-bs-theme="dark"] .sl-hero::before {
+    background:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  .sl-hero::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    width: 520px;
+    height: 520px;
+    right: -250px;
+    top: -230px;
+    border-radius: 50%;
+    background: var(--sl-acid);
+    opacity: .24;
+    filter: blur(1px);
+  }
+
+  .sl-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.02fr) minmax(390px, .98fr);
+    align-items: center;
+    gap: clamp(48px, 7vw, 96px);
+  }
+
+  .sl-eyebrow {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    background: rgba(79,124,255,0.10);
-    border: 1px solid rgba(79,124,255,0.25);
-    color: var(--accent);
-    padding: 5px 16px;
-    border-radius: 100px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: .8px;
+    gap: 10px;
+    margin-bottom: 24px;
+    color: var(--sl-ink);
+    font-size: .76rem;
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: .12em;
     text-transform: uppercase;
-    margin-bottom: 22px;
+  }
+
+  .sl-eyebrow::before {
+    content: "";
+    width: 32px;
+    height: 3px;
+    border-radius: 99px;
+    background: var(--sl-orange);
   }
 
   .sl-hero-title {
-    font-size: clamp(2.3rem, 5.5vw, 3.8rem);
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.025em;
-    color: var(--text-main);
-    margin-bottom: 22px;
+    max-width: 690px;
+    margin: 0;
+    color: var(--sl-ink);
+    font-size: clamp(3.35rem, 6.8vw, 6.65rem);
+    font-weight: 900;
+    line-height: .88;
+    letter-spacing: -.065em;
   }
+
   .sl-hero-title em {
+    display: block;
+    width: fit-content;
+    margin-top: .09em;
+    color: var(--sl-blue);
     font-style: normal;
-    color: var(--accent);
+    position: relative;
+  }
+
+  .sl-hero-title em::after {
+    content: "";
+    position: absolute;
+    left: 2%;
+    right: -2%;
+    bottom: -.04em;
+    height: .13em;
+    border-radius: 99px;
+    background: var(--sl-acid);
+    transform: rotate(-1.5deg);
+    z-index: -1;
   }
 
   .sl-hero-sub {
-    max-width: 660px;
-    font-size: 1.12rem;
-    line-height: 1.75;
-    color: var(--text-muted);
-    margin: 0 auto 38px;
+    max-width: 570px;
+    margin: 30px 0 0;
+    color: var(--sl-muted);
+    font-size: clamp(1.02rem, 1.7vw, 1.18rem);
+    line-height: 1.7;
   }
 
-  .sl-hero-btns {
-    display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
-  }
-  .sl-btn-primary {
-    background: var(--accent);
-    color: #fff !important;
-    padding: 13px 32px;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 1rem;
-    border: none;
-    text-decoration: none;
-    transition: all .2s;
-    display: inline-block;
-  }
-  .sl-btn-primary:hover { filter: brightness(1.12); transform: translateY(-2px); }
-  .sl-btn-ghost {
-    background: transparent;
-    border: 2px solid var(--border-soft);
-    color: var(--text-main) !important;
-    padding: 13px 32px;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 1rem;
-    text-decoration: none;
-    transition: all .2s;
-    display: inline-block;
-  }
-  .sl-btn-ghost:hover {
-    border-color: var(--accent);
-    color: var(--accent) !important;
-  }
-
-  /* ── STRIP GARANTIAS ── */
-  .sl-strip {
-    background: var(--bg-card);
-    border-top: 1px solid var(--border-soft);
-    border-bottom: 1px solid var(--border-soft);
-    padding: 22px 0;
-  }
-  .sl-strip-item {
+  .sl-actions {
     display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 34px;
+  }
+
+  .sl-btn {
+    min-height: 54px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 11px;
-    padding: 10px 8px;
-  }
-  .sl-strip-icon {
-    width: 40px; height: 40px;
-    border-radius: 10px;
-    background: rgba(79,124,255,0.10);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.15rem;
-    flex-shrink: 0;
-  }
-  body[data-bs-theme="dark"] .sl-strip-icon { background: rgba(96,165,250,0.13); }
-  .sl-strip-title { font-weight: 700; font-size: 0.88rem; color: var(--text-main); line-height: 1.2; }
-  .sl-strip-sub   { font-size: 0.78rem; color: var(--text-muted); line-height: 1.3; }
-
-  /* ── SECCION LABELS ── */
-  .sl-section-label {
-    display: inline-block;
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 10px;
-  }
-  .sl-section-title {
-    font-size: clamp(1.6rem, 3vw, 2.1rem);
+    padding: 0 24px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    color: var(--sl-ink) !important;
+    font-size: .94rem;
     font-weight: 800;
-    color: var(--text-main);
-    letter-spacing: -0.02em;
-    margin-bottom: 12px;
+    text-decoration: none;
+    transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
   }
-  .sl-section-sub {
-    color: var(--text-muted);
+
+  .sl-btn svg { transition: transform .2s ease; }
+  .sl-btn:hover { transform: translateY(-2px); }
+  .sl-btn:hover svg { transform: translateX(3px); }
+
+  .sl-btn-primary {
+    background: var(--sl-ink);
+    color: var(--sl-paper) !important;
+    box-shadow: 0 12px 30px rgba(11,31,51,.18);
+  }
+
+  .sl-btn-secondary {
+    border-color: var(--sl-line);
+    background: rgba(255,255,255,.5);
+  }
+
+  body[data-bs-theme="dark"] .sl-btn-secondary {
+    background: rgba(255,255,255,.04);
+  }
+
+  .sl-proof {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin-top: 26px;
+    color: var(--sl-muted);
+    font-size: .82rem;
+    font-weight: 650;
+  }
+
+  .sl-proof span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .sl-proof svg { color: var(--sl-blue); }
+
+  .sl-showcase-wrap {
+    position: relative;
+    padding: 24px 18px 30px;
+  }
+
+  .sl-showcase {
+    position: relative;
+    min-height: 510px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 30px;
+    border: 1px solid rgba(11,31,51,.08);
+    border-radius: 38px;
+    background: #dfe8ff;
+    color: #0b1f33;
+    overflow: hidden;
+    box-shadow: 0 34px 80px rgba(32,52,84,.16);
+    transform: rotate(2deg);
+  }
+
+  .sl-showcase::before {
+    content: "MOVE";
+    position: absolute;
+    right: -28px;
+    top: 104px;
+    color: rgba(11,31,51,.065);
+    font-size: 8.2rem;
+    font-weight: 950;
+    letter-spacing: -.08em;
+    transform: rotate(90deg);
+  }
+
+  .sl-showcase::after {
+    content: "";
+    position: absolute;
+    width: 270px;
+    height: 270px;
+    left: -70px;
+    bottom: -105px;
+    border-radius: 50%;
+    background: var(--sl-acid);
+  }
+
+  .sl-showcase-top,
+  .sl-product-meta { position: relative; z-index: 2; }
+
+  .sl-showcase-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .sl-showcase-kicker {
+    font-size: .7rem;
+    font-weight: 850;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+
+  .sl-showcase-index {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(11,31,51,.16);
+    border-radius: 50%;
+    font-size: .72rem;
+    font-weight: 800;
+  }
+
+  .sl-shoe {
+    position: absolute;
+    z-index: 1;
+    width: 128%;
+    max-width: none;
+    left: -12%;
+    top: 24%;
+    filter: drop-shadow(0 32px 22px rgba(11,31,51,.25));
+    transform: rotate(-10deg);
+  }
+
+  .sl-product-meta {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px 22px;
+    align-items: end;
+  }
+
+  .sl-product-name {
+    color: #0b1f33;
+    font-size: clamp(1.65rem, 3vw, 2.15rem);
+    font-weight: 900;
+    letter-spacing: -.04em;
+    line-height: 1;
+  }
+
+  .sl-product-type {
+    margin-top: 7px;
+    color: rgba(11,31,51,.63);
+    font-size: .84rem;
+    font-weight: 650;
+  }
+
+  .sl-product-price {
+    font-size: 1.12rem;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .sl-float-card {
+    position: absolute;
+    z-index: 4;
+    right: -14px;
+    top: 70px;
+    width: 154px;
+    padding: 15px 17px;
+    border: 1px solid rgba(11,31,51,.08);
+    border-radius: 18px;
+    background: rgba(255,255,255,.92);
+    color: #0b1f33;
+    box-shadow: 0 16px 40px rgba(11,31,51,.14);
+    backdrop-filter: blur(12px);
+  }
+
+  .sl-float-card strong {
+    display: block;
+    font-size: 1.1rem;
+    letter-spacing: -.03em;
+  }
+
+  .sl-float-card span {
+    display: block;
+    margin-top: 2px;
+    color: #677487;
+    font-size: .72rem;
+    font-weight: 650;
+  }
+
+  .sl-float-dot {
+    width: 9px;
+    height: 9px;
+    display: inline-block !important;
+    margin: 0 5px 0 0 !important;
+    border-radius: 50%;
+    background: #36b36b;
+  }
+
+  .sl-trust {
+    position: relative;
+    z-index: 2;
+    margin-top: -1px;
+    background: #0b1f33;
+    color: #f5f7f2;
+  }
+
+  .sl-trust-grid {
+    min-height: 118px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .sl-trust-item {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 24px;
+    border-right: 1px solid rgba(255,255,255,.13);
+  }
+
+  .sl-trust-item:last-child { border-right: 0; }
+
+  .sl-trust-icon {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: var(--sl-acid);
+    color: #0b1f33;
+  }
+
+  .sl-trust-title {
+    color: inherit;
+    font-size: .88rem;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .sl-trust-sub {
+    margin-top: 4px;
+    color: rgba(245,247,242,.62);
+    font-size: .72rem;
+    line-height: 1.35;
+  }
+
+  .sl-section { padding: clamp(82px, 10vw, 132px) 0; }
+  .sl-section-white { background: var(--sl-card); }
+
+  .sl-heading-row {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 34px;
+    margin-bottom: 44px;
+  }
+
+  .sl-label {
+    display: block;
+    margin-bottom: 12px;
+    color: var(--sl-blue);
+    font-size: .72rem;
+    font-weight: 850;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+
+  .sl-title {
+    max-width: 700px;
+    margin: 0;
+    color: var(--sl-ink);
+    font-size: clamp(2.2rem, 4.8vw, 4.25rem);
+    font-weight: 900;
+    line-height: .98;
+    letter-spacing: -.055em;
+  }
+
+  .sl-heading-note {
+    max-width: 340px;
+    margin: 0;
+    color: var(--sl-muted);
+    font-size: .94rem;
+    line-height: 1.65;
+  }
+
+  .sl-category-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 16px;
+  }
+
+  .sl-category {
+    position: relative;
+    min-height: 230px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    grid-column: span 4;
+    padding: 24px;
+    border: 1px solid var(--sl-line);
+    border-radius: 24px;
+    color: var(--sl-ink) !important;
+    text-decoration: none;
+    overflow: hidden;
+    transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+  }
+
+  .sl-category:nth-child(1),
+  .sl-category:nth-child(5) { grid-column: span 5; }
+  .sl-category:nth-child(2),
+  .sl-category:nth-child(6) { grid-column: span 3; }
+  .sl-category:nth-child(3),
+  .sl-category:nth-child(4) { grid-column: span 4; }
+
+  .sl-category:nth-child(1) { background: #dfe8ff; }
+  .sl-category:nth-child(2) { background: #eef7ca; }
+  .sl-category:nth-child(3) { background: #ffe4da; }
+  .sl-category:nth-child(4) { background: #e5e8ec; }
+  .sl-category:nth-child(5) { background: #d9f1e4; }
+  .sl-category:nth-child(6) { background: #eee4ff; }
+
+  .sl-category:hover {
+    transform: translateY(-5px);
+    border-color: transparent;
+    box-shadow: 0 20px 44px rgba(11,31,51,.12);
+  }
+
+  .sl-category-icon {
+    width: 62px;
+    height: 62px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(11,31,51,.12);
+    border-radius: 20px;
+    background: rgba(255,255,255,.48);
+    color: #0b1f33;
+    transform: rotate(-4deg);
+  }
+
+  .sl-category-bottom {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .sl-category-name {
+    display: block;
+    color: #0b1f33;
+    font-size: 1.3rem;
+    font-weight: 900;
+    letter-spacing: -.035em;
+  }
+
+  .sl-category-count {
+    display: block;
+    margin-top: 4px;
+    color: rgba(11,31,51,.58);
+    font-size: .74rem;
+    font-weight: 650;
+  }
+
+  .sl-circle-arrow {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: #0b1f33;
+    color: #fff;
+    transition: transform .2s ease;
+  }
+
+  .sl-category:hover .sl-circle-arrow { transform: rotate(-35deg); }
+
+  .sl-story-grid {
+    display: grid;
+    grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+    gap: clamp(48px, 9vw, 120px);
+    align-items: start;
+  }
+
+  .sl-story-sticky { position: sticky; top: 110px; }
+
+  .sl-story-copy {
+    margin: 26px 0 0;
+    color: var(--sl-muted);
     font-size: 1rem;
-    max-width: 520px;
-    margin: 0 auto;
+    line-height: 1.78;
+  }
+
+  .sl-principles {
+    border-top: 1px solid var(--sl-line);
+  }
+
+  .sl-principle {
+    display: grid;
+    grid-template-columns: 68px 1fr;
+    gap: 24px;
+    padding: 34px 0;
+    border-bottom: 1px solid var(--sl-line);
+  }
+
+  .sl-principle-num {
+    color: var(--sl-blue);
+    font-size: .76rem;
+    font-weight: 850;
+    letter-spacing: .1em;
+  }
+
+  .sl-principle h3 {
+    margin: 0 0 9px;
+    color: var(--sl-ink);
+    font-size: 1.22rem;
+    font-weight: 850;
+    letter-spacing: -.025em;
+  }
+
+  .sl-principle p {
+    margin: 0;
+    color: var(--sl-muted);
+    font-size: .94rem;
     line-height: 1.7;
   }
 
-  /* ── MISSION CARDS ── */
-  .sl-cards-section { padding: 72px 0; }
-  .sl-mission-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-soft);
-    border-radius: 18px;
-    padding: 30px 26px;
-    height: 100%;
-    transition: transform .2s, box-shadow .2s;
-    position: relative;
+  .sl-process {
+    display: grid;
+    grid-template-columns: minmax(0, 1.02fr) minmax(0, .98fr);
+    gap: clamp(40px, 7vw, 86px);
+    align-items: stretch;
+  }
+
+  .sl-process-visual {
+    min-height: 610px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(28px, 4vw, 48px);
+    border-radius: 30px;
+    background: #0b1f33;
+    color: #f5f7f2;
     overflow: hidden;
+    position: relative;
   }
-  .sl-mission-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 14px 32px rgba(0,0,0,0.10);
-  }
-  .sl-mission-card::after {
+
+  .sl-process-visual::before {
     content: "";
     position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: var(--accent);
-    border-radius: 3px 3px 0 0;
-    opacity: 0;
-    transition: opacity .2s;
-  }
-  .sl-mission-card:hover::after { opacity: 1; }
-  .sl-mission-icon {
-    width: 50px; height: 50px;
-    background: rgba(79,124,255,0.10);
-    border-radius: 13px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem;
-    margin-bottom: 18px;
-  }
-  body[data-bs-theme="dark"] .sl-mission-icon { background: rgba(96,165,250,0.14); }
-  .sl-mission-card h4 { font-weight: 800; font-size: 1.05rem; color: var(--text-main); margin-bottom: 10px; }
-  .sl-mission-card p  { font-size: 0.96rem; color: var(--text-muted); line-height: 1.7; margin: 0; }
-
-  /* ── CATEGORIAS ── */
-  .sl-categories-section { padding: 70px 0; background: var(--bg-main); }
-  .sl-cat-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-soft);
-    border-radius: 16px;
-    padding: 26px 16px;
-    text-align: center;
-    transition: all .2s;
-    text-decoration: none;
-    display: block;
-    color: var(--text-main);
-  }
-  .sl-cat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 26px rgba(0,0,0,0.09);
-    border-color: var(--accent);
-    color: var(--text-main);
-  }
-  .sl-cat-emoji { font-size: 2.4rem; display: block; margin-bottom: 10px; }
-  .sl-cat-name  { font-weight: 700; font-size: 0.9rem; color: var(--text-main); }
-
-  /* ── POR QUE SPORTLIKE (dark mode fix) ── */
-  .sl-why-section {
-    padding: 80px 0;
-    background: var(--bg-card);
-    border-top: 1px solid var(--border-soft);
-    border-bottom: 1px solid var(--border-soft);
-  }
-  .sl-why-section h2, .sl-why-section h3 { color: var(--text-main) !important; }
-  .sl-why-section p { color: var(--text-muted) !important; }
-  .sl-why-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--bg-main);
-    border: 1px solid var(--border-soft);
-    border-radius: 10px;
-    padding: 10px 16px;
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: var(--text-main);
-    width: 100%;
-    transition: border-color .2s, transform .15s;
-  }
-  .sl-why-pill:hover {
-    border-color: var(--accent);
-    transform: translateX(4px);
+    width: 380px;
+    height: 380px;
+    right: -115px;
+    bottom: -110px;
+    border: 74px solid var(--sl-acid);
+    border-radius: 50%;
+    opacity: .95;
   }
 
-  /* ── FEATURES / COMO FUNCIONA ── */
-  .sl-features-section { padding: 80px 0; background: var(--bg-main); }
-  .sl-feature-row {
+  .sl-process-visual::after {
+    content: "SPORTLIKE";
+    position: absolute;
+    left: 44px;
+    bottom: 104px;
+    color: rgba(255,255,255,.06);
+    font-size: clamp(4rem, 8vw, 7rem);
+    font-weight: 950;
+    letter-spacing: -.07em;
+    transform: rotate(-90deg);
+    transform-origin: left bottom;
+  }
+
+  .sl-process-big {
+    position: relative;
+    z-index: 1;
+    max-width: 420px;
+    margin: 0;
+    color: inherit;
+    font-size: clamp(2.25rem, 4vw, 3.8rem);
+    font-weight: 900;
+    line-height: .98;
+    letter-spacing: -.055em;
+  }
+
+  .sl-sport-tags {
+    position: relative;
+    z-index: 1;
     display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 390px;
   }
-  .sl-feature-row:last-child { margin-bottom: 0; }
-  .sl-feature-num {
-    width: 38px; height: 38px;
-    background: var(--accent);
-    color: #fff;
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800;
-    font-size: 0.85rem;
-    flex-shrink: 0;
+
+  .sl-sport-tag {
+    padding: 8px 13px;
+    border: 1px solid rgba(255,255,255,.23);
+    border-radius: 999px;
+    color: rgba(255,255,255,.78);
+    font-size: .74rem;
+    font-weight: 700;
   }
-  body[data-bs-theme="dark"] .sl-feature-num { color: #020617; }
-  .sl-feature-text h5 { font-weight: 700; font-size: 0.97rem; color: var(--text-main); margin-bottom: 4px; }
-  .sl-feature-text p  { font-size: 0.92rem; color: var(--text-muted); margin: 0; line-height: 1.65; }
-  .sl-feature-panel {
-    background: var(--bg-card);
-    border: 1px solid var(--border-soft);
-    border-radius: 20px;
-    padding: 40px 32px;
-    height: 100%;
+
+  .sl-process-copy {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: flex-start;
+    padding-block: 20px;
   }
-  .sl-feature-panel-title {
-    font-weight: 800;
-    font-size: 1.5rem;
-    color: var(--text-main);
-    margin-bottom: 14px;
-    line-height: 1.25;
-  }
-  .sl-feature-panel-sub {
-    font-size: 0.97rem;
-    color: var(--text-muted);
-    line-height: 1.7;
-    margin-bottom: 28px;
-  }
-  .sl-tag {
-    display: inline-block;
-    background: rgba(79,124,255,0.10);
-    color: var(--accent);
-    border-radius: 8px;
-    padding: 5px 13px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin: 3px;
-  }
-  body[data-bs-theme="dark"] .sl-tag { background: rgba(96,165,250,0.14); }
 
-  /* ── CTA FINAL ── */
-  .sl-cta-section { padding: 80px 0; background: var(--bg-main); }
+  .sl-steps { margin-top: 30px; }
+
+  .sl-step {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 18px;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--sl-line);
+  }
+
+  .sl-step-num {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--sl-acid);
+    color: #0b1f33;
+    font-size: .72rem;
+    font-weight: 900;
+  }
+
+  .sl-step h3 {
+    margin: 0 0 5px;
+    color: var(--sl-ink);
+    font-size: 1rem;
+    font-weight: 850;
+  }
+
+  .sl-step p {
+    margin: 0;
+    color: var(--sl-muted);
+    font-size: .88rem;
+    line-height: 1.6;
+  }
+
+  .sl-cta { padding: 0 0 clamp(82px, 10vw, 130px); }
+
   .sl-cta-inner {
-    background: linear-gradient(135deg, var(--accent) 0%, #142b47 100%);
-    border-radius: 24px;
-    padding: 64px 40px;
-    text-align: center;
     position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 40px;
+    min-height: 330px;
+    padding: clamp(42px, 7vw, 82px);
+    border-radius: 32px;
+    background: var(--sl-blue);
+    color: #fff;
     overflow: hidden;
   }
-  body[data-bs-theme="dark"] .sl-cta-inner {
-    background: linear-gradient(135deg, #1e3a5f 0%, #0b1220 100%);
-  }
+
   .sl-cta-inner::before {
     content: "";
     position: absolute;
-    width: 380px; height: 380px;
+    width: 360px;
+    height: 360px;
+    right: -110px;
+    top: -180px;
+    border: 60px solid rgba(199,242,43,.92);
     border-radius: 50%;
-    background: rgba(255,255,255,0.05);
-    top: -120px; right: -80px;
-    pointer-events: none;
   }
-  .sl-cta-inner h2 {
-    color: #fff !important;
-    font-weight: 800;
-    font-size: clamp(1.6rem, 3.5vw, 2.2rem);
-    margin-bottom: 14px;
-    position: relative;
+
+  .sl-cta-inner::after {
+    content: "";
+    position: absolute;
+    width: 210px;
+    height: 210px;
+    right: 20%;
+    bottom: -180px;
+    border: 35px solid rgba(255,255,255,.12);
+    border-radius: 50%;
   }
-  .sl-cta-inner p {
-    color: rgba(255,255,255,0.82) !important;
-    font-size: 1.05rem;
+
+  .sl-cta-copy { position: relative; z-index: 1; }
+
+  .sl-cta-title {
+    max-width: 720px;
+    margin: 0;
+    color: #fff;
+    font-size: clamp(2.4rem, 5vw, 4.8rem);
+    font-weight: 900;
+    line-height: .95;
+    letter-spacing: -.06em;
+  }
+
+  .sl-cta-copy p {
     max-width: 520px;
-    margin: 0 auto 34px;
-    line-height: 1.7;
-    position: relative;
+    margin: 18px 0 0;
+    color: rgba(255,255,255,.75);
+    font-size: .98rem;
+    line-height: 1.65;
   }
-  .sl-cta-btns {
-    display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+
+  .sl-cta .sl-btn {
     position: relative;
-  }
-  .sl-btn-white {
+    z-index: 2;
     background: #fff;
-    color: var(--accent) !important;
-    padding: 13px 34px;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 0.97rem;
-    text-decoration: none;
-    transition: all .2s;
-    display: inline-block;
+    color: #0b1f33 !important;
+    white-space: nowrap;
   }
-  .sl-btn-white:hover { background: #f0f4ff; transform: translateY(-2px); }
-  .sl-btn-outline-white {
-    background: transparent;
-    border: 2px solid rgba(255,255,255,0.45);
-    color: #fff !important;
-    padding: 13px 34px;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 0.97rem;
-    text-decoration: none;
-    transition: all .2s;
-    display: inline-block;
+
+  .sl-btn:focus-visible,
+  .sl-category:focus-visible {
+    outline: 3px solid var(--sl-orange);
+    outline-offset: 4px;
   }
-  .sl-btn-outline-white:hover { border-color: rgba(255,255,255,0.85); }
+
+  @media (max-width: 991.98px) {
+    .sl-hero { min-height: auto; }
+    .sl-hero-grid,
+    .sl-story-grid,
+    .sl-process { grid-template-columns: 1fr; }
+    .sl-hero-copy { max-width: 720px; }
+    .sl-showcase-wrap { width: min(600px, 100%); margin-inline: auto; }
+    .sl-story-sticky { position: static; }
+    .sl-trust-grid { grid-template-columns: repeat(2, 1fr); }
+    .sl-trust-item:nth-child(2) { border-right: 0; }
+    .sl-trust-item:nth-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,.13); }
+    .sl-category,
+    .sl-category:nth-child(n) { grid-column: span 6; }
+    .sl-process-visual { min-height: 500px; }
+  }
+
+  @media (max-width: 767.98px) {
+    .sl-container { width: min(100% - 28px, 1180px); }
+    .sl-hero { padding: 62px 0 70px; }
+    .sl-hero-grid { gap: 48px; }
+    .sl-hero-title { font-size: clamp(3.2rem, 15vw, 5rem); }
+    .sl-hero-sub { margin-top: 24px; }
+    .sl-actions { align-items: stretch; }
+    .sl-btn { flex: 1 1 100%; }
+    .sl-proof { display: grid; }
+    .sl-showcase-wrap { padding: 8px 4px 22px; }
+    .sl-showcase { min-height: 430px; padding: 24px; border-radius: 28px; }
+    .sl-shoe { width: 135%; left: -17%; top: 26%; }
+    .sl-float-card { right: -5px; top: 38px; }
+    .sl-heading-row { display: block; }
+    .sl-heading-note { margin-top: 20px; }
+    .sl-category { min-height: 200px; }
+    .sl-process-visual { min-height: 440px; }
+    .sl-cta-inner { grid-template-columns: 1fr; min-height: 420px; align-content: center; }
+    .sl-cta .sl-btn { width: fit-content; }
+  }
+
+  @media (max-width: 575.98px) {
+    .sl-trust-item { padding: 20px 12px; align-items: flex-start; }
+    .sl-trust-icon { width: 36px; height: 36px; }
+    .sl-trust-sub { display: none; }
+    .sl-category,
+    .sl-category:nth-child(n) { grid-column: span 12; min-height: 180px; }
+    .sl-principle { grid-template-columns: 46px 1fr; gap: 10px; }
+    .sl-process-visual { min-height: 400px; }
+    .sl-cta-inner { padding: 38px 26px; border-radius: 24px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sl-home *,
+    .sl-home *::before,
+    .sl-home *::after {
+      scroll-behavior: auto !important;
+      transition-duration: .01ms !important;
+    }
+  }
 `;
 
-const CARDS = [
-  {
-    icon: "🎯",
-    title: "Nuestra Misión",
-    text: "Brindar productos deportivos de excelencia que motiven a nuestros clientes a alcanzar sus objetivos, ofreciendo siempre un servicio confiable, rápido y seguro.",
-  },
-  {
-    icon: "🔭",
-    title: "Nuestra Visión",
-    text: "Convertirnos en la tienda deportiva líder en México, destacándonos por nuestra innovación tecnológica, calidad de productos y atención excepcional al cliente.",
-  },
-  {
-    icon: "🤝",
-    title: "Compromiso",
-    text: "Mejoramos continuamente nuestra plataforma, garantizando una experiencia de compra intuitiva, accesible y con los mejores estándares del mercado.",
-  },
+const Icon = ({ name, size = 22, strokeWidth = 1.8 }) => {
+  const paths = {
+    arrow: <><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></>,
+    check: <path d="m5 12 4 4L19 6"/>,
+    truck: <><path d="M3 6h11v10H3z"/><path d="M14 9h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></>,
+    rotate: <><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></>,
+    shield: <><path d="M12 3 4.8 6v5.2c0 4.5 3 8.3 7.2 9.8 4.2-1.5 7.2-5.3 7.2-9.8V6z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></>,
+    headset: <><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><path d="M4 14a2 2 0 0 1 2-2h1v6H6a2 2 0 0 1-2-2zM20 14a2 2 0 0 0-2-2h-1v6h1a2 2 0 0 0 2-2z"/><path d="M17 18c0 2-2 3-5 3"/></>,
+    shoe: <><path d="M3 15.5c2.3.1 4.4-.5 5.9-2.2L12 9.8l2.8 3.2 5.4 1.4c.5.1.8.5.8 1v1.1c0 .8-.7 1.5-1.5 1.5H5c-1.1 0-2-.9-2-2z"/><path d="m8.9 13.3 2.7 1.2M11 11l2.7 1.5"/></>,
+    shirt: <><path d="m8 4-5 3 2 4 3-1v10h8V10l3 1 2-4-5-3c-.5 1.2-1.9 2-4 2S8.5 5.2 8 4z"/></>,
+    dumbbell: <><path d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12"/></>,
+    bag: <><path d="M5 8h14l-1 13H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></>,
+    ball: <><circle cx="12" cy="12" r="9"/><path d="m12 8 3 2-1 4h-4l-1-4zM12 8V3M15 10l4-2M14 14l3 4M10 14l-3 4M9 10 5 8"/></>,
+    bottle: <><path d="M9 3h6v3l2 3v11H7V9l2-3z"/><path d="M9 6h6M8 11h8"/></>,
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {paths[name]}
+    </svg>
+  );
+};
+
+const TRUST = [
+  { icon: "truck", title: "Envío gratis", sub: "Desde $999 MXN" },
+  { icon: "rotate", title: "30 días para cambios", sub: "Sin vueltas innecesarias" },
+  { icon: "shield", title: "Compra protegida", sub: "Tus datos siempre seguros" },
+  { icon: "headset", title: "Estamos para ayudarte", sub: "Lunes a sábado" },
 ];
 
 const CATEGORIES = [
-  { emoji: "👟", name: "Calzado" },
-  { emoji: "👕", name: "Ropa" },
-  { emoji: "🏋️", name: "Equipamiento" },
-  { emoji: "🎒", name: "Accesorios" },
-  { emoji: "⚽", name: "Balones" },
-  { emoji: "🧴", name: "Nutrición" },
+  { icon: "shoe", name: "Calzado", count: "124 productos" },
+  { icon: "shirt", name: "Ropa", count: "86 productos" },
+  { icon: "dumbbell", name: "Entrenamiento", count: "52 productos" },
+  { icon: "bag", name: "Accesorios", count: "68 productos" },
+  { icon: "ball", name: "Balones", count: "34 productos" },
+  { icon: "bottle", name: "Nutrición", count: "41 productos" },
 ];
 
-const STRIP = [
-  { icon: "🚚", title: "Envío Gratis", sub: "Pedidos mayores a $999 MXN" },
-  { icon: "↩️",  title: "Devolución Fácil", sub: "30 días sin preguntas" },
-  { icon: "🔒", title: "Pago Seguro",   sub: "Cifrado SSL bancario" },
-  { icon: "🎧", title: "Soporte",       sub: "Lunes a sábado, 9–20 h" },
+const PRINCIPLES = [
+  {
+    title: "Lo bueno se elige, no se acumula",
+    text: "Cada producto entra por rendimiento, durabilidad y comodidad. Menos ruido, mejores opciones.",
+  },
+  {
+    title: "Hablar claro también es servicio",
+    text: "Precios visibles, entregas con seguimiento y cambios sencillos. Comprar deporte no debería cansarte.",
+  },
+  {
+    title: "Tu ritmo es el que importa",
+    text: "Entrenes todos los días o apenas estés empezando, aquí encuentras equipo que acompaña tu momento.",
+  },
 ];
 
-const WHY_PILLS = [
-  ["🌟", "Calidad garantizada"],
-  ["📦", "Envíos a todo México"],
-  ["🔒", "Pagos 100% seguros"],
-  ["🎯", "Productos auténticos"],
-  ["💯", "Satisfacción total"],
-  ["🤝", "Atención personalizada"],
+const STEPS = [
+  { title: "Encuentra lo tuyo", text: "Explora por disciplina, talla o el objetivo que tienes en mente." },
+  { title: "Compra con confianza", text: "Elige tu forma de pago y revisa todo antes de confirmar." },
+  { title: "Recíbelo y muévete", text: "Sigue tu pedido y prepárate para estrenar en pocos días." },
 ];
 
-const FEATURES = [
-  { title: "Catálogo curado", desc: "Seleccionamos cada producto pensando en rendimiento, durabilidad y relación calidad-precio." },
-  { title: "Plataforma segura", desc: "Tecnología de cifrado avanzada protege cada transacción que realizas en nuestra tienda." },
-  { title: "Entrega a domicilio", desc: "Recibe tu pedido en 2-5 días hábiles en cualquier punto de la república." },
-  { title: "Devoluciones sin complicaciones", desc: "Si no estás satisfecho, tienes 30 días para devolver tu compra sin costo adicional." },
-];
+const SPORTS = ["Running", "Fútbol", "Gimnasio", "Ciclismo", "Natación", "Yoga"];
 
 export default function Home() {
   useEffect(() => {
@@ -425,186 +903,179 @@ export default function Home() {
   }, []);
 
   return (
-    <div>
-      {/* HERO */}
+    <main className="sl-home">
       <section className="sl-hero">
-        <div className="sl-hero-inner">
-          <div className="sl-hero-eyebrow">
-            <span>⚡</span> Tienda deportiva en línea
+        <div className="sl-container sl-hero-grid">
+          <div className="sl-hero-copy">
+            <span className="sl-eyebrow">Hecho para moverte</span>
+            <h1 className="sl-hero-title">
+              Todo empieza con <em>un paso.</em>
+            </h1>
+            <p className="sl-hero-sub">
+              Equipo bien elegido para entrenar, jugar y disfrutar el movimiento.
+              Encuentra lo que te hace falta y sigue a tu ritmo.
+            </p>
+            <div className="sl-actions">
+              <a href="/catalogo" className="sl-btn sl-btn-primary">
+                Explorar catálogo <Icon name="arrow" size={19} />
+              </a>
+              <a href="/promociones" className="sl-btn sl-btn-secondary">
+                Ver promociones
+              </a>
+            </div>
+            <div className="sl-proof">
+              <span><Icon name="check" size={17} /> Envíos a todo México</span>
+              <span><Icon name="check" size={17} /> Productos auténticos</span>
+            </div>
           </div>
-          <h1 className="sl-hero-title">
-            Bienvenido a <em>SportLike</em>
-          </h1>
-          <p className="sl-hero-sub">
-            Nos dedicamos a ofrecer productos deportivos de alta calidad, combinando
-            innovación, rendimiento y estilo. Acompañándote en tu camino hacia un
-            estilo de vida activo con una plataforma moderna, segura y eficiente.
-          </p>
-          <div className="sl-hero-btns">
-            <a href="/catalogo" className="sl-btn-primary">Ver catálogo</a>
-            <a href="/promociones" className="sl-btn-ghost">Ver promociones</a>
+
+          <div className="sl-showcase-wrap" aria-label="Producto destacado">
+            <div className="sl-showcase">
+              <div className="sl-showcase-top">
+                <span className="sl-showcase-kicker">Selección de la semana</span>
+                <span className="sl-showcase-index">01</span>
+              </div>
+              <svg className="sl-shoe" viewBox="0 0 620 330" role="img" aria-label="Tenis deportivo Flux">
+                <defs>
+                  <linearGradient id="shoeBody" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stopColor="#ffffff"/>
+                    <stop offset=".62" stopColor="#f2f4f7"/>
+                    <stop offset="1" stopColor="#d8dee8"/>
+                  </linearGradient>
+                </defs>
+                <path d="M85 202c38 1 79-7 116-43l73-72c15-15 40-14 53 3l42 57 122 38c33 10 50 32 42 61-4 15-17 25-34 25H108c-44 0-61-16-55-43 3-15 14-26 32-26z" fill="url(#shoeBody)" stroke="#0b1f33" strokeWidth="5"/>
+                <path d="M172 177c46 1 78-18 108-54l38 18-48 63-104-5z" fill="#3157f5"/>
+                <path d="M270 204l64-84 43 55-32 37z" fill="#c7f22b"/>
+                <path d="M340 170l74 21-31 34-47-12z" fill="#ff6938"/>
+                <path d="M58 235c77 18 148 15 223 7 92-9 174-20 250-4" fill="none" stroke="#0b1f33" strokeWidth="11" strokeLinecap="round"/>
+                <path d="M123 272h355" stroke="#0b1f33" strokeWidth="7" strokeLinecap="round"/>
+                <path d="m253 125 72 28M238 142l73 29M222 159l75 29" stroke="#0b1f33" strokeWidth="5" strokeLinecap="round"/>
+                <circle cx="452" cy="221" r="7" fill="#0b1f33"/>
+              </svg>
+              <div className="sl-product-meta">
+                <div>
+                  <div className="sl-product-name">Flux Runner</div>
+                  <div className="sl-product-type">Running diario · Unisex</div>
+                </div>
+                <div className="sl-product-price">$2,199</div>
+              </div>
+            </div>
+            <div className="sl-float-card">
+              <strong>4.9 / 5</strong>
+              <span><i className="sl-float-dot" />240 reseñas reales</span>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* STRIP */}
-      <div className="sl-strip">
-        <div className="container">
-          <div className="row g-2">
-            {STRIP.map((s, i) => (
-              <div key={i} className="col-6 col-md-3">
-                <div className="sl-strip-item">
-                  <div className="sl-strip-icon">{s.icon}</div>
+      <section className="sl-trust" aria-label="Beneficios de compra">
+        <div className="sl-container sl-trust-grid">
+          {TRUST.map((item) => (
+            <div className="sl-trust-item" key={item.title}>
+              <span className="sl-trust-icon"><Icon name={item.icon} size={20} /></span>
+              <div>
+                <div className="sl-trust-title">{item.title}</div>
+                <div className="sl-trust-sub">{item.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="sl-section sl-section-white">
+        <div className="sl-container">
+          <div className="sl-heading-row">
+            <div>
+              <span className="sl-label">Encuentra tu equipo</span>
+              <h2 className="sl-title">Muévete como más te gusta.</h2>
+            </div>
+            <p className="sl-heading-note">
+              Una selección para cada disciplina, desde el primer entrenamiento
+              hasta el día de competencia.
+            </p>
+          </div>
+          <div className="sl-category-grid">
+            {CATEGORIES.map((category) => (
+              <a className="sl-category" href="/catalogo" key={category.name}>
+                <span className="sl-category-icon">
+                  <Icon name={category.icon} size={31} strokeWidth={1.65} />
+                </span>
+                <span className="sl-category-bottom">
+                  <span>
+                    <span className="sl-category-name">{category.name}</span>
+                    <span className="sl-category-count">{category.count}</span>
+                  </span>
+                  <span className="sl-circle-arrow"><Icon name="arrow" size={18} /></span>
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="sl-section">
+        <div className="sl-container sl-story-grid">
+          <div className="sl-story-sticky">
+            <span className="sl-label">Nuestra manera de hacer las cosas</span>
+            <h2 className="sl-title">Buen equipo. Cero complicaciones.</h2>
+            <p className="sl-story-copy">
+              SportLike nació para hacer más fácil una decisión sencilla:
+              elegir algo que te dé ganas de salir y moverte.
+            </p>
+          </div>
+          <div className="sl-principles">
+            {PRINCIPLES.map((item, index) => (
+              <article className="sl-principle" key={item.title}>
+                <span className="sl-principle-num">0{index + 1}</span>
+                <div>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="sl-section sl-section-white">
+        <div className="sl-container sl-process">
+          <div className="sl-process-visual">
+            <h2 className="sl-process-big">Más de 500 formas de ponerte en movimiento.</h2>
+            <div className="sl-sport-tags">
+              {SPORTS.map((sport) => <span className="sl-sport-tag" key={sport}>{sport}</span>)}
+            </div>
+          </div>
+          <div className="sl-process-copy">
+            <span className="sl-label">Así de simple</span>
+            <h2 className="sl-title">Elige. Recibe. Estrena.</h2>
+            <div className="sl-steps">
+              {STEPS.map((step, index) => (
+                <article className="sl-step" key={step.title}>
+                  <span className="sl-step-num">0{index + 1}</span>
                   <div>
-                    <div className="sl-strip-title">{s.title}</div>
-                    <div className="sl-strip-sub">{s.sub}</div>
+                    <h3>{step.title}</h3>
+                    <p>{step.text}</p>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* MISION / VISION / COMPROMISO */}
-      <section className="sl-cards-section">
-        <div className="container">
-          <div className="text-center mb-5">
-            <span className="sl-section-label">Quiénes somos</span>
-            <h2 className="sl-section-title">Lo que nos define</h2>
-            <p className="sl-section-sub">
-              Conoce los pilares que guían cada decisión en SportLike.
-            </p>
-          </div>
-          <div className="row g-4">
-            {CARDS.map((c, i) => (
-              <div key={i} className="col-md-4">
-                <div className="sl-mission-card">
-                  <div className="sl-mission-icon">{c.icon}</div>
-                  <h4>{c.title}</h4>
-                  <p>{c.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CATEGORIAS */}
-      <section className="sl-categories-section">
-        <div className="container">
-          <div className="text-center mb-5">
-            <span className="sl-section-label">Catálogo</span>
-            <h2 className="sl-section-title">Explora por categoría</h2>
-            <p className="sl-section-sub">
-              Encuentra exactamente lo que buscas entre nuestras líneas deportivas.
-            </p>
-          </div>
-          <div className="row g-3 justify-content-center">
-            {CATEGORIES.map((cat, i) => (
-              <div key={i} className="col-4 col-md-2">
-                <a href="/catalogo" className="sl-cat-card">
-                  <span className="sl-cat-emoji">{cat.emoji}</span>
-                  <div className="sl-cat-name">{cat.name}</div>
-                </a>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* POR QUE SPORTLIKE */}
-      <section className="sl-why-section">
-        <div className="container">
-          <div className="row align-items-center g-5">
-            <div className="col-lg-6">
-              <span className="sl-section-label">Nuestra propuesta</span>
-              <h2 className="sl-section-title">¿Por qué elegir SportLike?</h2>
-              <p style={{ lineHeight: 1.8, marginBottom: 16 }}>
-                En SportLike trabajamos diariamente para ofrecer una experiencia
-                sobresaliente. Nuestra plataforma combina tecnología moderna, seguridad
-                en tus compras y una selección de productos cuidadosamente pensados para
-                atletas, deportistas recreativos y quienes buscan un estilo de vida más
-                saludable.
-              </p>
-              <p style={{ lineHeight: 1.8, marginBottom: 0 }}>
-                Creemos firmemente que el deporte transforma vidas, y queremos ser parte
-                de ese proceso brindándote herramientas, productos y apoyo para que
-                avances hacia tus metas con confianza.
-              </p>
-            </div>
-            <div className="col-lg-6">
-              <div className="row g-2">
-                {WHY_PILLS.map(([icon, label], i) => (
-                  <div key={i} className="col-6">
-                    <div className="sl-why-pill">
-                      <span>{icon}</span>
-                      <span>{label}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* COMO FUNCIONA */}
-      <section className="sl-features-section">
-        <div className="container">
-          <div className="row align-items-center g-5">
-            <div className="col-lg-6 order-lg-2">
-              <span className="sl-section-label">Proceso de compra</span>
-              <h2 className="sl-section-title" style={{ marginBottom: 32 }}>
-                Comprar en SportLike es sencillo
-              </h2>
-              {FEATURES.map((f, i) => (
-                <div key={i} className="sl-feature-row">
-                  <div className="sl-feature-num">{String(i + 1).padStart(2, "0")}</div>
-                  <div className="sl-feature-text">
-                    <h5>{f.title}</h5>
-                    <p>{f.desc}</p>
-                  </div>
-                </div>
+                </article>
               ))}
             </div>
-            <div className="col-lg-6 order-lg-1">
-              <div className="sl-feature-panel">
-                <div style={{ fontSize: "3.5rem", marginBottom: 20 }}>🏃</div>
-                <div className="sl-feature-panel-title">
-                  Más de 500 productos<br />para cada disciplina
-                </div>
-                <p className="sl-feature-panel-sub">
-                  Desde calzado de alto rendimiento hasta suplementos deportivos,
-                  tenemos todo lo que necesitas para entrenar, competir y recuperarte.
-                </p>
-                <div>
-                  {["Running","Fútbol","Gimnasio","Ciclismo","Natación","Yoga"].map((tag, i) => (
-                    <span key={i} className="sl-tag">{tag}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* CTA FINAL */}
-      <section className="sl-cta-section">
-        <div className="container">
+      <section className="sl-cta">
+        <div className="sl-container">
           <div className="sl-cta-inner">
-            <h2>¿Listo para empezar?</h2>
-            <p>
-              Explora nuestro catálogo completo y encuentra los productos que
-              necesitas para alcanzar tus metas deportivas.
-            </p>
-            <div className="sl-cta-btns">
-              <a href="/catalogo" className="sl-btn-white">Ver catálogo completo</a>
-              <a href="/register" className="sl-btn-outline-white">Crear cuenta gratis</a>
+            <div className="sl-cta-copy">
+              <h2 className="sl-cta-title">Tu próxima meta empieza aquí.</h2>
+              <p>Explora la colección y encuentra ese impulso que te faltaba.</p>
             </div>
+            <a href="/catalogo" className="sl-btn">
+              Ver todo el catálogo <Icon name="arrow" size={19} />
+            </a>
           </div>
         </div>
       </section>
-    </div>
+    </main>
   );
 }

@@ -207,6 +207,109 @@ const CSS = `
   .mp-foot-actions { width: 100%; }
   .mp-btn-primary, .mp-btn-secondary { flex: 1; text-align: center; }
 }
+
+/* Nueva dirección visual */
+.mp {
+  color:#0b1f33;
+  background:
+    radial-gradient(circle at 94% 0%,rgba(49,87,245,.09),transparent 28rem),
+    #f5f7f2;
+}
+.mp-topbar {
+  min-height:68px; padding:14px max(20px,calc((100vw - 1040px)/2));
+  background:#0b1f33; border-radius:0 0 24px 24px;
+}
+.mp-topbar-back {
+  min-height:38px; padding:0 14px;
+  border:1px solid rgba(255,255,255,.15); border-radius:999px;
+}
+.mp-topbar-title { font-size:.82rem; letter-spacing:.12em; text-transform:uppercase; }
+.mp-body { max-width:1040px; padding:42px 20px 90px; }
+.mp-head-card {
+  position:relative; min-height:245px; padding:46px;
+  align-items:flex-end; margin-bottom:20px;
+  border:0; border-radius:28px; overflow:hidden;
+  background:#3157f5; color:#fff;
+  box-shadow:0 22px 55px rgba(49,87,245,.18);
+}
+.mp-head-card::before {
+  content:""; position:absolute; width:300px; height:300px;
+  right:-90px; top:-190px; border:54px solid #c7f22b; border-radius:50%;
+}
+.mp-head-eyebrow {
+  position:relative; display:block; margin-bottom:13px;
+  color:rgba(255,255,255,.7); font-size:.7rem; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase;
+}
+.mp-head-title {
+  position:relative; margin:0;
+  color:#fff; font-size:clamp(2.35rem,5vw,4rem);
+  line-height:.96; letter-spacing:-.055em;
+}
+.mp-head-sub {
+  position:relative; max-width:480px; margin-top:15px;
+  color:rgba(255,255,255,.72); font-size:.92rem; line-height:1.6;
+}
+.mp-filters {
+  gap:7px; padding:9px; margin-bottom:26px;
+  border:1px solid rgba(11,31,51,.09); border-radius:999px;
+  box-shadow:0 8px 25px rgba(11,31,51,.045);
+}
+.mp-ftab {
+  min-height:40px; padding:0 17px;
+  border:0; border-radius:999px; margin:0;
+}
+.mp-ftab.active { color:#fff; background:#0b1f33; border:0; }
+.mp-date-header {
+  padding:18px 4px 12px; color:#637083; letter-spacing:.12em;
+}
+.mp-order {
+  margin-bottom:18px;
+  border:1px solid rgba(11,31,51,.1); border-radius:22px;
+  box-shadow:0 10px 30px rgba(11,31,51,.05);
+}
+.mp-order:hover { box-shadow:0 18px 42px rgba(11,31,51,.1); }
+.mp-order-strip { padding:16px 22px; background:#fafbf8; }
+.mp-order-strip-left { gap:28px; }
+.mp-order-strip-label { color:#8b95a3; letter-spacing:.08em; }
+.mp-order-strip-val { color:#0b1f33; }
+.mp-badge { padding:6px 11px; border-radius:999px; }
+.mp-item-row { padding:20px 22px; }
+.mp-item-img {
+  width:82px; height:82px; border:0; border-radius:16px;
+  background:#f1f3ee; overflow:hidden;
+}
+.mp-item-name { color:#0b1f33; font-size:.96rem; }
+.mp-item-price { color:#0b1f33; }
+.mp-order-foot { padding:16px 22px; background:#fafbf8; }
+.mp-btn-primary,.mp-btn-secondary {
+  min-height:40px; padding-inline:18px; border-radius:999px;
+}
+.mp-btn-primary { background:#3157f5; }
+.mp-btn-secondary { color:#0b1f33; border-color:rgba(11,31,51,.2); }
+.mp-timeline-section { padding:26px 22px; }
+.mp-tl-node { width:30px; height:30px; }
+.mp-tl-line { top:14px; }
+.mp-detail-grid { padding:18px 22px; background:#f6f7f3; }
+.mp-detail-box { padding:15px 16px; border-radius:14px; }
+.mp-empty {
+  min-height:360px; display:grid; place-content:center;
+  border:1px dashed rgba(11,31,51,.18); border-radius:24px;
+}
+
+@media(max-width:600px) {
+  .mp-body { padding:24px 12px 60px; }
+  .mp-head-card { min-height:220px; padding:30px 24px; border-radius:22px; }
+  .mp-head-title { font-size:2.65rem; }
+  .mp-filters { border-radius:17px; overflow-x:auto; }
+  .mp-order { border-radius:18px; }
+  .mp-order-strip { align-items:flex-start; }
+  .mp-order-strip-left { display:grid; grid-template-columns:1fr 1fr; gap:12px 24px; }
+  .mp-item-row { gap:12px; padding:17px 15px; }
+  .mp-item-img { width:64px; height:64px; border-radius:13px; }
+  .mp-item-right { max-width:100px; }
+  .mp-order-foot { align-items:flex-end; }
+}
 `;
 
 function Timeline({ status }) {
@@ -269,8 +372,6 @@ export default function MisPedidos() {
       .catch(() => setLoading(false));
   }, []);
 
-  const conteos = pedidos.reduce((a, p) => { a[p.status] = (a[p.status]||0)+1; return a; }, {});
-
   const filtrados = filtro === "todos"
     ? pedidos
     : pedidos.filter(p => p.status === filtro);
@@ -278,8 +379,8 @@ export default function MisPedidos() {
   const grupos = agruparPorMes(filtrados);
 
   const TABS = [
-    { key: "todos",     label: `Todas (${pedidos.length})` },
-    { key: "pendiente", label: `Pendientes${conteos.pendiente ? ` (${conteos.pendiente})` : ""}` },
+    { key: "todos",     label: "Todas" },
+    { key: "pendiente", label: "Pendientes" },
     { key: "preparando",label: "Preparando" },
     { key: "en_camino", label: "En camino" },
     { key: "entregado", label: "Entregados" },
@@ -297,6 +398,16 @@ export default function MisPedidos() {
       </div>
 
       <div className="mp-body">
+
+        <div className="mp-head-card">
+          <div>
+            <span className="mp-head-eyebrow">Historial y seguimiento</span>
+            <h1 className="mp-head-title">Sigue cada pedido.</h1>
+            <p className="mp-head-sub">
+              Revisa tus compras, consulta su avance y encuentra todos los detalles en un solo lugar.
+            </p>
+          </div>
+        </div>
 
         {/* Tabs */}
         <div className="mp-filters">

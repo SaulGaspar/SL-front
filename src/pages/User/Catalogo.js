@@ -225,6 +225,124 @@ const getCSS = (dark) => `
   .sl-card-overlay { display:none; }
   .sl-stock-details { flex-direction:column; align-items:flex-start; gap:2px; }
 }
+
+/* ── NUEVA DIRECCIÓN VISUAL ── */
+.sl-cat {
+  --accent:#c7f22b;
+  background:
+    radial-gradient(circle at 92% 0%, ${dark ? "rgba(49,87,245,.12)" : "rgba(49,87,245,.08)"} 0, transparent 26rem),
+    var(--cream);
+}
+.sl-bar {
+  min-height:76px;
+  padding:12px max(24px,calc((100vw - 1380px)/2));
+  gap:10px;
+  border-bottom:1px solid rgba(255,255,255,.09);
+  box-shadow:0 12px 35px rgba(10,26,47,.12);
+}
+.sl-bar-brand {
+  font-family:'Outfit',sans-serif;
+  font-size:.82rem;
+  font-weight:800;
+  letter-spacing:.15em;
+  margin-right:18px;
+}
+.sl-search-wrap { max-width:390px; margin-right:2px; }
+.sl-input,.sl-sel,.sl-range-pill,.sl-clear {
+  min-height:44px;
+  border-radius:999px;
+}
+.sl-input { padding-left:42px; }
+.sl-sel { padding-inline:16px; }
+.sl-range-pill { padding-inline:16px; }
+.sl-clear { padding-inline:18px; }
+.sl-wrap { max-width:1380px; padding:58px 28px 90px; }
+.sl-catalog-intro { max-width:690px; margin-bottom:42px; }
+.sl-catalog-kicker {
+  display:inline-flex; align-items:center; gap:9px;
+  margin-bottom:14px; color:#3157f5;
+  font-size:.72rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
+}
+.sl-catalog-kicker::before {
+  content:""; width:28px; height:3px; border-radius:99px; background:#ff6938;
+}
+.sl-catalog-title {
+  margin:0; color:var(--text);
+  font-family:'Outfit',sans-serif;
+  font-size:clamp(2.55rem,5vw,4.8rem);
+  font-weight:700; line-height:.96; letter-spacing:-.06em;
+}
+.sl-catalog-sub {
+  max-width:560px; margin:18px 0 0;
+  color:var(--muted); font-size:1rem; line-height:1.65;
+}
+.sl-grid,.sl-skeleton-grid {
+  grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+  gap:20px;
+}
+.sl-card,.sl-skeleton {
+  border:1px solid var(--border);
+  border-radius:22px;
+  box-shadow:0 8px 28px rgba(10,26,47,.055);
+  transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;
+}
+.sl-card:hover {
+  transform:translateY(-6px);
+  border-color:${dark ? "#475569" : "#d3d8df"};
+  box-shadow:0 20px 46px rgba(10,26,47,.13);
+}
+.sl-card-img {
+  height:285px;
+  margin:8px 8px 0;
+  border-radius:16px;
+}
+.sl-card-img img { padding:18px; }
+.sl-card-body { padding:18px 19px 20px; gap:11px; }
+.sl-card-name { font-size:1rem; letter-spacing:-.015em; }
+.sl-card-price {
+  font-family:'Outfit',sans-serif;
+  font-size:1.02rem; font-weight:700; letter-spacing:-.02em;
+}
+.sl-card-desc { font-size:.8rem; }
+.sl-badge-wrap { top:16px; left:16px; }
+.sl-badge { border-radius:999px; padding:5px 10px; font-size:.62rem; }
+.sl-chip { border-radius:999px; padding:4px 10px; }
+.sl-stock-bar-track { height:5px; }
+.sl-stock-msg { width:fit-content; border-radius:999px; padding:5px 9px; }
+.sl-card-overlay {
+  inset:auto 16px 16px;
+  padding:0;
+  background:none;
+}
+.sl-card-overlay-btn {
+  min-height:44px;
+  border-radius:999px;
+  box-shadow:0 10px 22px rgba(10,26,47,.2);
+}
+.sl-empty {
+  min-height:380px; display:grid; place-content:center;
+  border:1px dashed var(--border); border-radius:24px; background:var(--white);
+}
+
+@media(max-width:900px) {
+  .sl-bar { padding:14px 16px; border-radius:0 0 20px 20px; }
+  .sl-wrap { padding:38px 16px 64px; }
+  .sl-catalog-intro { margin-bottom:30px; }
+  .sl-grid,.sl-skeleton-grid { gap:12px; }
+  .sl-card-img { height:220px; }
+}
+@media(max-width:560px) {
+  .sl-catalog-title { font-size:2.7rem; }
+  .sl-catalog-sub { font-size:.9rem; }
+  .sl-grid,.sl-skeleton-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .sl-card { border-radius:16px; }
+  .sl-card-img { height:155px; margin:5px 5px 0; border-radius:12px; }
+  .sl-card-img img { padding:8px; }
+  .sl-card-body { padding:11px 10px 14px; }
+  .sl-card-price { font-size:.9rem; }
+  .sl-badge-wrap { top:10px; left:10px; }
+  .sl-badge { padding:4px 7px; }
+}
 `;
 
 const COLOR_MAP = {
@@ -461,8 +579,12 @@ export default function Catalogo() {
       <div className="sl-wrap">
         {error && <div className="sl-error">⚠ {error}</div>}
         {!loading && !error && (
-          <div className="sl-info-bar">
-            <div className="sl-count">{filtered.length} <span>producto{filtered.length!==1?"s":""}</span></div>
+          <div className="sl-catalog-intro">
+            <span className="sl-catalog-kicker">Colección SportLike</span>
+            <h1 className="sl-catalog-title">Encuentra lo que te mueve.</h1>
+            <p className="sl-catalog-sub">
+              Explora equipo elegido para entrenar, competir y disfrutar cada paso.
+            </p>
           </div>
         )}
 

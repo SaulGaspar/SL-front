@@ -41,7 +41,7 @@ export default function Profile({ user, setUser }) {
   const nombreCompleto = [user.nombre, user.apellidoP, user.apellidoM].filter(Boolean).join(' ');
 
   return (
-    <div style={{ minHeight: '92vh', background: '#f0f2f5', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '48px 16px', fontFamily: "'DM Sans', 'Segoe UI', sans-serif" }}>
+    <div className="pf-page">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 
@@ -164,6 +164,86 @@ export default function Profile({ user, setUser }) {
           cursor: pointer; transition: all .2s; font-family: inherit;
         }
         .pf-cancel:hover { background: #e4e8f0; }
+
+        /* Nueva dirección visual */
+        .pf-page {
+          min-height: 100vh; padding: 54px 20px 90px;
+          display: flex; align-items: flex-start; justify-content: center;
+          font-family: 'DM Sans', 'Segoe UI', sans-serif;
+          color: #0b1f33;
+          background:
+            radial-gradient(circle at 94% 2%, rgba(49,87,245,.1), transparent 28rem),
+            #f5f7f2;
+        }
+        .pf-wrap { max-width: 880px; }
+        .pf-back {
+          min-height: 42px; padding: 0 16px; margin-bottom: 20px;
+          border: 1px solid rgba(11,31,51,.1); border-radius: 999px;
+          background: rgba(255,255,255,.7); color: #637083;
+        }
+        .pf-hero {
+          min-height: 260px; padding: 48px;
+          display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end;
+          text-align: left; margin-bottom: 20px;
+          border-radius: 30px; background: #0b1f33;
+          box-shadow: 0 24px 60px rgba(11,31,51,.16);
+        }
+        .pf-hero::before {
+          width: 300px; height: 300px; top: -190px; right: -40px;
+          border: 52px solid #c7f22b; background: transparent;
+        }
+        .pf-hero::after {
+          width: 160px; height: 160px; left: auto; right: 20%;
+          bottom: -125px; border: 30px solid rgba(49,87,245,.8); background: transparent;
+        }
+        .pf-avatar {
+          width: 80px; height: 80px; margin-bottom: 22px;
+          border: 0; border-radius: 24px; background: #c7f22b;
+          color: #0b1f33; font-size: 2rem;
+          transform: rotate(-3deg);
+        }
+        .pf-name {
+          font-size: clamp(1.8rem,4vw,2.7rem);
+          line-height: 1; letter-spacing: -.05em; margin-bottom: 8px;
+        }
+        .pf-handle { color: rgba(255,255,255,.58); }
+        .pf-content-grid {
+          display: grid; grid-template-columns: minmax(0,1.15fr) minmax(250px,.85fr);
+          gap: 18px; align-items: start;
+        }
+        .pf-card,.pf-form-card {
+          border: 1px solid rgba(11,31,51,.09); border-radius: 22px;
+          box-shadow: 0 10px 30px rgba(11,31,51,.055);
+        }
+        .pf-card-title { padding: 20px 24px 13px; letter-spacing: .13em; color: #7b8795; }
+        .pf-row { padding: 17px 24px; }
+        .pf-row-icon { border-radius: 50%; background: #eef1e9; }
+        .pf-actions { gap: 10px; }
+        .pf-btn {
+          min-height: 68px; padding: 14px 16px;
+          border: 1px solid rgba(11,31,51,.09); border-radius: 18px;
+          box-shadow: 0 8px 24px rgba(11,31,51,.045);
+        }
+        .pf-btn:hover { border-color: rgba(49,87,245,.28); transform: translateY(-2px); }
+        .pf-btn-icon { border-radius: 14px; background: #3157f5; }
+        .pf-form-card { padding: 32px; }
+        .pf-form-title { font-size: 1.35rem; letter-spacing: -.03em; }
+        .pf-input { min-height: 48px; border-radius: 13px; background: #f7f8f5; }
+        .pf-input:focus { border-color: #3157f5; box-shadow: 0 0 0 4px rgba(49,87,245,.1); }
+        .pf-save,.pf-cancel { min-height: 48px; border-radius: 999px; }
+        .pf-save { background: #3157f5; box-shadow: 0 8px 20px rgba(49,87,245,.2); }
+        .pf-save:hover { background: #2447d8; }
+        .pf-msg-ok,.pf-msg-err { border-radius: 16px; }
+
+        @media(max-width: 720px) {
+          .pf-page { padding: 28px 14px 60px; }
+          .pf-hero { min-height: 235px; padding: 30px 26px; border-radius: 24px; }
+          .pf-content-grid { grid-template-columns: 1fr; }
+          .pf-grid { grid-template-columns: 1fr; gap: 0; }
+          .pf-form-card { padding: 24px 18px; }
+          .pf-form-actions { flex-direction: column-reverse; }
+          .pf-cancel { width: 100%; }
+        }
       `}</style>
 
       <div className="pf-wrap">
@@ -191,7 +271,7 @@ export default function Profile({ user, setUser }) {
         )}
 
         {!editing ? (
-          <>
+          <div className="pf-content-grid">
             {/* Info card */}
             <div className="pf-card" style={{ marginBottom: 16 }}>
               <div className="pf-card-title">Información de cuenta</div>
@@ -252,7 +332,7 @@ export default function Profile({ user, setUser }) {
                 <span className="pf-btn-arrow">›</span>
               </button>
             </div>
-          </>
+          </div>
         ) : (
           <div className="pf-form-card">
             <p className="pf-form-title">Editar información</p>
