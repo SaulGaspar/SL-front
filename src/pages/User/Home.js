@@ -314,44 +314,6 @@ const css = `
     white-space: nowrap;
   }
 
-  .sl-float-card {
-    position: absolute;
-    z-index: 4;
-    right: -14px;
-    top: 70px;
-    width: 154px;
-    padding: 15px 17px;
-    border: 1px solid rgba(11,31,51,.08);
-    border-radius: 18px;
-    background: rgba(255,255,255,.92);
-    color: #0b1f33;
-    box-shadow: 0 16px 40px rgba(11,31,51,.14);
-    backdrop-filter: blur(12px);
-  }
-
-  .sl-float-card strong {
-    display: block;
-    font-size: 1.1rem;
-    letter-spacing: -.03em;
-  }
-
-  .sl-float-card span {
-    display: block;
-    margin-top: 2px;
-    color: #677487;
-    font-size: .72rem;
-    font-weight: 650;
-  }
-
-  .sl-float-dot {
-    width: 9px;
-    height: 9px;
-    display: inline-block !important;
-    margin: 0 5px 0 0 !important;
-    border-radius: 50%;
-    background: #36b36b;
-  }
-
   .sl-trust {
     position: relative;
     z-index: 2;
@@ -791,7 +753,6 @@ const css = `
     .sl-showcase-wrap { padding: 8px 4px 22px; }
     .sl-showcase { min-height: 430px; padding: 24px; border-radius: 28px; }
     .sl-shoe { width: 135%; left: -17%; top: 26%; }
-    .sl-float-card { right: -5px; top: 38px; }
     .sl-heading-row { display: block; }
     .sl-heading-note { margin-top: 20px; }
     .sl-category { min-height: 200px; }
@@ -934,13 +895,6 @@ const css = `
     filter: drop-shadow(0 28px 20px rgba(10,26,47,.22));
   }
 
-  .sl-float-card {
-    right: -18px;
-    top: 38px;
-    border-radius: 14px;
-    box-shadow: 0 14px 34px rgba(10,26,47,.13);
-  }
-
   .sl-trust {
     background: var(--sl-card);
     color: var(--sl-ink);
@@ -1059,9 +1013,73 @@ const css = `
     .sl-hero { padding-top: 68px; }
     .sl-hero-title { font-size: clamp(3rem, 14vw, 4.5rem); }
     .sl-showcase { min-height: 420px; }
-    .sl-float-card { right: -4px; }
     .sl-category,
     .sl-category:nth-child(n) { min-height: 190px; }
+  }
+
+  /* ── HERO PRINCIPAL ── */
+  .sl-hero {
+    min-height: min(700px, calc(100svh - 72px));
+    padding: clamp(90px, 11vw, 140px) 0;
+  }
+
+  .sl-hero::after {
+    display: block;
+    width: 520px;
+    height: 520px;
+    right: -330px;
+    top: 50%;
+    border: 76px solid rgba(36,79,219,.075);
+    border-radius: 50%;
+    background: transparent;
+    transform: translateY(-50%);
+  }
+
+  .sl-hero-grid {
+    grid-template-columns: minmax(0, 900px);
+    justify-content: center;
+    text-align: center;
+  }
+
+  .sl-hero-copy {
+    max-width: 900px;
+    margin-inline: auto;
+  }
+
+  .sl-eyebrow {
+    justify-content: center;
+  }
+
+  .sl-hero-title {
+    max-width: 900px;
+    margin-inline: auto;
+  }
+
+  .sl-hero-title em {
+    width: auto;
+  }
+
+  .sl-hero-sub {
+    max-width: 640px;
+    margin-inline: auto;
+  }
+
+  .sl-actions,
+  .sl-proof {
+    justify-content: center;
+  }
+
+  @media (max-width: 767.98px) {
+    .sl-hero {
+      min-height: 620px;
+      padding: 80px 0;
+    }
+    .sl-hero::after {
+      width: 320px;
+      height: 320px;
+      right: -235px;
+      border-width: 46px;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1174,42 +1192,6 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="sl-showcase-wrap" aria-label="Producto destacado">
-            <div className="sl-showcase">
-              <div className="sl-showcase-top">
-                <span className="sl-showcase-kicker">Producto destacado</span>
-                <span className="sl-showcase-index">01</span>
-              </div>
-              <svg className="sl-shoe" viewBox="0 0 620 330" role="img" aria-label="Tenis deportivo Flux">
-                <defs>
-                  <linearGradient id="shoeBody" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stopColor="#ffffff"/>
-                    <stop offset=".62" stopColor="#f2f4f7"/>
-                    <stop offset="1" stopColor="#d8dee8"/>
-                  </linearGradient>
-                </defs>
-                <path d="M85 202c38 1 79-7 116-43l73-72c15-15 40-14 53 3l42 57 122 38c33 10 50 32 42 61-4 15-17 25-34 25H108c-44 0-61-16-55-43 3-15 14-26 32-26z" fill="url(#shoeBody)" stroke="#0b1f33" strokeWidth="5"/>
-                <path d="M172 177c46 1 78-18 108-54l38 18-48 63-104-5z" fill="#3157f5"/>
-                <path d="M270 204l64-84 43 55-32 37z" fill="#c7f22b"/>
-                <path d="M340 170l74 21-31 34-47-12z" fill="#ff6938"/>
-                <path d="M58 235c77 18 148 15 223 7 92-9 174-20 250-4" fill="none" stroke="#0b1f33" strokeWidth="11" strokeLinecap="round"/>
-                <path d="M123 272h355" stroke="#0b1f33" strokeWidth="7" strokeLinecap="round"/>
-                <path d="m253 125 72 28M238 142l73 29M222 159l75 29" stroke="#0b1f33" strokeWidth="5" strokeLinecap="round"/>
-                <circle cx="452" cy="221" r="7" fill="#0b1f33"/>
-              </svg>
-              <div className="sl-product-meta">
-                <div>
-                  <div className="sl-product-name">Aero Motion</div>
-                  <div className="sl-product-type">Running diario · Unisex</div>
-                </div>
-                <div className="sl-product-price">$2,199</div>
-              </div>
-            </div>
-            <div className="sl-float-card">
-              <strong>4.9 / 5</strong>
-              <span><i className="sl-float-dot" />240 reseñas reales</span>
-            </div>
-          </div>
         </div>
       </section>
 
