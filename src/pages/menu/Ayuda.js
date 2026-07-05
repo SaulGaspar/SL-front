@@ -1,166 +1,231 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
+const FAQS = [
+  {
+    category: "Pedidos",
+    title: "¿Cómo puedo rastrear mi pedido?",
+    text: "Consulta el estado desde “Mis compras” dentro de tu perfil. También recibirás una notificación cuando el pedido cambie de etapa.",
+  },
+  {
+    category: "Cuenta",
+    title: "No puedo iniciar sesión",
+    text: "Utiliza la opción “Recuperar contraseña”. Si el problema continúa, nuestro equipo de soporte puede ayudarte a recuperar el acceso.",
+  },
+  {
+    category: "Pagos",
+    title: "¿Qué métodos de pago aceptan?",
+    text: "Puedes utilizar las tarjetas y medios digitales disponibles al finalizar tu compra. Antes de confirmar verás todas las opciones habilitadas.",
+  },
+  {
+    category: "Facturación",
+    title: "¿Cómo solicito mi factura?",
+    text: "Solicítala dentro de las 48 horas posteriores a la compra. Ten a la mano tus datos fiscales y la información del pedido.",
+  },
+  {
+    category: "Envíos",
+    title: "¿Cuánto tarda en llegar mi compra?",
+    text: "La entrega habitual es de 2 a 5 días hábiles. El tiempo puede variar según la ubicación y la disponibilidad del producto.",
+  },
+  {
+    category: "Cambios",
+    title: "¿Cómo solicito una devolución?",
+    text: "Comunícate con soporte indicando tu número de pedido y el motivo. Te explicaremos los pasos de acuerdo con el estado de la compra.",
+  },
+];
+
+const CSS = `
+  .hp-page {
+    --hp-ink:#0a1a2f; --hp-muted:#687587; --hp-paper:#f5f7f4;
+    --hp-card:#fff; --hp-line:rgba(10,26,47,.11);
+    --hp-blue:#244fdb; --hp-acid:#bde632;
+    min-height:100vh; background:var(--hp-paper); color:var(--hp-ink);
+    font-family:"Poppins","Segoe UI",sans-serif;
+  }
+  body[data-bs-theme="dark"] .hp-page {
+    --hp-ink:#f3f6fa; --hp-muted:#a6b1c0; --hp-paper:#09131f;
+    --hp-card:#101d2b; --hp-line:rgba(255,255,255,.11); --hp-blue:#82a2ff;
+  }
+  .hp-page *,.hp-page *::before,.hp-page *::after { box-sizing:border-box; }
+  .hp-shell { width:min(1060px,calc(100% - 40px)); margin-inline:auto; }
+  .hp-hero {
+    position:relative; padding:48px 0 100px; overflow:hidden;
+    color:#fff; background:#0a1a2f;
+  }
+  .hp-hero::after {
+    content:""; position:absolute; width:340px; height:340px;
+    right:7%; top:-230px; border:54px solid var(--hp-acid); border-radius:50%;
+  }
+  .hp-back {
+    min-height:42px; display:inline-flex; align-items:center; gap:8px;
+    padding:0 15px; border:1px solid rgba(255,255,255,.16);
+    border-radius:999px; color:rgba(255,255,255,.8);
+    background:rgba(255,255,255,.05); text-decoration:none;
+    font-size:.82rem; font-weight:600;
+  }
+  .hp-hero-copy { position:relative; z-index:1; max-width:760px; margin-top:62px; }
+  .hp-eyebrow {
+    display:block; margin-bottom:14px; color:var(--hp-acid);
+    font-size:.7rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase;
+  }
+  .hp-title {
+    margin:0; color:#fff; font-size:clamp(2.8rem,6vw,5rem);
+    font-weight:800; line-height:.96; letter-spacing:-.06em;
+  }
+  .hp-lead {
+    max-width:620px; margin:20px 0 0; color:rgba(255,255,255,.64);
+    font-size:1rem; line-height:1.7;
+  }
+  .hp-content {
+    position:relative; z-index:2; margin-top:-48px; padding-bottom:90px;
+  }
+  .hp-panel {
+    padding:clamp(26px,5vw,52px); border:1px solid var(--hp-line);
+    border-radius:26px; background:var(--hp-card);
+    box-shadow:0 20px 55px rgba(10,26,47,.08);
+  }
+  .hp-panel-head {
+    display:flex; align-items:end; justify-content:space-between;
+    gap:28px; margin-bottom:28px;
+  }
+  .hp-panel-head h2 {
+    margin:0; color:var(--hp-ink); font-size:clamp(1.65rem,3vw,2.25rem);
+    font-weight:750; letter-spacing:-.045em;
+  }
+  .hp-panel-head p {
+    max-width:390px; margin:0; color:var(--hp-muted);
+    font-size:.87rem; line-height:1.6;
+  }
+  .hp-faq-list { border-top:1px solid var(--hp-line); }
+  .hp-faq {
+    border-bottom:1px solid var(--hp-line);
+  }
+  .hp-question {
+    width:100%; min-height:82px; display:grid;
+    grid-template-columns:105px minmax(0,1fr) 38px;
+    align-items:center; gap:18px; padding:16px 0;
+    border:0; background:transparent; color:var(--hp-ink);
+    font:inherit; text-align:left; cursor:pointer;
+  }
+  .hp-category {
+    width:fit-content; padding:6px 10px; border-radius:999px;
+    color:var(--hp-blue); background:rgba(36,79,219,.08);
+    font-size:.66rem; font-weight:700; letter-spacing:.04em;
+  }
+  .hp-question strong { font-size:.96rem; font-weight:700; }
+  .hp-toggle {
+    width:34px; height:34px; display:grid; place-items:center;
+    border:1px solid var(--hp-line); border-radius:50%;
+    color:var(--hp-blue); font-size:1.1rem; transition:transform .2s ease;
+  }
+  .hp-toggle.open { transform:rotate(45deg); }
+  .hp-answer {
+    max-width:720px; margin:0 42px 0 123px; padding:0 0 24px;
+    color:var(--hp-muted); font-size:.9rem; line-height:1.72;
+  }
+  .hp-support {
+    position:relative; display:grid; grid-template-columns:1fr auto;
+    align-items:center; gap:28px; margin-top:24px; padding:30px;
+    border-radius:20px; overflow:hidden; background:#244fdb; color:#fff;
+  }
+  .hp-support::after {
+    content:""; position:absolute; width:180px; height:180px;
+    right:-105px; top:-105px; border:32px solid var(--hp-acid); border-radius:50%;
+  }
+  .hp-support-copy { position:relative; z-index:1; }
+  .hp-support h3 { margin:0 0 7px; color:#fff; font-size:1.25rem; font-weight:750; }
+  .hp-support p { margin:0; color:rgba(255,255,255,.7); font-size:.85rem; }
+  .hp-support-actions { position:relative; z-index:1; display:flex; gap:9px; }
+  .hp-action {
+    min-height:44px; display:inline-flex; align-items:center; justify-content:center;
+    padding:0 17px; border-radius:11px; background:#fff; color:#0a1a2f;
+    text-decoration:none; font-size:.8rem; font-weight:700;
+  }
+  .hp-action.secondary {
+    border:1px solid rgba(255,255,255,.28); background:transparent; color:#fff;
+  }
+  .hp-question:focus-visible,.hp-action:focus-visible,.hp-back:focus-visible {
+    outline:3px solid var(--hp-acid); outline-offset:3px;
+  }
+  @media(max-width:700px) {
+    .hp-shell { width:min(100% - 24px,1060px); }
+    .hp-hero { padding:28px 0 76px; }
+    .hp-hero-copy { margin-top:48px; }
+    .hp-content { margin-top:-34px; padding-bottom:60px; }
+    .hp-panel { border-radius:20px; }
+    .hp-panel-head { display:block; }
+    .hp-panel-head p { margin-top:12px; }
+    .hp-question { grid-template-columns:1fr 34px; gap:12px; }
+    .hp-category { grid-column:1/-1; }
+    .hp-answer { margin-left:0; margin-right:38px; }
+    .hp-support { grid-template-columns:1fr; padding:24px; }
+    .hp-support-actions { flex-wrap:wrap; }
+  }
+`;
+
 export default function Ayuda() {
   const [open, setOpen] = useState(null);
-  const toggle = (i) => {
-    setOpen(open === i ? null : i);
-  };
-
-  const faqs = [
-    { title: "📦 ¿Cómo puedo rastrear mi pedido?", text: "Puedes ver el estado de tu pedido desde la sección 'Mis Pedidos' en tu perfil. También recibirás notificaciones por correo cuando cambie el estatus." },
-    { title: "🔑 Problemas para iniciar sesión", text: "Si olvidaste tu contraseña, usa la opción 'Recuperar contraseña'. Si el problema persiste, contáctanos desde soporte." },
-    { title: "💳 Métodos de pago aceptados", text: "Aceptamos tarjetas de crédito/débito, transferencias y pagos digitales autorizados." },
-    { title: "📄 Facturación", text: "Solicita tu factura dentro de las 48 horas posteriores a tu compra desde tu perfil." },
-    { title: "🚚 Envíos y tiempos de entrega", text: "Los tiempos varían según tu ubicación. Normalmente entre 2 y 5 días hábiles." },
-    { title: "🔄 Devoluciones", text: "Puedes solicitar una devolución dentro de los primeros 7 días desde que recibiste tu pedido." }
-  ];
 
   return (
-    <div className="page-wrapper">
-      <style>{`
-        /* ================= VARIABLES ================= */
-        :root {
-          --bg-page: linear-gradient(135deg,#eef3ff,#fff);
-          --card-bg: #ffffff;
-          --title-color: #0a2540;
-          --subtitle-color: #6b7a90;
-          --faq-bg: #f6f8fc;
-          --faq-hover: #eaf0ff;
-          --faq-text: #444;
-          --support-bg: linear-gradient(135deg,#4f7cff,#6ea8ff);
-          --support-text: #ffffff;
-          --support-btn-bg: #ffffff;
-          --support-btn-text: #4f7cff;
-        }
+    <main className="hp-page">
+      <style>{CSS}</style>
 
-        body[data-bs-theme="dark"] {
-          --bg-page: linear-gradient(135deg,#0a1120,#1b1f33);
-          --card-bg: #131a2c;
-          --title-color: #e5edff;
-          --subtitle-color: #a0aec0;
-          --faq-bg: #1e293b;
-          --faq-hover: #273449;
-          --faq-text: #e2e8f0;
-          --support-bg: linear-gradient(135deg,#1e40af,#3b82f6);
-          --support-text: #e5edff;
-          --support-btn-bg: #3b82f6;
-          --support-btn-text: #ffffff;
-        }
-
-        /* ================= ESTILOS ================= */
-        .page-wrapper {
-          min-height: 90vh;
-          background: var(--bg-page);
-          display:flex;
-          justify-content:center;
-          padding:60px 20px;
-        }
-
-        .page-card {
-          background: var(--card-bg);
-          width:100%;
-          max-width:850px;
-          padding:45px;
-          border-radius:22px;
-          box-shadow:0 20px 45px rgba(0,0,0,.15);
-        }
-
-        .page-title {
-          font-size:2.6rem;
-          font-weight:900;
-          color: var(--title-color);
-          margin-bottom:10px;
-        }
-
-        .subtitle {
-          color: var(--subtitle-color);
-          margin-bottom:35px;
-        }
-
-        .faq {
-          background: var(--faq-bg);
-          border-radius:16px;
-          padding:18px 22px;
-          margin-bottom:14px;
-          cursor:pointer;
-          transition:.25s;
-        }
-
-        .faq:hover {
-          background: var(--faq-hover);
-          transform:scale(1.01);
-        }
-
-        .faq h5 {
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-          font-weight:700;
-          margin:0;
-        }
-
-        .faq p {
-          margin-top:12px;
-          color: var(--faq-text);
-          line-height:1.6;
-        }
-
-        .arrow {
-          font-size:1.2rem;
-        }
-
-        .support-box {
-          margin-top:45px;
-          background: var(--support-bg);
-          color: var(--support-text);
-          padding:28px;
-          border-radius:20px;
-          text-align:center;
-        }
-
-        .support-box h4 {
-          font-weight:800;
-        }
-
-        .support-box a {
-          display:inline-block;
-          margin-top:15px;
-          background: var(--support-btn-bg);
-          color: var(--support-btn-text);
-          padding:10px 22px;
-          border-radius:999px;
-          text-decoration:none;
-          font-weight:700;
-        }
-      `}</style>
-
-      <div className="page-card">
-        <div className="mb-3">
-          <Link to="/">Inicio</Link> / <b>Ayuda</b>
-        </div>
-
-        <h1 className="page-title">Centro de Ayuda</h1>
-        <p className="subtitle">
-          Encuentra respuestas rápidas o ponte en contacto con nuestro equipo.
-        </p>
-
-        {faqs.map((faq, i) => (
-          <div key={i} className="faq" onClick={() => toggle(i)}>
-            <h5>
-              {faq.title}
-              <span className="arrow">{open === i ? "▲" : "▼"}</span>
-            </h5>
-            {open === i && <p>{faq.text}</p>}
+      <header className="hp-hero">
+        <div className="hp-shell">
+          <Link to="/" className="hp-back">← Volver al inicio</Link>
+          <div className="hp-hero-copy">
+            <span className="hp-eyebrow">Soporte SportLike</span>
+            <h1 className="hp-title">¿Cómo podemos ayudarte?</h1>
+            <p className="hp-lead">
+              Encuentra respuestas sobre compras, pagos, entregas y tu cuenta.
+            </p>
           </div>
-        ))}
-
-        <div className="support-box">
-          <h4>¿Necesitas ayuda personalizada?</h4>
-          <p>Escríbenos y nuestro equipo te responderá lo antes posible.</p>
-          <Link to="/contacto">Contactar Soporte</Link>
         </div>
+      </header>
+
+      <div className="hp-shell hp-content">
+        <section className="hp-panel" aria-labelledby="faq-title">
+          <div className="hp-panel-head">
+            <h2 id="faq-title">Preguntas frecuentes</h2>
+            <p>Selecciona una pregunta para consultar la respuesta.</p>
+          </div>
+
+          <div className="hp-faq-list">
+            {FAQS.map((faq, index) => {
+              const isOpen = open === index;
+              return (
+                <article className="hp-faq" key={faq.title}>
+                  <button
+                    type="button"
+                    className="hp-question"
+                    aria-expanded={isOpen}
+                    aria-controls={`faq-answer-${index}`}
+                    onClick={() => setOpen(isOpen ? null : index)}
+                  >
+                    <span className="hp-category">{faq.category}</span>
+                    <strong>{faq.title}</strong>
+                    <span className={`hp-toggle ${isOpen ? "open" : ""}`} aria-hidden="true">+</span>
+                  </button>
+                  {isOpen && (
+                    <p className="hp-answer" id={`faq-answer-${index}`}>{faq.text}</p>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+
+          <div className="hp-support">
+            <div className="hp-support-copy">
+              <h3>¿Necesitas atención personalizada?</h3>
+              <p>Nuestro equipo está disponible para ayudarte con tu compra.</p>
+            </div>
+            <div className="hp-support-actions">
+              <Link to="/contacto" className="hp-action">Contactar soporte</Link>
+              <Link to="/orders" className="hp-action secondary">Ver mis compras</Link>
+            </div>
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

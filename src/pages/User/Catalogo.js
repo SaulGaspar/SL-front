@@ -470,7 +470,9 @@ export default function Catalogo() {
   const [maxPrice,     setMaxPrice]     = useState(9999);
 
   useEffect(() => {
-    setSearch(new URLSearchParams(location.search).get("q") || "");
+    const params = new URLSearchParams(location.search);
+    setSearch(params.get("q") || "");
+    setCategoria(params.get("categoria") || "");
   }, [location.search]);
 
   // Carga productos

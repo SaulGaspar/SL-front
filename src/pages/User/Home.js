@@ -916,6 +916,89 @@ const css = `
 
   .sl-trust-sub { color: var(--sl-muted); }
 
+  .sl-values {
+    padding: clamp(78px, 8vw, 108px) 0;
+    background: #0a1a2f;
+    color: #f5f7f2;
+  }
+
+  .sl-values-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 380px);
+    align-items: end;
+    gap: 36px;
+    margin-bottom: 38px;
+  }
+
+  .sl-values .sl-label { color: var(--sl-acid); }
+
+  .sl-values-title {
+    max-width: 680px;
+    margin: 0;
+    color: #fff;
+    font-size: clamp(2.25rem, 4.3vw, 3.8rem);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -.05em;
+  }
+
+  .sl-values-intro {
+    margin: 0;
+    color: rgba(255,255,255,.62);
+    font-size: .94rem;
+    line-height: 1.7;
+  }
+
+  .sl-values-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .sl-value-card {
+    min-height: 220px;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 18px;
+    background: rgba(255,255,255,.045);
+  }
+
+  .sl-value-icon {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    background: var(--sl-acid);
+    color: #0a1a2f;
+  }
+
+  .sl-value-index {
+    display: block;
+    margin-bottom: 10px;
+    color: rgba(255,255,255,.38);
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .13em;
+  }
+
+  .sl-value-card h3 {
+    margin: 0 0 7px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 800;
+  }
+
+  .sl-value-card p {
+    margin: 0;
+    color: rgba(255,255,255,.58);
+    font-size: .8rem;
+    line-height: 1.6;
+  }
+
   .sl-section { padding: clamp(88px, 9vw, 118px) 0; }
 
   .sl-label { color: var(--sl-blue); }
@@ -1007,6 +1090,7 @@ const css = `
     .sl-hero-grid { grid-template-columns: 1fr; }
     .sl-showcase-wrap { width: min(580px, 100%); }
     .sl-trust-item:nth-child(-n+2) { border-bottom-color: var(--sl-line); }
+    .sl-values-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 
   @media (max-width: 767.98px) {
@@ -1015,6 +1099,7 @@ const css = `
     .sl-showcase { min-height: 420px; }
     .sl-category,
     .sl-category:nth-child(n) { min-height: 190px; }
+    .sl-values-head { grid-template-columns: 1fr; gap: 18px; }
   }
 
   /* ── HERO PRINCIPAL ── */
@@ -1082,6 +1167,11 @@ const css = `
     }
   }
 
+  @media (max-width: 575.98px) {
+    .sl-values-grid { grid-template-columns: 1fr; }
+    .sl-value-card { min-height: 185px; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .sl-home *,
     .sl-home *::before,
@@ -1115,20 +1205,36 @@ const Icon = ({ name, size = 22, strokeWidth = 1.8 }) => {
   );
 };
 
-const TRUST = [
-  { icon: "truck", title: "Envío gratis", sub: "Desde $999 MXN" },
-  { icon: "rotate", title: "30 días para cambios", sub: "Sin vueltas innecesarias" },
-  { icon: "shield", title: "Compra protegida", sub: "Tus datos siempre seguros" },
-  { icon: "headset", title: "Estamos para ayudarte", sub: "Lunes a sábado" },
+const VALUES = [
+  {
+    icon: "check",
+    title: "Calidad seleccionada",
+    text: "Elegimos productos por su rendimiento, comodidad y durabilidad.",
+  },
+  {
+    icon: "ball",
+    title: "Pasión por el deporte",
+    text: "Conocemos lo que necesitas para entrenar, competir y avanzar.",
+  },
+  {
+    icon: "shield",
+    title: "Confianza en cada compra",
+    text: "Información clara y una experiencia segura de principio a fin.",
+  },
+  {
+    icon: "headset",
+    title: "Servicio cercano",
+    text: "Te acompañamos antes, durante y después de recibir tu pedido.",
+  },
 ];
 
 const CATEGORIES = [
-  { icon: "shoe", name: "Calzado" },
-  { icon: "shirt", name: "Ropa" },
-  { icon: "dumbbell", name: "Entrenamiento" },
-  { icon: "bag", name: "Accesorios" },
-  { icon: "ball", name: "Balones" },
-  { icon: "bottle", name: "Nutrición" },
+  { icon: "shoe", name: "Calzado", filter: "Calzado" },
+  { icon: "shirt", name: "Ropa", filter: "Ropa" },
+  { icon: "dumbbell", name: "Entrenamiento", filter: "Equipamiento" },
+  { icon: "bag", name: "Accesorios", filter: "Accesorios" },
+  { icon: "ball", name: "Balones", filter: "Balones" },
+  { icon: "bottle", name: "Nutrición", filter: "Nutrición" },
 ];
 
 const PRINCIPLES = [
@@ -1195,17 +1301,30 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="sl-trust" aria-label="Beneficios de compra">
-        <div className="sl-container sl-trust-grid">
-          {TRUST.map((item) => (
-            <div className="sl-trust-item" key={item.title}>
-              <span className="sl-trust-icon"><Icon name={item.icon} size={20} /></span>
-              <div>
-                <div className="sl-trust-title">{item.title}</div>
-                <div className="sl-trust-sub">{item.sub}</div>
-              </div>
+      <section className="sl-values" aria-labelledby="sl-values-title">
+        <div className="sl-container">
+          <div className="sl-values-head">
+            <div>
+              <span className="sl-label">Lo que nos mueve</span>
+              <h2 className="sl-values-title" id="sl-values-title">Nuestros valores.</h2>
             </div>
-          ))}
+            <p className="sl-values-intro">
+              Estos principios guían la forma en que elegimos productos y atendemos
+              a cada persona que confía en SportLike.
+            </p>
+          </div>
+          <div className="sl-values-grid">
+            {VALUES.map((item, index) => (
+              <article className="sl-value-card" key={item.title}>
+                <span className="sl-value-icon"><Icon name={item.icon} size={21} /></span>
+                <div>
+                  <span className="sl-value-index">0{index + 1}</span>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -1223,7 +1342,11 @@ export default function Home() {
           </div>
           <div className="sl-category-grid">
             {CATEGORIES.map((category) => (
-              <a className="sl-category" href="/catalogo" key={category.name}>
+              <a
+                className="sl-category"
+                href={`/catalogo?categoria=${encodeURIComponent(category.filter)}`}
+                key={category.name}
+              >
                 <span className="sl-category-icon">
                   <Icon name={category.icon} size={31} strokeWidth={1.65} />
                 </span>
