@@ -93,9 +93,153 @@ const CSS = `
   .mp-state p { color:#6e7d90; line-height:1.65; margin:0 0 22px; }
   .mp-reference { display:inline-block; border-radius:999px; background:#edf5ff; color:#235987; padding:7px 14px; font-size:.8rem; font-weight:750; margin-bottom:20px; }
   .mp-spinner { width:18px; height:18px; border:2px solid rgba(255,255,255,.45); border-top-color:white; border-radius:50%; animation:mp-spin .75s linear infinite; }
-  @keyframes mp-spin { to { transform:rotate(360deg); } }
-  @media(max-width:860px){ .mp-grid{grid-template-columns:1fr;} .mp-summary{position:static;} }
-  @media(max-width:560px){ .mp-page{padding:22px 12px 50px;} .mp-checkout,.mp-summary,.mp-state{padding:23px 18px;} .mp-benefits{grid-template-columns:1fr;} .mp-brand{min-height:110px;} }
+@keyframes mp-spin { to { transform:rotate(360deg); } }
+@media(max-width:860px){ .mp-grid{grid-template-columns:1fr;} .mp-summary{position:static;} }
+@media(max-width:560px){ .mp-page{padding:22px 12px 50px;} .mp-checkout,.mp-summary,.mp-state{padding:23px 18px;} .mp-benefits{grid-template-columns:1fr;} .mp-brand{min-height:110px;} }
+
+/* ── Visual refresh SportLike ── */
+.mp-page {
+  background:
+    radial-gradient(circle at 88% 4%, rgba(36,79,219,.08), transparent 25rem),
+    radial-gradient(circle at 8% 92%, rgba(189,230,50,.2), transparent 22rem),
+    #f5f7f4;
+  color:#0a1a2f;
+  font-family:"Poppins","Segoe UI",sans-serif;
+}
+.mp-wrap {
+  width:min(1120px,100%);
+}
+.mp-breadcrumb {
+  color:#687587;
+  font-weight:700;
+}
+.mp-breadcrumb button {
+  color:#244fdb;
+}
+.mp-grid {
+  gap:28px;
+}
+.mp-card {
+  border:1px solid rgba(10,26,47,.1);
+  border-radius:28px;
+  box-shadow:0 18px 48px rgba(10,26,47,.08);
+}
+.mp-checkout {
+  padding:clamp(28px,4vw,46px);
+}
+.mp-checkout::after {
+  width:260px;
+  height:260px;
+  border:34px solid rgba(189,230,50,.7);
+  background:transparent;
+  right:-155px;
+  top:-155px;
+  border-radius:50%;
+}
+.mp-kicker {
+  color:#244fdb;
+  background:rgba(36,79,219,.08);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.mp-title {
+  max-width:620px;
+  color:#0a1a2f;
+  font-size:clamp(2rem,4.4vw,3.8rem);
+  line-height:.98;
+  font-weight:950;
+  letter-spacing:-.065em;
+}
+.mp-subtitle {
+  max-width:640px;
+  color:#687587;
+}
+.mp-brand {
+  border-radius:24px;
+  background:
+    radial-gradient(circle at 92% -30%, rgba(189,230,50,.45), transparent 11rem),
+    linear-gradient(145deg,#07182d,#102b4d);
+}
+.mp-handshake {
+  color:#244fdb;
+}
+.mp-benefit {
+  border-color:rgba(10,26,47,.1);
+  border-radius:16px;
+  background:#f8fafc;
+}
+.mp-benefit i {
+  color:#244fdb;
+}
+.mp-pay {
+  min-height:54px;
+  border-radius:16px;
+  background:#244fdb;
+  box-shadow:0 14px 28px rgba(36,79,219,.22);
+}
+.mp-pay:hover {
+  background:#183fc2;
+}
+.mp-back {
+  min-height:50px;
+  border-radius:16px;
+  border-color:rgba(10,26,47,.12);
+  color:#0a1a2f;
+}
+.mp-summary {
+  padding:clamp(22px,3vw,30px);
+}
+.mp-summary h2 {
+  color:#0a1a2f;
+  font-weight:900;
+}
+.mp-item img,
+.mp-item-placeholder {
+  border-radius:15px;
+  background:
+    radial-gradient(circle at 25% 15%, rgba(189,230,50,.25), transparent 4rem),
+    #eef3fb;
+}
+.mp-total {
+  border-top-color:rgba(10,26,47,.1);
+  color:#0a1a2f;
+}
+.mp-state {
+  border-radius:30px;
+}
+.mp-state h1 {
+  color:#0a1a2f;
+  font-size:clamp(2rem,5vw,3rem);
+  font-weight:950;
+  letter-spacing:-.055em;
+}
+.mp-reference {
+  background:rgba(36,79,219,.08);
+  color:#244fdb;
+}
+body[data-bs-theme="dark"] .mp-page {
+  background:#09131f;
+  color:#f3f6fa;
+}
+body[data-bs-theme="dark"] .mp-card {
+  background:#101d2b;
+  border-color:rgba(255,255,255,.11);
+}
+body[data-bs-theme="dark"] .mp-title,
+body[data-bs-theme="dark"] .mp-summary h2,
+body[data-bs-theme="dark"] .mp-state h1,
+body[data-bs-theme="dark"] .mp-total {
+  color:#f3f6fa;
+}
+body[data-bs-theme="dark"] .mp-benefit {
+  background:rgba(255,255,255,.04);
+  border-color:rgba(255,255,255,.11);
+  color:#a6b1c0;
+}
+@media(max-width:560px) {
+  .mp-title { font-size:clamp(2.2rem,12vw,3.1rem); }
+  .mp-brand { align-items:flex-start; flex-direction:column; }
+}
 `;
 
 export default function Pago() {

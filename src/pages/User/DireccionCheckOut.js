@@ -470,6 +470,140 @@ const CSS = `
   color:#a0aec0; font-size:.85rem;
 }
 
+/* ── Visual refresh SportLike ── */
+.dch-block {
+  border:1px solid rgba(10,26,47,.1);
+  border-radius:24px;
+  background:#fff;
+  box-shadow:0 16px 38px rgba(10,26,47,.07);
+}
+.dch-block-head {
+  padding:18px 20px;
+  background:
+    radial-gradient(circle at 96% -35%, rgba(189,230,50,.26), transparent 9rem),
+    #fbfcff;
+}
+.dch-block-title {
+  color:#0a1a2f;
+  font-weight:900;
+  letter-spacing:.08em;
+}
+.dch-change-btn {
+  min-height:36px;
+  padding:0 12px;
+  border-radius:999px;
+  background:rgba(36,79,219,.08);
+  color:#244fdb;
+  font-weight:850;
+}
+.dch-selected {
+  padding:18px 20px;
+}
+.dch-sel-icon,
+.dch-empty-icon,
+.dch-form-icon {
+  border-radius:16px;
+  background:
+    radial-gradient(circle at 18% 10%, rgba(189,230,50,.4), transparent 4rem),
+    linear-gradient(145deg,#07182d,#102b4d);
+}
+.dch-sel-name {
+  color:#0a1a2f;
+  font-weight:900;
+}
+.dch-sel-badge {
+  background:rgba(36,79,219,.08);
+  color:#244fdb;
+  border-radius:999px;
+}
+.dch-empty {
+  padding:26px 20px;
+}
+.dch-empty-add-btn,
+.dch-location-btn,
+.dch-form-save,
+.dch-confirm-btn {
+  border-radius:16px;
+  background:#244fdb;
+  color:#fff;
+  box-shadow:0 12px 24px rgba(36,79,219,.2);
+}
+.dch-empty-add-btn:hover,
+.dch-location-btn:hover,
+.dch-form-save:hover,
+.dch-confirm-btn:hover {
+  background:#183fc2;
+}
+.dch-overlay {
+  backdrop-filter:blur(8px);
+  background:rgba(4,13,26,.46);
+}
+.dch-sheet {
+  border-radius:28px;
+  border:1px solid rgba(10,26,47,.1);
+  box-shadow:0 28px 80px rgba(0,0,0,.28);
+}
+.dch-sheet-head {
+  background:
+    radial-gradient(circle at 94% -30%, rgba(189,230,50,.38), transparent 10rem),
+    linear-gradient(145deg,#07182d,#102b4d);
+  color:#fff;
+}
+.dch-sheet-title,
+.dch-sheet-subtitle {
+  color:inherit;
+}
+.dch-sheet-subtitle {
+  color:rgba(255,255,255,.65);
+}
+.dch-close-btn {
+  border-radius:14px;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+}
+.dch-dir-option,
+.dch-form,
+.dch-map-card {
+  border-radius:20px;
+  border:1px solid rgba(10,26,47,.1);
+  background:#fff;
+}
+.dch-dir-option.selected {
+  border-color:rgba(36,79,219,.45);
+  background:rgba(36,79,219,.06);
+}
+.dch-opt-radio {
+  border-color:#244fdb;
+}
+.dch-dir-option.selected .dch-opt-radio {
+  background:#244fdb;
+}
+.dch-fg input,
+.dch-fg select,
+.dch-fg textarea {
+  border-radius:14px;
+  border:1px solid rgba(10,26,47,.13);
+  background:#fbfcff;
+}
+.dch-fg input:focus,
+.dch-fg select:focus,
+.dch-fg textarea:focus {
+  border-color:rgba(36,79,219,.55);
+  box-shadow:0 0 0 4px rgba(36,79,219,.1);
+}
+.dch-map-frame {
+  border-radius:0 0 20px 20px;
+}
+.dch-confirm-bar {
+  padding:16px 24px 22px;
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(12px);
+}
+.dch-toast {
+  border-radius:16px;
+  background:#07182d;
+}
+
 @media(max-width:480px) {
   .dch-sheet { border-radius:16px 16px 0 0; max-height:95vh; }
   .dch-overlay { align-items:flex-end; padding:0; }
