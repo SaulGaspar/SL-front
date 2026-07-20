@@ -4,6 +4,8 @@ import {
   MdLock, MdCheckCircle, MdCancel, MdAdminPanelSettings,
   MdPeople, MdWarning, MdKey, MdDelete, MdShoppingCart,
 } from "react-icons/md";
+import RepurchasePanel from "./RepurchasePanel";
+import CustomerSegmentsPanel from "./CustomerSegmentsPanel";
 
 const API = "https://sl-back.vercel.app/api/admin";
 
@@ -23,6 +25,9 @@ const fmt = (v) => new Intl.NumberFormat("es-MX", { style: "currency", currency:
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 .usu * { font-family:'DM Sans',sans-serif; box-sizing:border-box; }
+.usu-tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; background:white; padding:6px; border-radius:12px; width:max-content; max-width:100%; box-shadow:0 1px 6px rgba(0,0,0,.06); }
+.usu-tab { padding:9px 16px; border:0; border-radius:8px; background:transparent; color:#718096; font-family:inherit; font-weight:700; cursor:pointer; }
+.usu-tab.active { background:linear-gradient(135deg,#667eea,#764ba2); color:white; }
 
 /* Stats */
 .usu-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:20px; }
@@ -198,6 +203,7 @@ const CSS = `
 const INIT_FORM = { nombre: "", apellidoP: "", apellidoM: "", telefono: "", usuario: "", rol: "cliente", verificado: 1 };
 
 export default function Usuarios() {
+  const [view, setView] = useState("users");
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
@@ -326,9 +332,17 @@ export default function Usuarios() {
       <style>{CSS}</style>
 
       <div className="page-header">
-        <h2>Usuarios</h2>
-        <p>Gestiona los usuarios del sistema</p>
+        <h2>{view === "users" ? "Usuarios" : view === "repurchase" ? "Propensión de recompra" : "Segmentación de clientes"}</h2>
+        <p>{view === "users" ? "Gestiona los usuarios del sistema" : view === "repurchase" ? "Clasificación de clientes que podrían volver a comprar en los próximos 30 días" : "Grupos de clientes según su comportamiento de compra de los últimos 180 días"}</p>
       </div>
+
+      <div className="usu-tabs">
+        <button className={`usu-tab ${view === "users" ? "active" : ""}`} onClick={()=>setView("users")}>Gestión de usuarios</button>
+        <button className={`usu-tab ${view === "repurchase" ? "active" : ""}`} onClick={()=>setView("repurchase")}>Probabilidad de recompra</button>
+        <button className={`usu-tab ${view === "segments" ? "active" : ""}`} onClick={()=>setView("segments")}>Segmentación de clientes</button>
+      </div>
+
+      {view === "users" ? <>
 
       {/* Stats */}
       <div className="usu-stats">
@@ -447,6 +461,8 @@ export default function Usuarios() {
           </>
         )}
       </div>
+
+      </> : view === "repurchase" ? <RepurchasePanel /> : <CustomerSegmentsPanel />}
 
       {/* Modal edición */}
       {modal && (
