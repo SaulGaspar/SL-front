@@ -111,6 +111,7 @@ const getCSS = (dark) => `
 
 .pd-related { max-width:1300px; margin:0 auto; padding:0 48px 80px; }
 .pd-related-title { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:3px; color:var(--text); margin-bottom:20px; }
+.pd-related-subtitle { color:var(--muted); font-size:.9rem; margin:-12px 0 20px; }
 .pd-related-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:2px; }
 .pd-rel-card { background:var(--white); cursor:pointer; overflow:hidden; }
 .pd-rel-card:hover .pd-rel-img img { transform:scale(1.06); }
@@ -119,6 +120,8 @@ const getCSS = (dark) => `
 .pd-rel-body { padding:12px; }
 .pd-rel-name { font-size:.85rem; font-weight:700; color:var(--text); margin-bottom:4px; }
 .pd-rel-price { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; color:var(--text); letter-spacing:1px; }
+.pd-rel-add { width:100%; margin-top:12px; padding:10px 12px; border:1px solid var(--text); border-radius:12px; background:var(--text); color:var(--white); font-family:'Outfit',sans-serif; font-weight:800; cursor:pointer; transition:transform .2s ease,opacity .2s ease; }
+.pd-rel-add:hover { transform:translateY(-1px); opacity:.88; }
 
 .pd-toast { position:fixed; bottom:28px; right:28px; z-index:9999; background:var(--navy); color:white; padding:14px 22px; border-radius:6px; font-family:'Outfit',sans-serif; font-size:.88rem; font-weight:600; box-shadow:0 12px 32px rgba(10,26,47,.3); display:flex; align-items:center; gap:10px; animation:pd-slide-up .3s ease; border-left:4px solid var(--accent); }
 @keyframes pd-slide-up { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
@@ -329,6 +332,7 @@ export default function ProductoDetalle() {
   const [product, setProduct] = useState(null);
   const [images,  setImages]  = useState([]); // galería real
   const [related, setRelated] = useState([]);
+  const [recommendationSource, setRecommendationSource] = useState("category_fallback");
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(null);
   const [activeIdx, setActiveIdx] = useState(0); // índice activo en galería
@@ -340,7 +344,7 @@ export default function ProductoDetalle() {
 
   useEffect(() => {
     (async () => {
-      setLoading(true); setError(null); setActiveIdx(0);
+      setLoading(true); setError(null); setActiveIdx(0); setRecommendationSource("category_fallback");
       try {
         const res = await fetch(`${API_URL}/api/products`);
         if (!res.ok) throw new Error("Error cargando producto");
@@ -370,7 +374,26 @@ export default function ProductoDetalle() {
         const colores = parseLista(prod.colores);
         if (tallas.length)  setSize(tallas[0]);
         if (colores.length) setColor(colores[0]);
-        setRelated(all.filter(p => p.id !== prod.id && p.categoria === prod.categoria && p.activo !== 0).slice(0,4));
+        const fallbackRelated = all
+          .filter(p => p.id !== prod.id && p.categoria === prod.categoria && p.activo !== 0)
+          .slice(0,4);
+
+        try {
+          const recRes = await fetch(`${API_URL}/api/products/${prod.id}/recommendations?limit=4`);
+          if (recRes.ok) {
+            const payload = await recRes.json();
+            if (Array.isArray(payload.recommendations) && payload.recommendations.length > 0) {
+              setRelated(payload.recommendations);
+              setRecommendationSource("apriori");
+            } else {
+              setRelated(fallbackRelated);
+            }
+          } else {
+            setRelated(fallbackRelated);
+          }
+        } catch {
+          setRelated(fallbackRelated);
+        }
       } catch (e) { setError(e.message); }
       finally { setLoading(false); }
     })();
@@ -383,6 +406,24 @@ export default function ProductoDetalle() {
     setToast(`✓  ${product.nombre} agregado al carrito`);
     toggleMiniCart();
     setTimeout(() => setAdded(false), 2500);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleAddRelated = (event, item) => {
+    event.stopPropagation();
+    const itemSizes = parseLista(item.talla);
+    const itemColors = parseLista(item.colores);
+    addToCart({
+      id:item.id,
+      title:item.nombre,
+      price:item.precio,
+      img:item.imagen,
+      qty:1,
+      size:itemSizes[0]||"Único",
+      color:itemColors[0]||"Único",
+    });
+    setToast(`✓  ${item.nombre} agregado al carrito`);
+    toggleMiniCart();
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -538,7 +579,12 @@ export default function ProductoDetalle() {
 
       {related.length > 0 && (
         <div className="pd-related">
-          <div className="pd-related-title">También te puede gustar</div>
+          <div className="pd-related-title">
+            {recommendationSource === "apriori" ? "Comprados frecuentemente juntos" : "También te puede gustar"}
+          </div>
+          {recommendationSource === "apriori" && (
+            <div className="pd-related-subtitle">Recomendaciones basadas en patrones de pedidos entregados.</div>
+          )}
           <div className="pd-related-grid">
             {related.map(r=>(
               <div key={r.id} className="pd-rel-card" onClick={()=>navigate(`/producto/${r.id}`)}>
@@ -549,6 +595,7 @@ export default function ProductoDetalle() {
                 <div className="pd-rel-body">
                   <div className="pd-rel-name">{r.nombre}</div>
                   <div className="pd-rel-price">${Number(r.precio).toLocaleString("es-MX")}</div>
+                  <button className="pd-rel-add" onClick={event=>handleAddRelated(event,r)}>Agregar al carrito</button>
                 </div>
               </div>
             ))}
