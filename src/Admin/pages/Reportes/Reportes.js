@@ -229,6 +229,89 @@ const S = `
 .stock-bar { margin-top:4px; height:3px; background:#e2e8f0; border-radius:2px; overflow:hidden; }
 .stock-bar-fill { height:100%; border-radius:2px; transition:width .3s; }
 
+.agot-ai-hero {
+  display:grid; grid-template-columns:1.4fr repeat(3,minmax(150px,1fr));
+  gap:14px; align-items:stretch; margin-bottom:16px;
+}
+.agot-ai-intro {
+  background:white; border:1px solid #e2e8f0; border-radius:12px;
+  padding:20px 22px; box-shadow:0 1px 4px rgba(15,23,42,.06);
+}
+.agot-ai-eyebrow {
+  font-size:.68rem; font-weight:800; color:#2563eb; text-transform:uppercase;
+  letter-spacing:.1em; margin-bottom:7px;
+}
+.agot-ai-title { margin:0 0 6px; color:#0f172a; font-size:1.45rem; font-weight:800; }
+.agot-ai-copy { margin:0; color:#475569; font-size:.86rem; line-height:1.55; max-width:640px; }
+.agot-ai-card {
+  background:white; border:1px solid #e2e8f0; border-radius:12px; padding:18px;
+  box-shadow:0 1px 4px rgba(15,23,42,.06);
+}
+.agot-ai-card.red { border-left:4px solid #dc2626; }
+.agot-ai-card.green { border-left:4px solid #16a34a; }
+.agot-ai-card.blue { border-left:4px solid #2563eb; }
+.agot-ai-card-label {
+  font-size:.66rem; font-weight:800; color:#94a3b8; text-transform:uppercase;
+  letter-spacing:.08em; margin-bottom:8px;
+}
+.agot-ai-card-value { font-family:'JetBrains Mono',monospace; color:#0f172a; font-weight:800; font-size:1.75rem; line-height:1; }
+.agot-ai-card-sub { color:#64748b; font-size:.74rem; margin-top:8px; }
+.agot-ai-panel {
+  background:white; border:1px solid #e2e8f0; border-radius:12px;
+  box-shadow:0 1px 4px rgba(15,23,42,.06); overflow:hidden;
+}
+.agot-ai-panel-head {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:16px 18px; border-bottom:1px solid #e2e8f0;
+}
+.agot-ai-panel-title { display:flex; align-items:center; gap:8px; color:#0f172a; font-size:.95rem; font-weight:800; }
+.agot-ai-panel-title svg { color:#2563eb; }
+.agot-ai-controls {
+  display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px;
+  padding:14px 18px; background:#f8fafc; border-bottom:1px solid #e2e8f0;
+}
+.agot-ai-control { display:flex; flex-direction:column; gap:4px; }
+.agot-ai-control label {
+  font-size:.66rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:.06em;
+}
+.agot-ai-control select {
+  min-width:150px; padding:8px 10px; border:1.5px solid #e2e8f0; border-radius:8px;
+  background:white; color:#0f172a; font-family:inherit; font-size:.82rem;
+}
+.agot-ai-control select:focus { outline:none; border-color:#2563eb; }
+.agot-ai-table-wrap { overflow-x:auto; }
+.agot-ai-table { width:100%; border-collapse:collapse; font-size:.78rem; }
+.agot-ai-table th {
+  padding:10px 12px; text-align:left; background:#f8fafc; color:#64748b;
+  border-bottom:1px solid #e2e8f0; font-size:.64rem; font-weight:800;
+  text-transform:uppercase; letter-spacing:.04em; white-space:nowrap;
+}
+.agot-ai-table th.sortable { cursor:pointer; user-select:none; }
+.agot-ai-table th.sortable:hover { color:#1e3a5f; background:#eef4ff; }
+.agot-ai-table td { padding:10px 12px; border-bottom:1px solid #f1f5f9; color:#1e293b; vertical-align:middle; }
+.agot-ai-table tbody tr:hover { background:#f8fafc; }
+.agot-ai-table tbody tr.agot-risk { background:#fff7f7; }
+.agot-ai-table tbody tr.agot-risk td:first-child { box-shadow:inset 3px 0 #dc2626; }
+.agot-product-name { font-weight:800; color:#0f172a; line-height:1.25; }
+.agot-product-meta { color:#94a3b8; font-size:.68rem; margin-top:2px; }
+.agot-chip {
+  display:inline-flex; align-items:center; gap:4px; background:#f1f5f9; color:#334155;
+  padding:3px 8px; border-radius:6px; font-size:.7rem; font-weight:700;
+}
+.agot-result {
+  display:inline-flex; flex-direction:column; gap:2px; min-width:116px;
+  border-radius:8px; padding:7px 10px; font-weight:800;
+}
+.agot-result.si { background:#fee2e2; color:#991b1b; }
+.agot-result.no { background:#dcfce7; color:#166534; }
+.agot-result-main { font-size:.78rem; }
+.agot-result-sub { font-size:.63rem; font-weight:700; opacity:.78; }
+.agot-prob { min-width:92px; }
+.agot-prob-top { display:flex; justify-content:space-between; gap:8px; margin-bottom:4px; }
+.agot-prob-val { font-family:'JetBrains Mono',monospace; font-weight:800; color:#0f172a; font-size:.75rem; }
+.agot-prob-track { height:5px; border-radius:999px; background:#e2e8f0; overflow:hidden; }
+.agot-prob-fill { height:100%; border-radius:999px; }
+
 .dias-val { font-family:'JetBrains Mono',monospace; font-weight:700; font-size:.82rem; }
 .dias-val.danger  { color:#dc2626; }
 .dias-val.warning { color:#d97706; }
@@ -323,8 +406,8 @@ const S = `
 .rep-empty { text-align:center; color:#94a3b8; padding:40px; font-size:.84rem; }
 .mono { font-family:'JetBrains Mono',monospace; font-size:.78rem; }
 
-@media(max-width:1024px){ .rep-kpis{grid-template-columns:1fr 1fr;} .rep-grid2{grid-template-columns:1fr;} .model-hero{grid-template-columns:1fr 1fr;} }
-@media(max-width:640px){  .rep-kpis{grid-template-columns:1fr;} .model-hero{grid-template-columns:1fr;} }
+@media(max-width:1024px){ .rep-kpis{grid-template-columns:1fr 1fr;} .rep-grid2{grid-template-columns:1fr;} .model-hero{grid-template-columns:1fr 1fr;} .agot-ai-hero{grid-template-columns:1fr 1fr;} }
+@media(max-width:640px){  .rep-kpis{grid-template-columns:1fr;} .model-hero{grid-template-columns:1fr;} .agot-ai-hero{grid-template-columns:1fr;} .agot-ai-panel-head{align-items:flex-start; flex-direction:column;} }
 `;
 
 // ── HELPERS UI ────────────────────────────────────────────────────────────────
@@ -910,7 +993,7 @@ function TabAgotamiento({ branches }) {
         </div>
         <div className="model-chip">
           <div className="model-chip-label">Salida</div>
-          <div className="model-chip-value">Riesgo 0 / 1</div>
+          <div className="model-chip-value">Si / No</div>
         </div>
         <div className="model-chip">
           <div className="model-chip-label">Probabilidad</div>
@@ -1138,31 +1221,342 @@ function TabAgotamiento({ branches }) {
 }
 
 // ── PRINCIPAL ─────────────────────────────────────────────────────────────────
-export default function Reportes({ initialTab = "ventas" }) {
-  const [tab,      setTab]      = useState(initialTab);
-  const [branches, setBranches] = useState([]);
-  const [alertas,  setAlertas]  = useState({ critico:0, agotado:0 });
+function readNum(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
 
-  useEffect(() => {
-    setTab(initialTab);
-  }, [initialTab]);
+function normalizarAgotamientoRow(row) {
+  const stockActual = readNum(row.stock_actual);
+  const minStock = readNum(row.min_stock);
+  const ventas30 = readNum(row.ventas_30d);
+  const ventas30Anterior = readNum(row.ventas_30d_anterior);
+  const pedidos30 = readNum(row.pedidos_30d);
+  const tasaDiaria = readNum(row.tasa_diaria_venta ?? row.tasa_diaria, +(ventas30 / 30).toFixed(3));
+  const stockEstimado30 = readNum(row.stock_estimado_30d, Math.max(0, Math.round(stockActual - ventas30)));
+  const diasInventario = row.dias_inventario === null || row.dias_inventario === undefined
+    ? (tasaDiaria > 0 ? Math.round(stockActual / tasaDiaria) : null)
+    : readNum(row.dias_inventario);
+  const variacion = row.variacion_ventas_30d === null || row.variacion_ventas_30d === undefined
+    ? (ventas30Anterior > 0 ? +((ventas30 - ventas30Anterior) / ventas30Anterior).toFixed(4) : 0)
+    : readNum(row.variacion_ventas_30d);
+  const salidaTexto = String(row.se_agotara_30d || "").trim().toLowerCase();
+  const seAgotara = salidaTexto.startsWith("s") || stockEstimado30 <= minStock;
+  const probabilidad = readNum(row.probabilidad_riesgo, seAgotara ? 80 : 20);
+
+  return {
+    ...row,
+    precio: readNum(row.precio),
+    stock_actual: stockActual,
+    min_stock: minStock,
+    ventas_30d: ventas30,
+    ventas_30d_anterior: ventas30Anterior,
+    pedidos_30d: pedidos30,
+    tasa_diaria_venta: tasaDiaria,
+    dias_inventario: diasInventario,
+    stock_estimado_30d: stockEstimado30,
+    variacion_ventas_30d: variacion,
+    dias_desde_ultima_venta: readNum(row.dias_desde_ultima_venta, 999),
+    probabilidad_riesgo: Math.max(0, Math.min(100, probabilidad)),
+    seAgotara,
+  };
+}
+
+function ResultadoAgotamiento({ row }) {
+  return (
+    <span className={`agot-result ${row.seAgotara ? "si" : "no"}`}>
+      <span className="agot-result-main">{row.seAgotara ? "Si se agotara" : "No se agotara"}</span>
+      <span className="agot-result-sub">en los proximos 30 dias</span>
+    </span>
+  );
+}
+
+function ProbabilidadAgotamiento({ value }) {
+  const pct = Math.max(0, Math.min(100, Number(value || 0)));
+  const color = pct >= 75 ? "#dc2626" : pct >= 50 ? "#d97706" : pct >= 30 ? "#2563eb" : "#16a34a";
+  return (
+    <div className="agot-prob">
+      <div className="agot-prob-top">
+        <span className="agot-prob-val">{pct}%</span>
+      </div>
+      <div className="agot-prob-track">
+        <div className="agot-prob-fill" style={{ width:`${pct}%`, background:color }} />
+      </div>
+    </div>
+  );
+}
+
+function TabAgotamientoIA({ branches }) {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [sucursal, setSucursal] = useState("all");
+  const [filtCat, setFiltCat] = useState("");
+  const [filtResultado, setFiltResultado] = useState("");
+  const [filtBusqueda, setFiltBusqueda] = useState("");
+  const [sortCol, setSortCol] = useState("resultado");
+  const [sortDir, setSortDir] = useState("desc");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const p = new URLSearchParams();
+      if (sucursal !== "all") p.set("branch", sucursal);
+      const res = await fetch(`${API_URL}/api/admin/reports/prediccion-agotamiento?${p}`, { headers:auth() });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const raw = await res.json();
+      setData(Array.isArray(raw) ? raw : []);
+    } catch (e) {
+      console.error(e);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [sucursal]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const rows = useMemo(() => data.map(normalizarAgotamientoRow), [data]);
+
+  const categorias = useMemo(
+    () => [...new Set(rows.map(d => d.categoria).filter(Boolean))].sort(),
+    [rows]
+  );
+
+  const totales = useMemo(() => rows.reduce((acc, row) => {
+    acc.total += 1;
+    if (row.seAgotara) acc.si += 1;
+    else acc.no += 1;
+    if (row.ventas_30d === 0) acc.sinMovimiento += 1;
+    return acc;
+  }, { total:0, si:0, no:0, sinMovimiento:0 }), [rows]);
+
+  const filtered = useMemo(() => {
+    const q = filtBusqueda.trim().toLowerCase();
+    return rows.filter(row => {
+      if (filtResultado === "si" && !row.seAgotara) return false;
+      if (filtResultado === "no" && row.seAgotara) return false;
+      if (filtCat && row.categoria !== filtCat) return false;
+      if (!q) return true;
+      return (
+        String(row.product_id || "").includes(q) ||
+        (row.producto || "").toLowerCase().includes(q) ||
+        (row.marca || "").toLowerCase().includes(q) ||
+        (row.categoria || "").toLowerCase().includes(q) ||
+        (row.sucursal || "").toLowerCase().includes(q)
+      );
+    });
+  }, [rows, filtBusqueda, filtResultado, filtCat]);
+
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      let va, vb;
+      switch (sortCol) {
+        case "product_id": va = a.product_id; vb = b.product_id; break;
+        case "producto": va = a.producto || ""; vb = b.producto || ""; break;
+        case "sucursal": va = a.sucursal || ""; vb = b.sucursal || ""; break;
+        case "stock": va = a.stock_actual; vb = b.stock_actual; break;
+        case "ventas": va = a.ventas_30d; vb = b.ventas_30d; break;
+        case "stock_estimado": va = a.stock_estimado_30d; vb = b.stock_estimado_30d; break;
+        case "dias": va = a.dias_inventario ?? 9999; vb = b.dias_inventario ?? 9999; break;
+        case "probabilidad": va = a.probabilidad_riesgo; vb = b.probabilidad_riesgo; break;
+        case "resultado": va = a.seAgotara ? 1 : 0; vb = b.seAgotara ? 1 : 0; break;
+        default: va = 0; vb = 0;
+      }
+      if (typeof va === "string") return sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
+      return sortDir === "asc" ? va - vb : vb - va;
+    });
+  }, [filtered, sortCol, sortDir]);
+
+  const toggleSort = col => {
+    if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else {
+      setSortCol(col);
+      setSortDir(col === "resultado" || col === "probabilidad" ? "desc" : "asc");
+    }
+  };
+
+  const sortIcon = col => sortCol === col ? (sortDir === "asc" ? " ^" : " v") : "";
+
+  const highlight = text => {
+    if (!filtBusqueda.trim()) return text;
+    const q = filtBusqueda.trim();
+    const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+    return String(text).split(regex).map((part, i) =>
+      part.toLowerCase() === q.toLowerCase()
+        ? <mark key={i} style={{ background:"#fef08a", borderRadius:2, padding:"0 1px" }}>{part}</mark>
+        : part
+    );
+  };
+
+  const variacionTexto = value => {
+    const pct = Number(value || 0) * 100;
+    if (!Number.isFinite(pct)) return "0%";
+    return `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%`;
+  };
+
+  return (
+    <>
+      <section className="agot-ai-hero">
+        <div className="agot-ai-intro">
+          <div className="agot-ai-eyebrow">Modelo de clasificacion</div>
+          <h3 className="agot-ai-title">Agotamiento IA</h3>
+          <p className="agot-ai-copy">
+            Predice por producto y sucursal si el inventario se agotara o quedara bajo el minimo durante los proximos 30 dias.
+          </p>
+        </div>
+        <div className="agot-ai-card blue">
+          <div className="agot-ai-card-label">Registros</div>
+          <div className="agot-ai-card-value">{fmt(totales.total)}</div>
+          <div className="agot-ai-card-sub">producto + sucursal</div>
+        </div>
+        <div className="agot-ai-card red">
+          <div className="agot-ai-card-label">Si se agotara</div>
+          <div className="agot-ai-card-value">{fmt(totales.si)}</div>
+          <div className="agot-ai-card-sub">en los proximos 30 dias</div>
+        </div>
+        <div className="agot-ai-card green">
+          <div className="agot-ai-card-label">No se agotara</div>
+          <div className="agot-ai-card-value">{fmt(totales.no)}</div>
+          <div className="agot-ai-card-sub">stock suficiente</div>
+        </div>
+      </section>
+
+      <div className="agot-ai-panel">
+        <div className="agot-ai-panel-head">
+          <div className="agot-ai-panel-title">
+            <MdTrendingDown/>
+            Dataset de riesgo de agotamiento a 30 dias
+          </div>
+          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+            <span className="rep-badge">{fmt(sorted.length)} de {fmt(rows.length)}</span>
+            <button className="rep-apply" onClick={load} disabled={loading} style={{ padding:"7px 14px", fontSize:".78rem" }}>
+              <MdRefresh size={14} className={loading ? "spinning" : ""}/>
+              {loading ? "Cargando" : "Actualizar"}
+            </button>
+          </div>
+        </div>
+
+        <div className="agot-ai-controls">
+          <div className="agot-ai-control">
+            <label>Sucursal</label>
+            <select value={sucursal} onChange={e => setSucursal(e.target.value)}>
+              <option value="all">Todas</option>
+              {branches.map(b => <option key={b.id} value={String(b.id)}>{b.nombre || `SUC${b.id}`}</option>)}
+            </select>
+          </div>
+          <div className="agot-ai-control">
+            <label>Categoria</label>
+            <select value={filtCat} onChange={e => setFiltCat(e.target.value)}>
+              <option value="">Todas</option>
+              {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div className="agot-ai-control">
+            <label>Resultado</label>
+            <select value={filtResultado} onChange={e => setFiltResultado(e.target.value)}>
+              <option value="">Todos</option>
+              <option value="si">Si se agotara</option>
+              <option value="no">No se agotara</option>
+            </select>
+          </div>
+          <div className="search-bar" style={{ minWidth:280, flex:"1 1 280px", alignSelf:"flex-end" }}>
+            <MdSearch size={16} />
+            <input
+              type="text"
+              placeholder="Buscar producto, marca, categoria o sucursal"
+              value={filtBusqueda}
+              onChange={e => setFiltBusqueda(e.target.value)}
+            />
+            {filtBusqueda && (
+              <button
+                onClick={() => setFiltBusqueda("")}
+                style={{ background:"none", border:"none", cursor:"pointer", color:"#94a3b8", padding:0, lineHeight:1, fontSize:16 }}
+              >
+                x
+              </button>
+            )}
+          </div>
+        </div>
+
+        {loading ? (
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, padding:52, color:"#94a3b8" }}>
+            <MdRefresh size={22} className="spinning"/>
+            Calculando dataset de agotamiento
+          </div>
+        ) : (
+          <div className="agot-ai-table-wrap">
+            <table className="agot-ai-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th className="sortable" onClick={() => toggleSort("product_id")}>product_id{sortIcon("product_id")}</th>
+                  <th className="sortable" onClick={() => toggleSort("producto")}>producto{sortIcon("producto")}</th>
+                  <th className="sortable" onClick={() => toggleSort("sucursal")}>sucursal{sortIcon("sucursal")}</th>
+                  <th>categoria</th>
+                  <th>precio</th>
+                  <th className="sortable" onClick={() => toggleSort("stock")}>stock_actual{sortIcon("stock")}</th>
+                  <th>min_stock</th>
+                  <th className="sortable" onClick={() => toggleSort("ventas")}>ventas_30d{sortIcon("ventas")}</th>
+                  <th>ventas_30d_anterior</th>
+                  <th>pedidos_30d</th>
+                  <th>tasa_diaria_venta</th>
+                  <th className="sortable" onClick={() => toggleSort("dias")}>dias_inventario{sortIcon("dias")}</th>
+                  <th className="sortable" onClick={() => toggleSort("stock_estimado")}>stock_estimado_30d{sortIcon("stock_estimado")}</th>
+                  <th>variacion_ventas_30d</th>
+                  <th>dias_desde_ultima_venta</th>
+                  <th className="sortable" onClick={() => toggleSort("probabilidad")}>probabilidad{sortIcon("probabilidad")}</th>
+                  <th className="sortable" onClick={() => toggleSort("resultado")}>se agotara 30d{sortIcon("resultado")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sorted.length === 0 ? (
+                  <tr>
+                    <td colSpan={18} className="rep-empty">
+                      {filtBusqueda ? `Sin resultados para "${filtBusqueda}"` : "Sin productos con los filtros seleccionados"}
+                    </td>
+                  </tr>
+                ) : sorted.map((row, i) => (
+                  <tr key={`${row.product_id}_${row.branch_id}`} className={row.seAgotara ? "agot-risk" : ""}>
+                    <td className="mono" style={{ color:"#94a3b8" }}>{i + 1}</td>
+                    <td className="mono">{row.product_id}</td>
+                    <td>
+                      <div className="agot-product-name">{highlight(row.producto || `Producto ${row.product_id}`)}</div>
+                      <div className="agot-product-meta">{highlight(row.marca || "Sin marca")}</div>
+                    </td>
+                    <td><span className="agot-chip"><MdStore size={12}/>{highlight(row.sucursal || `SUC${row.branch_id}`)}</span></td>
+                    <td><span className="agot-chip">{highlight(row.categoria || "-")}</span></td>
+                    <td className="mono">{fmtMXN(row.precio)}</td>
+                    <td className="mono" style={{ fontWeight:800, color:row.seAgotara ? "#dc2626" : "#0f172a" }}>{fmt(row.stock_actual)}</td>
+                    <td className="mono">{fmt(row.min_stock)}</td>
+                    <td className="mono">{fmt(row.ventas_30d)}</td>
+                    <td className="mono">{fmt(row.ventas_30d_anterior)}</td>
+                    <td className="mono">{fmt(row.pedidos_30d)}</td>
+                    <td className="mono">{row.tasa_diaria_venta.toFixed(3)}</td>
+                    <td className="mono">{row.dias_inventario === null ? "-" : fmt(row.dias_inventario)}</td>
+                    <td className="mono" style={{ fontWeight:800 }}>{fmt(row.stock_estimado_30d)}</td>
+                    <td className="mono">{variacionTexto(row.variacion_ventas_30d)}</td>
+                    <td className="mono">{row.dias_desde_ultima_venta >= 999 ? "Sin venta" : `${fmt(row.dias_desde_ultima_venta)} d`}</td>
+                    <td><ProbabilidadAgotamiento value={row.probabilidad_riesgo}/></td>
+                    <td><ResultadoAgotamiento row={row}/></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+export default function Reportes({ initialTab = "ventas" }) {
+  const [branches, setBranches] = useState([]);
+  const isAgotamientoDirecto = initialTab === "inventario";
 
   useEffect(() => {
     fetch(`${API_URL}/api/admin/branches`, { headers:auth() })
       .then(r => r.ok ? r.json() : []).then(setBranches).catch(() => {});
-    fetch(`${API_URL}/api/admin/reports/prediccion-agotamiento`, { headers:auth() })
-      .then(r => r.ok ? r.json() : [])
-      .then(raw => {
-        if (!Array.isArray(raw)) return;
-        setAlertas({
-          critico: raw.filter(d => d.alerta === "critico").length,
-          agotado: raw.filter(d => d.alerta === "agotado").length,
-        });
-      }).catch(() => {});
   }, []);
-
-  const totalAlerta = alertas.critico + alertas.agotado;
-  const isAgotamientoDirecto = initialTab === "inventario";
 
   return (
     <div className="rep">
@@ -1176,6 +1570,7 @@ export default function Reportes({ initialTab = "ventas" }) {
         </p>
       </div>
 
+      {/*
       <div className="rep-tabs-nav">
         <button className={`rep-tab-btn${tab==="ventas"?" active":""}`} onClick={() => setTab("ventas")}>
           <MdBarChart/> Ventas y reportes
@@ -1187,8 +1582,10 @@ export default function Reportes({ initialTab = "ventas" }) {
         </button>
       </div>
 
-      {tab === "ventas"     && <TabReportes    branches={branches}/>}
-      {tab === "inventario" && <TabAgotamiento branches={branches}/>}
+      */}
+      {isAgotamientoDirecto
+        ? <TabAgotamientoIA branches={branches}/>
+        : <TabReportes branches={branches}/>}
     </div>
   );
 }
