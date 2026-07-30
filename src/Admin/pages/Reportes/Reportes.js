@@ -1286,7 +1286,7 @@ function ProbabilidadAgotamiento({ value }) {
   );
 }
 
-function TabAgotamientoIA({ branches }) {
+function TabRiesgoAgotamiento({ branches }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [sucursal, setSucursal] = useState("all");
@@ -1399,7 +1399,7 @@ function TabAgotamientoIA({ branches }) {
       <section className="agot-ai-hero">
         <div className="agot-ai-intro">
           <div className="agot-ai-eyebrow">Modelo de clasificacion</div>
-          <h3 className="agot-ai-title">Agotamiento IA</h3>
+          <h3 className="agot-ai-title">Riesgo de agotamiento</h3>
           <p className="agot-ai-copy">
             Predice por producto y sucursal si el inventario se agotara o quedara bajo el minimo durante los proximos 30 dias.
           </p>
@@ -1489,21 +1489,12 @@ function TabAgotamientoIA({ branches }) {
               <thead>
                 <tr>
                   <th>#</th>
-                  <th className="sortable" onClick={() => toggleSort("product_id")}>product_id{sortIcon("product_id")}</th>
                   <th className="sortable" onClick={() => toggleSort("producto")}>producto{sortIcon("producto")}</th>
                   <th className="sortable" onClick={() => toggleSort("sucursal")}>sucursal{sortIcon("sucursal")}</th>
-                  <th>categoria</th>
-                  <th>precio</th>
                   <th className="sortable" onClick={() => toggleSort("stock")}>stock_actual{sortIcon("stock")}</th>
                   <th>min_stock</th>
                   <th className="sortable" onClick={() => toggleSort("ventas")}>ventas_30d{sortIcon("ventas")}</th>
-                  <th>ventas_30d_anterior</th>
-                  <th>pedidos_30d</th>
-                  <th>tasa_diaria_venta</th>
-                  <th className="sortable" onClick={() => toggleSort("dias")}>dias_inventario{sortIcon("dias")}</th>
                   <th className="sortable" onClick={() => toggleSort("stock_estimado")}>stock_estimado_30d{sortIcon("stock_estimado")}</th>
-                  <th>variacion_ventas_30d</th>
-                  <th>dias_desde_ultima_venta</th>
                   <th className="sortable" onClick={() => toggleSort("probabilidad")}>probabilidad{sortIcon("probabilidad")}</th>
                   <th className="sortable" onClick={() => toggleSort("resultado")}>se agotara 30d{sortIcon("resultado")}</th>
                 </tr>
@@ -1511,31 +1502,24 @@ function TabAgotamientoIA({ branches }) {
               <tbody>
                 {sorted.length === 0 ? (
                   <tr>
-                    <td colSpan={18} className="rep-empty">
+                    <td colSpan={9} className="rep-empty">
                       {filtBusqueda ? `Sin resultados para "${filtBusqueda}"` : "Sin productos con los filtros seleccionados"}
                     </td>
                   </tr>
                 ) : sorted.map((row, i) => (
                   <tr key={`${row.product_id}_${row.branch_id}`} className={row.seAgotara ? "agot-risk" : ""}>
                     <td className="mono" style={{ color:"#94a3b8" }}>{i + 1}</td>
-                    <td className="mono">{row.product_id}</td>
                     <td>
                       <div className="agot-product-name">{highlight(row.producto || `Producto ${row.product_id}`)}</div>
-                      <div className="agot-product-meta">{highlight(row.marca || "Sin marca")}</div>
+                      <div className="agot-product-meta">
+                        ID {row.product_id} - {highlight(row.marca || "Sin marca")} - {highlight(row.categoria || "Sin categoria")}
+                      </div>
                     </td>
                     <td><span className="agot-chip"><MdStore size={12}/>{highlight(row.sucursal || `SUC${row.branch_id}`)}</span></td>
-                    <td><span className="agot-chip">{highlight(row.categoria || "-")}</span></td>
-                    <td className="mono">{fmtMXN(row.precio)}</td>
                     <td className="mono" style={{ fontWeight:800, color:row.seAgotara ? "#dc2626" : "#0f172a" }}>{fmt(row.stock_actual)}</td>
                     <td className="mono">{fmt(row.min_stock)}</td>
                     <td className="mono">{fmt(row.ventas_30d)}</td>
-                    <td className="mono">{fmt(row.ventas_30d_anterior)}</td>
-                    <td className="mono">{fmt(row.pedidos_30d)}</td>
-                    <td className="mono">{row.tasa_diaria_venta.toFixed(3)}</td>
-                    <td className="mono">{row.dias_inventario === null ? "-" : fmt(row.dias_inventario)}</td>
                     <td className="mono" style={{ fontWeight:800 }}>{fmt(row.stock_estimado_30d)}</td>
-                    <td className="mono">{variacionTexto(row.variacion_ventas_30d)}</td>
-                    <td className="mono">{row.dias_desde_ultima_venta >= 999 ? "Sin venta" : `${fmt(row.dias_desde_ultima_venta)} d`}</td>
                     <td><ProbabilidadAgotamiento value={row.probabilidad_riesgo}/></td>
                     <td><ResultadoAgotamiento row={row}/></td>
                   </tr>
@@ -1562,7 +1546,7 @@ export default function Reportes({ initialTab = "ventas" }) {
     <div className="rep">
       <style>{S}</style>
       <div className="page-header">
-        <h2>{isAgotamientoDirecto ? "Agotamiento IA" : "Reportes"}</h2>
+        <h2>{isAgotamientoDirecto ? "Riesgo de agotamiento" : "Reportes"}</h2>
         <p>
           {isAgotamientoDirecto
             ? "Clasificación de riesgo de agotamiento con probabilidad por producto y sucursal"
@@ -1584,7 +1568,7 @@ export default function Reportes({ initialTab = "ventas" }) {
 
       */}
       {isAgotamientoDirecto
-        ? <TabAgotamientoIA branches={branches}/>
+        ? <TabRiesgoAgotamiento branches={branches}/>
         : <TabReportes branches={branches}/>}
     </div>
   );
