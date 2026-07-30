@@ -114,6 +114,19 @@ const S = `
 .rep-kpi-val { font-family:'JetBrains Mono',monospace; font-size:1.55rem; font-weight:700; color:#0f172a; line-height:1.1; }
 .rep-kpi-sub { font-size:.7rem; color:#94a3b8; margin-top:3px; }
 
+.model-hero {
+  background:linear-gradient(135deg,#0f172a,#1e3a5f);
+  color:white; border-radius:16px; padding:22px 24px; margin-bottom:18px;
+  display:grid; grid-template-columns:1.4fr repeat(3,minmax(130px,1fr)); gap:16px;
+  align-items:center; box-shadow:0 18px 44px rgba(15,23,42,.16);
+}
+.model-eyebrow { font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.1em; color:#c8f03c; margin-bottom:6px; }
+.model-title { font-size:1.35rem; font-weight:800; line-height:1.15; margin-bottom:5px; }
+.model-copy { font-size:.8rem; color:#cbd5e1; max-width:540px; line-height:1.55; }
+.model-chip { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:12px 14px; }
+.model-chip-label { font-size:.62rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#94a3b8; margin-bottom:4px; }
+.model-chip-value { font-size:.9rem; font-weight:800; color:white; }
+
 .rep-grid2  { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
 .rep-panel  { background:white; border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,.06); overflow:hidden; margin-bottom:16px; border:1px solid #f1f5f9; }
 .rep-panel-head {
@@ -206,6 +219,12 @@ const S = `
   display:inline-flex; align-items:center; gap:4px; padding:3px 9px;
   border-radius:5px; font-size:.68rem; font-weight:700; white-space:nowrap;
 }
+.risk-meter { min-width:92px; display:flex; flex-direction:column; gap:4px; }
+.risk-meter-top { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.risk-meter-value { font-family:'JetBrains Mono',monospace; font-weight:800; font-size:.76rem; color:#0f172a; }
+.risk-meter-label { font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.35px; color:#64748b; }
+.risk-meter-track { height:5px; border-radius:999px; background:#e2e8f0; overflow:hidden; }
+.risk-meter-fill { height:100%; border-radius:999px; transition:width .25s ease; }
 
 .stock-bar { margin-top:4px; height:3px; background:#e2e8f0; border-radius:2px; overflow:hidden; }
 .stock-bar-fill { height:100%; border-radius:2px; transition:width .3s; }
@@ -304,8 +323,8 @@ const S = `
 .rep-empty { text-align:center; color:#94a3b8; padding:40px; font-size:.84rem; }
 .mono { font-family:'JetBrains Mono',monospace; font-size:.78rem; }
 
-@media(max-width:1024px){ .rep-kpis{grid-template-columns:1fr 1fr;} .rep-grid2{grid-template-columns:1fr;} }
-@media(max-width:640px){  .rep-kpis{grid-template-columns:1fr;} }
+@media(max-width:1024px){ .rep-kpis{grid-template-columns:1fr 1fr;} .rep-grid2{grid-template-columns:1fr;} .model-hero{grid-template-columns:1fr 1fr;} }
+@media(max-width:640px){  .rep-kpis{grid-template-columns:1fr;} .model-hero{grid-template-columns:1fr;} }
 `;
 
 // ── HELPERS UI ────────────────────────────────────────────────────────────────
@@ -339,6 +358,23 @@ function AlertaBadge({ alerta }) {
     <span className="alerta-badge" style={{ background:ALERTA_BG[alerta], color:ALERTA_COLORS[alerta] }}>
       {ALERTA_LABEL[alerta] || alerta}
     </span>
+  );
+}
+
+function RiesgoBadge({ value, clase }) {
+  const pct = Math.max(0, Math.min(100, Number(value || 0)));
+  const color = pct >= 75 ? "#dc2626" : pct >= 50 ? "#d97706" : pct >= 30 ? "#2563eb" : "#16a34a";
+  const label = clase === 1 ? "Riesgo" : "Sin riesgo";
+  return (
+    <div className="risk-meter">
+      <div className="risk-meter-top">
+        <span className="risk-meter-value">{pct}%</span>
+        <span className="risk-meter-label">{label}</span>
+      </div>
+      <div className="risk-meter-track">
+        <div className="risk-meter-fill" style={{ width:`${pct}%`, background:color }} />
+      </div>
+    </div>
   );
 }
 
@@ -846,6 +882,7 @@ function TabAgotamiento({ branches }) {
         case "stock":    va = a.stock_actual;              vb = b.stock_actual;            break;
         case "semanas":  va = a.semanas_a_critico??9999;  vb = b.semanas_a_critico??9999; break;
         case "ventas":   va = a.ventas_30d;               vb = b.ventas_30d;              break;
+        case "riesgo":   va = a.probabilidad_riesgo ?? 0;  vb = b.probabilidad_riesgo ?? 0; break;
         case "producto": va = a.producto||"";             vb = b.producto||"";            break;
         case "sucursal": va = a.sucursal||"";             vb = b.sucursal||"";            break;
         default:         va = 0; vb = 0;
@@ -863,6 +900,28 @@ function TabAgotamiento({ branches }) {
 
   return (
     <>
+      <div className="model-hero">
+        <div>
+          <div className="model-eyebrow">Modelo de minería de datos</div>
+          <div className="model-title">Clasificación de riesgo de agotamiento</div>
+          <div className="model-copy">
+            Evalúa inventario, ventas recientes y stock mínimo para clasificar productos con riesgo en los próximos 30 días.
+          </div>
+        </div>
+        <div className="model-chip">
+          <div className="model-chip-label">Salida</div>
+          <div className="model-chip-value">Riesgo 0 / 1</div>
+        </div>
+        <div className="model-chip">
+          <div className="model-chip-label">Probabilidad</div>
+          <div className="model-chip-value">0% a 100%</div>
+        </div>
+        <div className="model-chip">
+          <div className="model-chip-label">Horizonte</div>
+          <div className="model-chip-value">30 días</div>
+        </div>
+      </div>
+
       {/* KPIs */}
       <div className="rep-kpis">
         {[
@@ -885,7 +944,7 @@ function TabAgotamiento({ branches }) {
       {/* ── TABLA DE PREDICCIÓN ── */}
       <div className="rep-panel">
         <div className="rep-panel-head">
-          <div className="rep-panel-title"><MdTrendingDown/>Predicción de agotamiento por producto · sucursal</div>
+          <div className="rep-panel-title"><MdTrendingDown/>Clasificación de riesgo de agotamiento por producto · sucursal</div>
           <div style={{ display:"flex", gap:8, alignItems:"center" }}>
             <span className="rep-badge">{sorted.length} / {data.length}</span>
             <button className="rep-apply" onClick={load} disabled={loading} style={{ padding:"6px 14px", fontSize:".78rem" }}>
@@ -1001,13 +1060,14 @@ function TabAgotamiento({ branches }) {
                   <th>Tasa diaria</th>
                   <th className="sortable" onClick={() => toggleSort("semanas")}>Sems. a crítico{sortIcon("semanas")}</th>
                   <th>Agotamiento total ⓘ</th>
+                  <th className="sortable" onClick={() => toggleSort("riesgo")}>Riesgo{sortIcon("riesgo")}</th>
                   <th className="sortable" onClick={() => toggleSort("alerta")}>Estado{sortIcon("alerta")}</th>
                 </tr>
               </thead>
               <tbody>
                 {sorted.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="rep-empty">
+                    <td colSpan={12} className="rep-empty">
                       {filtBusqueda
                         ? `Sin resultados para "${filtBusqueda}"`
                         : "Sin productos con los filtros seleccionados"}
@@ -1063,6 +1123,7 @@ function TabAgotamiento({ branches }) {
                         )}
                       </td>
                       <td><AgotamientoCell d={d}/></td>
+                      <td><RiesgoBadge value={d.probabilidad_riesgo} clase={d.riesgo_clase}/></td>
                       <td><AlertaBadge alerta={d.alerta}/></td>
                     </tr>
                   );
@@ -1077,10 +1138,14 @@ function TabAgotamiento({ branches }) {
 }
 
 // ── PRINCIPAL ─────────────────────────────────────────────────────────────────
-export default function Reportes() {
-  const [tab,      setTab]      = useState("ventas");
+export default function Reportes({ initialTab = "ventas" }) {
+  const [tab,      setTab]      = useState(initialTab);
   const [branches, setBranches] = useState([]);
   const [alertas,  setAlertas]  = useState({ critico:0, agotado:0 });
+
+  useEffect(() => {
+    setTab(initialTab);
+  }, [initialTab]);
 
   useEffect(() => {
     fetch(`${API_URL}/api/admin/branches`, { headers:auth() })
@@ -1097,13 +1162,18 @@ export default function Reportes() {
   }, []);
 
   const totalAlerta = alertas.critico + alertas.agotado;
+  const isAgotamientoDirecto = initialTab === "inventario";
 
   return (
     <div className="rep">
       <style>{S}</style>
       <div className="page-header">
-        <h2>Reportes</h2>
-        <p>Análisis de ventas, inventario y predicción de agotamiento por sucursal</p>
+        <h2>{isAgotamientoDirecto ? "Agotamiento IA" : "Reportes"}</h2>
+        <p>
+          {isAgotamientoDirecto
+            ? "Clasificación de riesgo de agotamiento con probabilidad por producto y sucursal"
+            : "Análisis de ventas, inventario y predicción de agotamiento por sucursal"}
+        </p>
       </div>
 
       <div className="rep-tabs-nav">
