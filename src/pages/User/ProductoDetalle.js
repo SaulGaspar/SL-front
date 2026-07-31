@@ -580,10 +580,10 @@ export default function ProductoDetalle() {
       {related.length > 0 && (
         <div className="pd-related">
           <div className="pd-related-title">
-            {recommendationSource === "apriori" ? "Comprados frecuentemente juntos" : "También te puede gustar"}
+            {recommendationSource === "apriori" ? "También te puede interesar" : "También te puede gustar"}
           </div>
           {recommendationSource === "apriori" && (
-            <div className="pd-related-subtitle">Recomendaciones basadas en patrones de pedidos entregados.</div>
+            <div className="pd-related-subtitle">Una gran elección para llevar</div>
           )}
           <div className="pd-related-grid">
             {related.map(r=>(

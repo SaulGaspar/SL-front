@@ -230,19 +230,20 @@ const S = `
 .stock-bar-fill { height:100%; border-radius:2px; transition:width .3s; }
 
 .agot-ai-hero {
-  display:grid; grid-template-columns:1.4fr repeat(3,minmax(150px,1fr));
+  display:grid; grid-template-columns:1.35fr repeat(3,minmax(150px,1fr));
   gap:14px; align-items:stretch; margin-bottom:16px;
 }
 .agot-ai-intro {
-  background:white; border:1px solid #e2e8f0; border-radius:12px;
-  padding:20px 22px; box-shadow:0 1px 4px rgba(15,23,42,.06);
+  background:linear-gradient(135deg,#0f172a,#1e3a5f); color:white;
+  border:1px solid rgba(255,255,255,.08); border-radius:12px;
+  padding:22px 24px; box-shadow:0 14px 36px rgba(15,23,42,.14);
 }
 .agot-ai-eyebrow {
-  font-size:.68rem; font-weight:800; color:#2563eb; text-transform:uppercase;
+  font-size:.68rem; font-weight:800; color:#baf24a; text-transform:uppercase;
   letter-spacing:.1em; margin-bottom:7px;
 }
-.agot-ai-title { margin:0 0 6px; color:#0f172a; font-size:1.45rem; font-weight:800; }
-.agot-ai-copy { margin:0; color:#475569; font-size:.86rem; line-height:1.55; max-width:640px; }
+.agot-ai-title { margin:0 0 7px; color:white; font-size:1.55rem; font-weight:800; }
+.agot-ai-copy { margin:0; color:#dbeafe; font-size:.88rem; line-height:1.6; max-width:660px; }
 .agot-ai-card {
   background:white; border:1px solid #e2e8f0; border-radius:12px; padding:18px;
   box-shadow:0 1px 4px rgba(15,23,42,.06);
@@ -1265,8 +1266,8 @@ function normalizarAgotamientoRow(row) {
 function ResultadoAgotamiento({ row }) {
   return (
     <span className={`agot-result ${row.seAgotara ? "si" : "no"}`}>
-      <span className="agot-result-main">{row.seAgotara ? "Si se agotara" : "No se agotara"}</span>
-      <span className="agot-result-sub">en los proximos 30 dias</span>
+      <span className="agot-result-main">{row.seAgotara ? "Se agotará" : "No se agotará"}</span>
+      <span className="agot-result-sub">próximos 30 días</span>
     </span>
   );
 }
@@ -1398,24 +1399,24 @@ function TabRiesgoAgotamiento({ branches }) {
     <>
       <section className="agot-ai-hero">
         <div className="agot-ai-intro">
-          <div className="agot-ai-eyebrow">Modelo de clasificacion</div>
-          <h3 className="agot-ai-title">Riesgo de agotamiento</h3>
+          <div className="agot-ai-eyebrow">Inventario preventivo</div>
+          <h3 className="agot-ai-title">Alertas de stock</h3>
           <p className="agot-ai-copy">
-            Predice por producto y sucursal si el inventario se agotara o quedara bajo el minimo durante los proximos 30 dias.
+            Analiza ventas recientes, existencias y mínimos por sucursal para anticipar qué productos requieren reposición en los próximos 30 días.
           </p>
         </div>
         <div className="agot-ai-card blue">
-          <div className="agot-ai-card-label">Registros</div>
+          <div className="agot-ai-card-label">Productos evaluados</div>
           <div className="agot-ai-card-value">{fmt(totales.total)}</div>
           <div className="agot-ai-card-sub">producto + sucursal</div>
         </div>
         <div className="agot-ai-card red">
-          <div className="agot-ai-card-label">Si se agotara</div>
+          <div className="agot-ai-card-label">Requieren atención</div>
           <div className="agot-ai-card-value">{fmt(totales.si)}</div>
-          <div className="agot-ai-card-sub">en los proximos 30 dias</div>
+          <div className="agot-ai-card-sub">posible falta de stock</div>
         </div>
         <div className="agot-ai-card green">
-          <div className="agot-ai-card-label">No se agotara</div>
+          <div className="agot-ai-card-label">Con cobertura</div>
           <div className="agot-ai-card-value">{fmt(totales.no)}</div>
           <div className="agot-ai-card-sub">stock suficiente</div>
         </div>
@@ -1425,13 +1426,13 @@ function TabRiesgoAgotamiento({ branches }) {
         <div className="agot-ai-panel-head">
           <div className="agot-ai-panel-title">
             <MdTrendingDown/>
-            Dataset de riesgo de agotamiento a 30 dias
+            Productos con riesgo a 30 días
           </div>
           <div style={{ display:"flex", gap:8, alignItems:"center" }}>
             <span className="rep-badge">{fmt(sorted.length)} de {fmt(rows.length)}</span>
             <button className="rep-apply" onClick={load} disabled={loading} style={{ padding:"7px 14px", fontSize:".78rem" }}>
               <MdRefresh size={14} className={loading ? "spinning" : ""}/>
-              {loading ? "Cargando" : "Actualizar"}
+              {loading ? "Actualizando" : "Actualizar"}
             </button>
           </div>
         </div>
@@ -1455,8 +1456,8 @@ function TabRiesgoAgotamiento({ branches }) {
             <label>Resultado</label>
             <select value={filtResultado} onChange={e => setFiltResultado(e.target.value)}>
               <option value="">Todos</option>
-              <option value="si">Si se agotara</option>
-              <option value="no">No se agotara</option>
+              <option value="si">Se agotará</option>
+              <option value="no">No se agotará</option>
             </select>
           </div>
           <div className="search-bar" style={{ minWidth:280, flex:"1 1 280px", alignSelf:"flex-end" }}>
@@ -1481,7 +1482,7 @@ function TabRiesgoAgotamiento({ branches }) {
         {loading ? (
           <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, padding:52, color:"#94a3b8" }}>
             <MdRefresh size={22} className="spinning"/>
-            Calculando dataset de agotamiento
+            Actualizando análisis de inventario
           </div>
         ) : (
           <div className="agot-ai-table-wrap">
@@ -1489,14 +1490,14 @@ function TabRiesgoAgotamiento({ branches }) {
               <thead>
                 <tr>
                   <th>#</th>
-                  <th className="sortable" onClick={() => toggleSort("producto")}>producto{sortIcon("producto")}</th>
-                  <th className="sortable" onClick={() => toggleSort("sucursal")}>sucursal{sortIcon("sucursal")}</th>
-                  <th className="sortable" onClick={() => toggleSort("stock")}>stock_actual{sortIcon("stock")}</th>
-                  <th>min_stock</th>
-                  <th className="sortable" onClick={() => toggleSort("ventas")}>ventas_30d{sortIcon("ventas")}</th>
-                  <th className="sortable" onClick={() => toggleSort("stock_estimado")}>stock_estimado_30d{sortIcon("stock_estimado")}</th>
-                  <th className="sortable" onClick={() => toggleSort("probabilidad")}>probabilidad{sortIcon("probabilidad")}</th>
-                  <th className="sortable" onClick={() => toggleSort("resultado")}>se agotara 30d{sortIcon("resultado")}</th>
+                  <th className="sortable" onClick={() => toggleSort("producto")}>Producto{sortIcon("producto")}</th>
+                  <th className="sortable" onClick={() => toggleSort("sucursal")}>Sucursal{sortIcon("sucursal")}</th>
+                  <th className="sortable" onClick={() => toggleSort("stock")}>Stock{sortIcon("stock")}</th>
+                  <th>Mínimo</th>
+                  <th className="sortable" onClick={() => toggleSort("ventas")}>Ventas 30 días{sortIcon("ventas")}</th>
+                  <th className="sortable" onClick={() => toggleSort("stock_estimado")}>Stock estimado{sortIcon("stock_estimado")}</th>
+                  <th className="sortable" onClick={() => toggleSort("probabilidad")}>Confianza{sortIcon("probabilidad")}</th>
+                  <th className="sortable" onClick={() => toggleSort("resultado")}>Estado 30 días{sortIcon("resultado")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1546,11 +1547,11 @@ export default function Reportes({ initialTab = "ventas" }) {
     <div className="rep">
       <style>{S}</style>
       <div className="page-header">
-        <h2>{isAgotamientoDirecto ? "Riesgo de agotamiento" : "Reportes"}</h2>
+        <h2>{isAgotamientoDirecto ? "Alertas de stock" : "Reportes"}</h2>
         <p>
           {isAgotamientoDirecto
-            ? "Clasificación de riesgo de agotamiento con probabilidad por producto y sucursal"
-            : "Análisis de ventas, inventario y predicción de agotamiento por sucursal"}
+            ? "Seguimiento preventivo de productos que podrían quedar bajo el mínimo en los próximos 30 días"
+            : "Resumen de ventas, inventario y desempeño por sucursal"}
         </p>
       </div>
 
@@ -1561,7 +1562,7 @@ export default function Reportes({ initialTab = "ventas" }) {
         </button>
         <button className={`rep-tab-btn${tab==="inventario"?" active":""}`} onClick={() => setTab("inventario")}>
           <MdWarning/>
-          Predicción de agotamiento
+          Alertas de stock
           {totalAlerta > 0 && <span className="rep-tab-badge">{totalAlerta}</span>}
         </button>
       </div>

@@ -39,7 +39,7 @@ export default function AdminLayout({ user, onLogout }) {
     { path: "/admin/promociones",icon: MdLocalOffer,   label: "Promociones"             },
     { path: "/admin/devoluciones",icon: MdAssignmentReturn,label: "Devoluciones"        },
     { path: "/admin/reportes",   icon: MdAssessment,   label: "Reportes"                },
-    { path: "/admin/agotamiento",icon: MdTrendingDown, label: "Riesgo de agotamiento"   },
+    { path: "/admin/agotamiento",icon: MdTrendingDown, label: "Alertas de stock"        },
   ];
 
   const isActive = (path, exact) => exact ? location.pathname === path : location.pathname.startsWith(path);

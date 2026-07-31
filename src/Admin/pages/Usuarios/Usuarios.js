@@ -4,7 +4,6 @@ import {
   MdLock, MdCheckCircle, MdCancel, MdAdminPanelSettings,
   MdPeople, MdWarning, MdKey, MdDelete, MdShoppingCart,
 } from "react-icons/md";
-import RepurchasePanel from "./RepurchasePanel";
 import CustomerSegmentsPanel from "./CustomerSegmentsPanel";
 
 const API = "https://sl-back.vercel.app/api/admin";
@@ -332,13 +331,12 @@ export default function Usuarios() {
       <style>{CSS}</style>
 
       <div className="page-header">
-        <h2>{view === "users" ? "Usuarios" : view === "repurchase" ? "Propensión de recompra" : "Segmentación de clientes"}</h2>
-        <p>{view === "users" ? "Gestiona los usuarios del sistema" : view === "repurchase" ? "Clasificación de clientes que podrían volver a comprar en los próximos 30 días" : "Grupos de clientes según su comportamiento de compra de los últimos 180 días"}</p>
+        <h2>{view === "users" ? "Usuarios" : "Segmentación de clientes"}</h2>
+        <p>{view === "users" ? "Gestiona los usuarios del sistema" : "Grupos de clientes según su comportamiento de compra de los últimos 180 días"}</p>
       </div>
 
       <div className="usu-tabs">
         <button className={`usu-tab ${view === "users" ? "active" : ""}`} onClick={()=>setView("users")}>Gestión de usuarios</button>
-        <button className={`usu-tab ${view === "repurchase" ? "active" : ""}`} onClick={()=>setView("repurchase")}>Probabilidad de recompra</button>
         <button className={`usu-tab ${view === "segments" ? "active" : ""}`} onClick={()=>setView("segments")}>Segmentación de clientes</button>
       </div>
 
@@ -462,7 +460,7 @@ export default function Usuarios() {
         )}
       </div>
 
-      </> : view === "repurchase" ? <RepurchasePanel /> : <CustomerSegmentsPanel />}
+      </> : <CustomerSegmentsPanel />}
 
       {/* Modal edición */}
       {modal && (
