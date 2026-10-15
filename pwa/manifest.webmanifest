@@ -1,0 +1,30 @@
+{
+  "id": "/",
+  "name": "SportLike",
+  "short_name": "SportLike",
+  "description": "Tu equipo deportivo, catálogo y carrito, también sin conexión.",
+  "lang": "es-MX",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#0b1f33",
+  "theme_color": "#0b1f33",
+  "categories": ["shopping", "sports"],
+  "prefer_related_applications": false,
+  "screenshots": [
+    { "src": "/screenshots/desktop.png", "sizes": "1365x900", "type": "image/png", "form_factor": "wide", "label": "Inicio de SportLike en escritorio" },
+    { "src": "/screenshots/mobile.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "Inicio de SportLike en celular" }
+  ],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Catálogo", "url": "/catalogo", "description": "Explora productos deportivos", "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }] },
+    { "name": "Mi carrito", "url": "/carrito", "description": "Revisa tu selección", "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }] },
+    { "name": "Mis pedidos", "url": "/orders", "description": "Consulta tus compras", "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }] }
+  ]
+}

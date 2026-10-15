@@ -4,14 +4,18 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 
 import { ThemeProvider } from "./context/ThemeContext.js";
+import { PwaProvider } from "./context/PwaContext.js";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
 import "./styles/theme.css";
 const root = createRoot(document.getElementById("root"));
 
 root.render(
   <ThemeProvider>
+    <PwaProvider>
     <BrowserRouter>
       <App />
     </BrowserRouter>
+    </PwaProvider>
   </ThemeProvider>
 );

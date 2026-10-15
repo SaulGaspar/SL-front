@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../../../config/api";
 import { useEffect, useState } from "react";
 import {
   BarChart,
@@ -10,7 +11,7 @@ import {
   Cell,
 } from "recharts";
 
-const API = "https://sl-back.vercel.app";
+const API = API_BASE_URL;
 
 export default function BranchBarChart() {
   const [branches, setBranches] = useState([]);

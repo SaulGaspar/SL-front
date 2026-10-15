@@ -56,6 +56,15 @@ html, body, #root {
   /* ⚠️ Solo aquí, en el root, aplicamos el color base */
 }
 
+body[data-reduce-motion="true"] *,
+body[data-reduce-motion="true"] *::before,
+body[data-reduce-motion="true"] *::after {
+  animation-duration:.01ms !important;
+  animation-iteration-count:1 !important;
+  scroll-behavior:auto !important;
+  transition-duration:.01ms !important;
+}
+
 /* Transiciones suaves de tema — solo en elementos Bootstrap/globales */
 .card, .btn, .form-control, .form-select, .navbar,
 .footer, .breadcrumb, .badge, .alert, .modal-content {

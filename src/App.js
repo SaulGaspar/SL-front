@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "./config/api";
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 
@@ -42,23 +43,31 @@ import Ayuda from "./pages/menu/Ayuda";
 import Configuracion from "./pages/menu/Configuracion";
 import Contacto from "./pages/menu/Contacto";
 import Tiendas from "./pages/menu/Tiendas";
+import Direcciones from "./pages/User/Direcciones";
+import Favoritos from "./pages/User/Favoritos";
+import { FavoritesProvider } from "./context/FavoritesContext";
+import { usePwa } from "./context/PwaContext";
+import OfflineRestricted from "./components/OfflineRestricted";
 
 
-const API_URL = "https://sl-back.vercel.app";
+const API_URL = API_BASE_URL;
 
 // El login conserva la barra superior, pero no muestra elementos de compra.
 const HIDDEN_NAV_ROUTES = ["/forgot-password", "/reset-password"];
-const AUTH_LAYOUT_ROUTES = ["/login", "/register", "/forgot-password", "/reset-password"];
+const AUTH_LAYOUT_ROUTES = ["/login", "/register", "/forgot-password", "/reset-password", "/google-callback"];
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const { online } = usePwa();
+  const requiresConnection = /^\/(?:profile|direcciones|orders|pago|cambios|devoluciones|login|register|change-password|verify-email|forgot-password|reset-password|google-callback)(?:\/|$)/.test(location.pathname);
 
   // true cuando la ruta actual es login o register
   const hideNav = HIDDEN_NAV_ROUTES.includes(location.pathname);
   const authLayout = AUTH_LAYOUT_ROUTES.includes(location.pathname);
+  const showCartTools = !authLayout && !["/carrito", "/pago"].includes(location.pathname);
 
   function handleLogout() {
     localStorage.removeItem("token");
@@ -68,24 +77,32 @@ export default function App() {
   }
 
   useEffect(() => {
+    const controller = new AbortController();
     async function cargarUsuario() {
       const token = localStorage.getItem("token");
-      if (!token) { setLoadingUser(false); return; }
+      if (!token || !online) { setLoadingUser(false); return; }
 
       try {
         const res = await axios.get(`${API_URL}/api/me`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+          timeout: 10000,
         });
         setUser(res.data);
-      } catch {
-        localStorage.clear();
-        setUser(null);
+      } catch (error) {
+        // Una desconexión no invalida la sesión ni borra carrito y preferencias.
+        if ([401, 403].includes(error.response?.status)) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          setUser(null);
+        }
       } finally {
         setLoadingUser(false);
       }
     }
     cargarUsuario();
-  }, []);
+    return () => controller.abort();
+  }, [online]);
 
   if (loadingUser) {
     return (
@@ -100,13 +117,14 @@ export default function App() {
 
   return (
     <CartProvider>
+      <FavoritesProvider key={user?.id || "guest"} owner={user?.id || "guest"}>
       <Routes>
 
         {/* ===== RUTAS ADMIN (sin Navbar/Footer) ===== */}
         <Route
           path="/admin/*"
           element={
-            user?.rol === "admin"
+            !online ? <OfflineRestricted /> : user?.rol === "admin"
               ? <AdminLayout user={user} onLogout={handleLogout} />
               : <Navigate to="/login" replace />
           }
@@ -120,11 +138,11 @@ export default function App() {
 
               {/* Se ocultan en /login y /register */}
               {!hideNav && <Navbar user={user} onLogout={handleLogout} />}
-              {!authLayout && <CartFloatingButton />}
-              {!authLayout && <MiniCart />}
+              {showCartTools && <CartFloatingButton />}
+              {showCartTools && <MiniCart />}
 
               <div className={`flex-grow-1 ${!authLayout ? "container-fluid px-4 py-4" : ""}`}>
-                <Routes>
+                {!online && requiresConnection ? <OfflineRestricted /> : <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/catalogo" element={<Catalogo />} />
                   <Route path="/producto/:id" element={<ProductoDetalle />} />
@@ -153,23 +171,23 @@ export default function App() {
 
                   <Route
                     path="/profile"
-                    element={localStorage.getItem("token") ? <Profile user={user} setUser={setUser} /> : <Navigate to="/login" />}
+                    element={user ? <Profile user={user} setUser={setUser} /> : <Navigate to="/login" />}
                   />
-                  <Route path="/change-password" element={<ChangePassword />} />
+                  <Route path="/direcciones" element={user ? <Direcciones/> : <Navigate to="/login" replace/>}/>
+                  <Route path="/favoritos" element={<Favoritos/>}/>
+                  <Route path="/change-password" element={user ? <ChangePassword /> : <Navigate to="/login" replace/>} />
                   <Route path="/verify-email" element={<VerifyEmail />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/google-callback" element={<GoogleCallback onLogin={setUser} />} />
-                  <Route path="/orders" element={<MisPedidos />} />
-                  <Route
-                    path="/devoluciones"
-                    element={localStorage.getItem("token") ? <Devoluciones /> : <Navigate to="/login" />}
-                  />
+                  <Route path="/orders" element={user ? <MisPedidos /> : <Navigate to="/login" replace/>} />
+                  <Route path="/cambios" element={localStorage.getItem("token") ? <Devoluciones /> : <Navigate to="/login" />} />
+                  <Route path="/devoluciones" element={<Navigate to="/cambios" replace />} />
 
                   <Route path="/400" element={<Error400 />} />
                   <Route path="/500" element={<Error500 />} />
                   <Route path="*" element={<Error404 />} />
-                </Routes>
+                </Routes>}
               </div>
 
               {/* En el login se conservan el Navbar y el Footer */}
@@ -179,6 +197,7 @@ export default function App() {
         />
 
       </Routes>
+      </FavoritesProvider>
     </CartProvider>
   );
 }

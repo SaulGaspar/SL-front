@@ -2,8 +2,10 @@
   "name": "sportlike-client",
   "version": "1.0.0",
   "private": true,
+  "engines": { "node": ">=20", "browsers": "defaults" },
+  "@parcel/resolver-default": { "packageExports": true },
   "dependencies": {
-    "axios": "^1.4.0",
+    "axios": "^1.20.0",
     "bootstrap": "^5.3.2",
     "bootstrap-icons": "^1.11.3",
     "chart.js": "^4.5.1",
@@ -12,13 +14,22 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.5.0",
-    "react-router-dom": "^6.14.1",
+    "react-router-dom": "^7.18.4",
     "recharts": "^3.7.0"
   },
   "scripts": {
-    "dev": "parcel index.html --open",
-    "build": "parcel build index.html --dist-dir dist",
-    "start": "serve -s dist"
+    "dev": "parcel index.html --dist-dir .parcel-dev --open",
+    "build": "parcel build index.html --dist-dir dist && node scripts/build-pwa.cjs",
+    "check:pwa": "node scripts/check-pwa.cjs",
+    "check:pwa:browser": "node scripts/check-pwa-browser.cjs",
+    "check:account:browser": "node scripts/check-account-browser.cjs",
+    "check:release:browser": "node scripts/check-release-browser.cjs",
+    "check:csv": "node scripts/check-product-csv.cjs",
+    "check:google:browser": "node scripts/check-google-browser.cjs",
+    "start": "npm run build && serve -s dist"
+  },
+  "overrides": {
+    "serve": { "compression": "^1.8.2" }
   },
   "devDependencies": {
     "buffer": "^6.0.3",

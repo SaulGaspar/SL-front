@@ -1,0 +1,31 @@
+.sl-pwa-offline { position:relative; z-index:1100; padding:12px 20px; background:#fff0c2; color:#593c00; text-align:center; font-size:.88rem; font-weight:600; }
+.sl-install-notice { position:fixed; z-index:2100; bottom:24px; left:24px; width:min(410px,calc(100vw - 32px)); box-sizing:border-box; padding:24px; border:1px solid var(--border-soft,#d8e0eb); border-radius:22px; background:var(--bg-card,#fff); color:var(--text-main,#0b1f33); box-shadow:0 12px 45px #0003; }
+.sl-install-notice-copy { padding-right:22px; }
+.sl-install-notice strong { display:block; font-size:1.1rem; }
+.sl-install-notice p { margin:8px 0 18px; font-size:.88rem; line-height:1.6; }
+.sl-install-close { position:absolute; top:10px; right:10px; width:40px; height:40px; border:0; background:transparent; color:inherit; font-size:1.6rem; cursor:pointer; }
+.sl-install-actions { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+.sl-install-later { min-height:44px; border:0; background:transparent; color:inherit; font:inherit; cursor:pointer; }
+.sl-install-notice button:focus-visible { outline:3px solid #86a5ff; outline-offset:3px; }
+@media(max-width:700px) { .sl-install-notice { left:16px; bottom:calc(16px + env(safe-area-inset-bottom)); padding:20px; } .sl-install-actions .sl-pwa-install { width:auto; flex:1; } }
+.sl-pwa-panel { margin-top:24px; padding:26px; display:flex; align-items:center; gap:20px; border:1px solid var(--cfg-line); border-radius:26px; background:var(--cfg-card); color:var(--cfg-ink); }
+.sl-pwa-mark { flex-shrink:0; width:60px; height:60px; border-radius:18px; display:grid; place-items:center; background:#0b1f33; color:#c7f22b; font-size:1.5rem; font-weight:900; }
+.sl-pwa-copy { flex:1; min-width:0; }
+.sl-pwa-copy h2 { margin:0 0 8px; color:var(--cfg-ink); font-size:1.3rem; font-weight:800; }
+.sl-pwa-copy p { margin:5px 0; line-height:1.6; }
+.sl-pwa-help { color:var(--cfg-muted); font-size:.85rem; }
+.sl-pwa-install { min-height:48px; padding:12px 20px; border:0; border-radius:14px; background:#244fdb; color:#fff; font:inherit; font-weight:750; cursor:pointer; }
+.sl-pwa-install:disabled { opacity:.6; cursor:wait; }
+.sl-pwa-install:focus-visible { outline:3px solid #86a5ff; outline-offset:3px; }
+.sl-pwa-installed { color:var(--cfg-blue); font-weight:700; }
+.sl-pwa-nav-install { display:inline-flex; align-items:center; gap:8px; min-height:40px; padding:8px 12px; border:1px solid #c7f22b; border-radius:12px; background:#c7f22b; color:#0b1f33; font:inherit; font-size:.8rem; font-weight:750; cursor:pointer; }
+.sl-pwa-nav-install:focus-visible { outline:3px solid #86a5ff; outline-offset:3px; }
+.nb-dbody .sl-pwa-nav-install { width:100%; justify-content:center; margin-bottom:14px; }
+.nb-dbody .sl-pwa-nav-install span { display:inline; }
+.sl-pwa-dialog { max-width:480px; width:calc(100% - 32px); padding:28px; border:1px solid var(--border-soft); border-radius:22px; background:var(--bg-card); color:var(--text-main); }
+.sl-pwa-dialog::backdrop { background:rgba(0,0,0,.65); }
+.sl-pwa-dialog p { line-height:1.65; }
+.sl-pwa-cached { padding:14px 18px; margin:16px auto; max-width:1324px; border:1px solid #d9ab30; border-radius:14px; background:#fff0c2; color:#593c00; font-size:.88rem; line-height:1.6; }
+.sl-pwa-restricted { padding:60px 24px; max-width:640px; margin:30px auto; color:var(--text-main); background:var(--bg-card); border:1px solid var(--border-soft); border-radius:24px; }
+@media(max-width:700px) { .sl-pwa-nav-install span { display:none; } .sl-pwa-nav-install { padding:8px 11px; } }
+@media(max-width:700px) { .sl-pwa-panel { flex-wrap:wrap; padding:20px; gap:14px; } .sl-pwa-copy { flex-basis:calc(100% - 80px); } .sl-pwa-install { width:100%; } }

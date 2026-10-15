@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../../../config/api";
 import { useEffect, useState, useMemo } from "react";
 import {
   ResponsiveContainer,
@@ -9,7 +10,7 @@ import {
   Area
 } from "recharts";
 
-const API = "https://sl-back.vercel.app";
+const API = API_BASE_URL;
 
 export default function SalesLineChart() {
   const [sales, setSales] = useState([]);

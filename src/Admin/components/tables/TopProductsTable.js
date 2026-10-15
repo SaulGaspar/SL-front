@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../../../config/api";
 import { useEffect, useState } from "react";
 
 export default function TopProductsTable() {
@@ -9,7 +10,7 @@ export default function TopProductsTable() {
     const fetchTopProducts = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("https://sl-back.vercel.app/api/admin/dashboard", {
+        const res = await fetch(`${API_BASE_URL}/api/admin/dashboard`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error(`Error API ${res.status}`);

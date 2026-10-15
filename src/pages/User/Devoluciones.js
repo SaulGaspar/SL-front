@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../../config/api";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -8,7 +9,7 @@ import {
   MdRefresh,
 } from "react-icons/md";
 
-const API = "https://sl-back.vercel.app/api/returns";
+const API = `${API_BASE_URL}/api/returns`;
 
 const reasonLabels = {
   damaged: "Producto dañado",
@@ -19,11 +20,11 @@ const reasonLabels = {
 };
 
 const statusLabels = {
-  requested: "Solicitada",
+  requested: "Cambio solicitado",
   reviewing: "En revisión",
-  approved: "Aprobada",
-  rejected: "Rechazada",
-  refunded: "Reembolsada",
+  approved: "Cambio autorizado",
+  rejected: "No autorizado",
+  refunded: "Solicitud cerrada",
 };
 
 const money = (value) =>
@@ -154,10 +155,9 @@ export default function Devoluciones() {
       <header className="returns-hero">
         <MdAssignmentReturn />
         <div>
-          <h1>Devoluciones y reembolsos</h1>
+          <h1>Cambios de producto</h1>
           <p>
-            Registra una solicitud para un pedido entregado y consulta aquí la
-            respuesta de nuestro equipo.
+            SportLike realiza cambios de productos entregados. No se realizan devoluciones ni reembolsos.
           </p>
         </div>
       </header>
@@ -166,7 +166,7 @@ export default function Devoluciones() {
 
       <section className="returns-layout">
         <form className="returns-card returns-form" onSubmit={submit}>
-          <h2>Nueva solicitud</h2>
+          <h2>Solicitar un cambio</h2>
           <label>
             Pedido entregado
             <select
@@ -205,7 +205,7 @@ export default function Devoluciones() {
               rows={5}
               value={form.details}
               onChange={(event) => setForm({ ...form, details: event.target.value })}
-              placeholder="Describe el estado del producto y la solución que solicitas."
+              placeholder="Describe el producto, la talla o el detalle que quieres cambiar."
             />
           </label>
           <div className="returns-evidence">
@@ -248,16 +248,16 @@ export default function Devoluciones() {
             )}
           </div>
           <button disabled={saving || eligibleOrders.length === 0}>
-            {saving ? "Registrando..." : "Enviar solicitud"}
+            {saving ? "Enviando..." : "Solicitar cambio"}
           </button>
           {eligibleOrders.length === 0 && !loading && (
-            <small>No hay pedidos entregados disponibles para devolución.</small>
+            <small>No hay pedidos entregados disponibles para solicitar un cambio.</small>
           )}
         </form>
 
         <section className="returns-card">
           <div className="returns-card-title">
-            <h2>Mis solicitudes</h2>
+            <h2>Mis cambios</h2>
             <button className="returns-refresh" onClick={load} title="Actualizar">
               <MdRefresh />
             </button>
@@ -267,14 +267,14 @@ export default function Devoluciones() {
           ) : requests.length === 0 ? (
             <div className="returns-empty">
               <MdCheckCircle />
-              <p>No has registrado devoluciones.</p>
+              <p>No has solicitado cambios.</p>
             </div>
           ) : (
             <div className="returns-list">
               {requests.map((item) => (
                 <article key={item.id}>
                   <div>
-                    <strong>Solicitud #{item.id}</strong>
+                    <strong>Cambio #{item.id}</strong>
                     <span>Pedido #{item.pedido_ref}</span>
                   </div>
                   <span className={`returns-status ${item.status}`}>
@@ -292,10 +292,7 @@ export default function Devoluciones() {
                       ))}
                     </div>
                   )}
-                  <footer>
-                    <span>{money(item.requested_amount)}</span>
-                    <span>{item.sucursal_nombre || "SportLike"}</span>
-                  </footer>
+                  <footer><span>Sin devolución de dinero</span><span>{item.sucursal_nombre || "SportLike"}</span></footer>
                   {item.admin_notes && (
                     <div className="returns-notes">
                       <strong>Respuesta:</strong> {item.admin_notes}
@@ -311,326 +308,4 @@ export default function Devoluciones() {
   );
 }
 
-const CSS = `
-  .returns-page { max-width:1180px; margin:0 auto; padding:26px 8px 60px; }
-  .returns-hero {
-    display:flex; gap:18px; align-items:flex-start; background:#0b2545; color:white;
-    padding:28px; border-radius:18px; margin-bottom:20px;
-  }
-  .returns-hero>svg { font-size:2.6rem; color:#c6f62d; flex-shrink:0; }
-  .returns-hero h1 { margin:0 0 6px; font-size:1.8rem; }
-  .returns-hero p { margin:0; color:#d6e0ec; max-width:760px; }
-  .returns-alert { border-radius:10px; padding:12px 16px; margin-bottom:16px; font-weight:700; }
-  .returns-alert.success { background:#f0fff4; color:#276749; border:1px solid #9ae6b4; }
-  .returns-alert.error { background:#fff5f5; color:#c53030; border:1px solid #feb2b2; }
-  .returns-layout { display:grid; grid-template-columns:minmax(300px,.8fr) minmax(360px,1.2fr); gap:20px; align-items:start; }
-  .returns-card { background:white; border:1px solid #e2e8f0; border-radius:16px; padding:22px; box-shadow:0 6px 24px rgba(15,23,42,.06); }
-  .returns-card h2 { margin:0 0 18px; color:#0b2545; font-size:1.2rem; }
-  .returns-form { display:flex; flex-direction:column; gap:14px; }
-  .returns-form label { display:flex; flex-direction:column; gap:6px; color:#475569; font-size:.86rem; font-weight:800; }
-  .returns-form select,.returns-form textarea { border:1px solid #cbd5e0; border-radius:9px; padding:10px 12px; font:500 .94rem 'DM Sans',sans-serif; }
-  .returns-form select:focus,.returns-form textarea:focus { outline:none; border-color:#2c5282; box-shadow:0 0 0 3px rgba(44,82,130,.12); }
-  .returns-evidence { border:1px dashed #b8c7d9; background:#f8fafc; border-radius:12px; padding:13px; }
-  .returns-evidence-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-  .returns-evidence-head>div { display:flex; flex-direction:column; color:#0b2545; font-size:.86rem; }
-  .returns-evidence-head small { color:#718096; margin-top:2px; font-weight:500; }
-  .returns-upload { display:inline-flex!important; flex-direction:row!important; align-items:center; gap:6px!important; border:0; border-radius:9px; padding:9px 12px; background:#e8f2ff; color:#1e3a5f!important; cursor:pointer; white-space:nowrap; }
-  .returns-upload input { display:none; }
-  .returns-evidence-grid,.returns-request-evidence { display:flex; flex-wrap:wrap; gap:9px; margin-top:12px; }
-  .returns-evidence-grid figure { width:82px; height:70px; margin:0; position:relative; }
-  .returns-evidence-grid img,.returns-request-evidence img { width:82px; height:70px; object-fit:cover; border-radius:9px; border:1px solid #dbe4ef; }
-  .returns-evidence-grid button { position:absolute; top:-6px; right:-6px; border:0; border-radius:50%; width:23px; height:23px; display:grid; place-items:center; padding:0; background:#c53030; color:white; cursor:pointer; }
-  .returns-request-evidence { margin:0 0 12px; }
-  .returns-request-evidence img { width:66px; height:56px; }
-  .returns-form>button { border:0; border-radius:10px; padding:12px 18px; color:white; background:#0b2545; font-weight:800; cursor:pointer; }
-  .returns-form>button:disabled { opacity:.5; cursor:not-allowed; }
-  .returns-form small { color:#975a16; }
-  .returns-card-title { display:flex; justify-content:space-between; align-items:center; }
-  .returns-refresh { border:1px solid #cbd5e0; background:white; color:#2c5282; border-radius:8px; width:36px; height:36px; display:grid; place-items:center; cursor:pointer; }
-  .returns-empty { padding:38px; color:#94a3b8; text-align:center; }
-  .returns-empty svg { font-size:2.4rem; color:#68d391; }
-  .returns-list { display:flex; flex-direction:column; gap:12px; }
-  .returns-list article { border:1px solid #e2e8f0; border-radius:12px; padding:15px; position:relative; }
-  .returns-list article>div:first-child { display:flex; flex-direction:column; color:#0b2545; }
-  .returns-list article>div:first-child span { color:#94a3b8; font-size:.78rem; }
-  .returns-list article>p { color:#64748b; margin:12px 0; }
-  .returns-list footer { display:flex; justify-content:space-between; color:#475569; font-weight:700; font-size:.82rem; }
-  .returns-status { position:absolute; right:14px; top:14px; border-radius:20px; padding:4px 9px; font-size:.73rem; font-weight:800; background:#edf2f7; }
-  .returns-status.requested { background:#fefcbf; color:#975a16; }
-  .returns-status.reviewing { background:#ebf8ff; color:#2b6cb0; }
-  .returns-status.approved,.returns-status.refunded { background:#c6f6d5; color:#276749; }
-  .returns-status.rejected { background:#fed7d7; color:#9b2c2c; }
-  .returns-notes { margin-top:12px; padding:9px 11px; border-radius:8px; background:#f8fafc; color:#475569; font-size:.82rem; }
-  @media(max-width:820px){ .returns-layout{grid-template-columns:1fr;} }
-  @media(max-width:520px){ .returns-evidence-head{align-items:flex-start; flex-direction:column;} .returns-upload{width:100%; justify-content:center;} }
-
-  /* Nueva presentación visual */
-  .returns-page {
-    --rt-ink:#0a1a2f;
-    --rt-muted:#687587;
-    --rt-paper:#f5f7f4;
-    --rt-card:#ffffff;
-    --rt-line:rgba(10,26,47,.11);
-    --rt-blue:#244fdb;
-    --rt-acid:#bde632;
-    max-width:none;
-    min-height:100vh;
-    margin:0;
-    padding:48px 20px 90px;
-    background:
-      radial-gradient(circle at 92% 2%,rgba(36,79,219,.09),transparent 27rem),
-      var(--rt-paper);
-    color:var(--rt-ink);
-    font-family:"Poppins","Segoe UI",sans-serif;
-  }
-  body[data-bs-theme="dark"] .returns-page {
-    --rt-ink:#f3f6fa;
-    --rt-muted:#a6b1c0;
-    --rt-paper:#09131f;
-    --rt-card:#101d2b;
-    --rt-line:rgba(255,255,255,.11);
-    --rt-blue:#82a2ff;
-  }
-  .returns-page *,.returns-page *::before,.returns-page *::after { box-sizing:border-box; }
-
-  .returns-hero,.returns-alert,.returns-layout {
-    width:min(1180px,100%);
-    margin-inline:auto;
-  }
-  .returns-hero {
-    position:relative;
-    min-height:250px;
-    display:flex;
-    align-items:flex-end;
-    gap:22px;
-    margin-bottom:22px;
-    padding:44px;
-    border-radius:28px;
-    overflow:hidden;
-    background:#0a1a2f;
-    box-shadow:0 24px 60px rgba(10,26,47,.15);
-  }
-  .returns-hero::after {
-    content:"";
-    position:absolute;
-    width:300px;
-    height:300px;
-    right:-65px;
-    top:-205px;
-    border:52px solid var(--rt-acid);
-    border-radius:50%;
-  }
-  .returns-hero>svg {
-    position:relative;
-    z-index:1;
-    width:62px;
-    height:62px;
-    padding:15px;
-    border-radius:17px;
-    background:var(--rt-acid);
-    color:#0a1a2f;
-    font-size:2rem;
-  }
-  .returns-hero>div { position:relative; z-index:1; }
-  .returns-hero h1 {
-    margin:0 0 9px;
-    color:#fff;
-    font-size:clamp(2rem,4vw,3.5rem);
-    font-weight:800;
-    line-height:1;
-    letter-spacing:-.055em;
-  }
-  .returns-hero p {
-    max-width:680px;
-    margin:0;
-    color:rgba(255,255,255,.64);
-    font-size:.92rem;
-    line-height:1.65;
-  }
-  .returns-alert {
-    margin-bottom:18px;
-    padding:14px 18px;
-    border-radius:14px;
-    font-size:.84rem;
-    box-shadow:0 8px 22px rgba(10,26,47,.05);
-  }
-  .returns-alert.success { background:#ecfdf3; color:#17633a; border-color:#a7e5bf; }
-  .returns-alert.error { background:#fff2f2; color:#a92626; border-color:#f5b5b5; }
-
-  .returns-layout {
-    grid-template-columns:minmax(360px,.82fr) minmax(0,1.18fr);
-    gap:20px;
-  }
-  .returns-card {
-    padding:clamp(22px,3vw,30px);
-    border:1px solid var(--rt-line);
-    border-radius:22px;
-    background:var(--rt-card);
-    box-shadow:0 14px 38px rgba(10,26,47,.065);
-  }
-  .returns-card h2 {
-    margin:0 0 22px;
-    color:var(--rt-ink);
-    font-size:1.35rem;
-    font-weight:750;
-    letter-spacing:-.035em;
-  }
-  .returns-form { gap:17px; }
-  .returns-form label {
-    gap:8px;
-    color:var(--rt-ink);
-    font-size:.72rem;
-    font-weight:700;
-  }
-  .returns-form select,.returns-form textarea {
-    width:100%;
-    min-height:50px;
-    padding:13px 14px;
-    border:1px solid var(--rt-line);
-    border-radius:12px;
-    background:var(--rt-paper);
-    color:var(--rt-ink);
-    font:500 .87rem "Poppins","Segoe UI",sans-serif;
-  }
-  .returns-form textarea { min-height:140px; resize:vertical; }
-  .returns-form select:focus,.returns-form textarea:focus {
-    border-color:var(--rt-blue);
-    box-shadow:0 0 0 4px rgba(36,79,219,.1);
-  }
-  .returns-evidence {
-    padding:17px;
-    border:1px dashed rgba(36,79,219,.3);
-    border-radius:16px;
-    background:rgba(36,79,219,.035);
-  }
-  .returns-evidence-head>div {
-    color:var(--rt-ink);
-    font-size:.78rem;
-  }
-  .returns-evidence-head small {
-    color:var(--rt-muted);
-    font-size:.68rem;
-    line-height:1.5;
-  }
-  .returns-upload {
-    min-height:42px;
-    padding:0 14px;
-    border-radius:11px;
-    background:rgba(36,79,219,.09);
-    color:var(--rt-blue)!important;
-    font-size:.72rem!important;
-  }
-  .returns-evidence-grid { gap:11px; margin-top:16px; }
-  .returns-evidence-grid figure {
-    width:88px;
-    height:76px;
-  }
-  .returns-evidence-grid img,.returns-request-evidence img {
-    width:88px;
-    height:76px;
-    border-color:var(--rt-line);
-    border-radius:11px;
-  }
-  .returns-evidence-grid button {
-    width:25px;
-    height:25px;
-    background:#c93636;
-    box-shadow:0 4px 10px rgba(201,54,54,.25);
-  }
-  .returns-form>button {
-    min-height:52px;
-    padding:0 20px;
-    border-radius:12px;
-    background:#244fdb;
-    font-family:inherit;
-    font-size:.82rem;
-    box-shadow:0 10px 24px rgba(36,79,219,.2);
-  }
-  .returns-form>button:not(:disabled):hover {
-    transform:translateY(-1px);
-    box-shadow:0 14px 28px rgba(36,79,219,.25);
-  }
-  .returns-form>small { color:#9a6510; font-size:.72rem; line-height:1.5; }
-
-  .returns-card-title { margin-bottom:18px; }
-  .returns-card-title h2 { margin:0; }
-  .returns-refresh {
-    width:40px;
-    height:40px;
-    border:1px solid var(--rt-line);
-    border-radius:12px;
-    background:var(--rt-paper);
-    color:var(--rt-blue);
-  }
-  .returns-empty {
-    min-height:260px;
-    display:grid;
-    place-content:center;
-    padding:36px;
-    color:var(--rt-muted);
-    border:1px dashed var(--rt-line);
-    border-radius:16px;
-    background:var(--rt-paper);
-  }
-  .returns-empty svg { margin-inline:auto; color:#33a969; }
-  .returns-list { gap:14px; }
-  .returns-list article {
-    padding:19px;
-    border:1px solid var(--rt-line);
-    border-radius:16px;
-    background:var(--rt-paper);
-  }
-  .returns-list article>div:first-child { color:var(--rt-ink); }
-  .returns-list article>div:first-child strong { font-size:.9rem; }
-  .returns-list article>div:first-child span { margin-top:3px; color:var(--rt-muted); }
-  .returns-list article>p {
-    margin:15px 0;
-    color:var(--rt-muted);
-    font-size:.82rem;
-    line-height:1.6;
-  }
-  .returns-list footer {
-    padding-top:12px;
-    border-top:1px solid var(--rt-line);
-    color:var(--rt-ink);
-    font-size:.76rem;
-  }
-  .returns-status {
-    right:16px;
-    top:16px;
-    padding:6px 10px;
-    border-radius:999px;
-    font-size:.66rem;
-  }
-  .returns-notes {
-    margin-top:14px;
-    padding:12px 13px;
-    border:1px solid var(--rt-line);
-    border-radius:11px;
-    background:var(--rt-card);
-    color:var(--rt-muted);
-    line-height:1.55;
-  }
-  .returns-request-evidence { margin:0 0 14px; }
-  .returns-request-evidence img { width:72px; height:62px; }
-
-  .returns-upload:focus-within,.returns-form>button:focus-visible,
-  .returns-refresh:focus-visible,.returns-evidence-grid button:focus-visible {
-    outline:3px solid var(--rt-acid);
-    outline-offset:3px;
-  }
-
-  @media(max-width:860px) {
-    .returns-page { padding:28px 14px 65px; }
-    .returns-layout { grid-template-columns:1fr; }
-    .returns-hero { min-height:230px; padding:30px; border-radius:22px; }
-  }
-  @media(max-width:560px) {
-    .returns-hero { align-items:flex-start; flex-direction:column; justify-content:flex-end; }
-    .returns-hero>svg { width:52px; height:52px; }
-    .returns-card { border-radius:19px; }
-    .returns-evidence-head { align-items:flex-start; flex-direction:column; }
-    .returns-upload { width:100%; justify-content:center; }
-    .returns-status { position:static; display:inline-flex; margin-top:10px; }
-  }
-`;
+import CSS from "./Devoluciones.styles";

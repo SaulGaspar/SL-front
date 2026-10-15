@@ -1,246 +1,133 @@
-import React, { useEffect, useState } from "react";
-import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { API_BASE_URL } from "../config/api";
+import CSS from "./GoogleCallback.styles";
 
-const CSS = `
-  .gc-page {
-    --gc-ink:#0a1a2f;
-    --gc-muted:#667386;
-    --gc-paper:#f5f7f4;
-    --gc-card:#ffffff;
-    --gc-line:rgba(10,26,47,.11);
-    --gc-blue:#244fdb;
-    --gc-acid:#bde632;
-    min-height:100vh;
-    display:grid;
-    place-items:center;
-    padding:34px 20px;
-    background:
-      linear-gradient(rgba(10,26,47,.028) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(10,26,47,.028) 1px, transparent 1px),
-      radial-gradient(circle at 88% 8%, rgba(36,79,219,.1), transparent 28rem),
-      var(--gc-paper);
-    background-size:64px 64px,64px 64px,auto,auto;
-    color:var(--gc-ink);
-    font-family:"Poppins","Segoe UI",sans-serif;
+const PENDING_KEY = "sportlike_google_signup";
+
+function readCredentials() {
+  const query = new URLSearchParams(window.location.search);
+  const fragment = new URLSearchParams(window.location.hash.slice(1));
+  const token = fragment.get("token") || query.get("token");
+  const error = fragment.get("error") || query.get("error");
+  let registration = fragment.get("registration_token") || query.get("registration_token");
+  if (!registration && !token && !error) {
+    try { registration = sessionStorage.getItem(PENDING_KEY); } catch { /* La URL sigue funcionando sin almacenamiento. */ }
   }
+  return {token,registration,error};
+}
 
-  body[data-bs-theme="dark"] .gc-page {
-    --gc-ink:#f4f7fb;
-    --gc-muted:#a6b1c0;
-    --gc-paper:#09131f;
-    --gc-card:#101d2b;
-    --gc-line:rgba(255,255,255,.11);
-    --gc-blue:#86a5ff;
-  }
-
-  .gc-page *,
-  .gc-page *::before,
-  .gc-page *::after { box-sizing:border-box; }
-
-  .gc-card {
-    position:relative;
-    width:min(100%,560px);
-    overflow:hidden;
-    padding:clamp(34px,6vw,56px);
-    border:1px solid var(--gc-line);
-    border-radius:30px;
-    background:var(--gc-card);
-    text-align:center;
-    box-shadow:0 28px 80px rgba(10,26,47,.13);
-  }
-
-  .gc-card::before {
-    content:"";
-    position:absolute;
-    width:210px;
-    height:210px;
-    right:-135px;
-    top:-135px;
-    border:34px solid var(--gc-acid);
-    border-radius:50%;
-    opacity:.92;
-  }
-
-  .gc-brand {
-    position:relative;
-    display:inline-flex;
-    align-items:center;
-    gap:10px;
-    margin-bottom:30px;
-    color:var(--gc-blue);
-    font-size:.72rem;
-    font-weight:850;
-    letter-spacing:.18em;
-    text-transform:uppercase;
-  }
-
-  .gc-brand-mark {
-    width:38px;
-    height:38px;
-    display:grid;
-    place-items:center;
-    border-radius:13px;
-    background:#0a1a2f;
-    color:var(--gc-acid);
-    letter-spacing:.04em;
-  }
-
-  .gc-icon {
-    position:relative;
-    width:82px;
-    height:82px;
-    display:grid;
-    place-items:center;
-    margin:0 auto 26px;
-    border-radius:25px;
-    background:rgba(36,79,219,.09);
-    color:var(--gc-blue);
-    font-size:2rem;
-    font-weight:900;
-  }
-
-  .gc-icon.error {
-    background:#fff0f0;
-    color:#c93636;
-  }
-
-  body[data-bs-theme="dark"] .gc-icon.error {
-    background:rgba(201,54,54,.17);
-    color:#ff8d8d;
-  }
-
-  .gc-spinner {
-    width:32px;
-    height:32px;
-    border:3px solid currentColor;
-    border-right-color:transparent;
-    border-radius:50%;
-    animation:gc-spin .85s linear infinite;
-  }
-
-  @keyframes gc-spin {
-    to { transform:rotate(360deg); }
-  }
-
-  .gc-kicker {
-    position:relative;
-    display:block;
-    margin-bottom:12px;
-    color:var(--gc-blue);
-    font-size:.7rem;
-    font-weight:850;
-    letter-spacing:.15em;
-    text-transform:uppercase;
-  }
-
-  .gc-title {
-    position:relative;
-    margin:0;
-    color:var(--gc-ink);
-    font-size:clamp(2rem,6vw,3rem);
-    line-height:1;
-    font-weight:900;
-    letter-spacing:-.055em;
-  }
-
-  .gc-message {
-    position:relative;
-    max-width:420px;
-    margin:18px auto 0;
-    color:var(--gc-muted);
-    font-size:.94rem;
-    line-height:1.7;
-  }
-
-  .gc-actions {
-    position:relative;
-    display:flex;
-    justify-content:center;
-    gap:10px;
-    margin-top:28px;
-  }
-
-  .gc-button {
-    min-height:48px;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    padding:0 20px;
-    border:1px solid transparent;
-    border-radius:14px;
-    background:#244fdb;
-    color:#fff;
-    font-size:.84rem;
-    font-weight:850;
-    text-decoration:none;
-    box-shadow:0 10px 22px rgba(36,79,219,.2);
-  }
-
-  .gc-button.secondary {
-    border-color:var(--gc-line);
-    background:transparent;
-    color:var(--gc-ink);
-    box-shadow:none;
-  }
-
-  @media(max-width:500px) {
-    .gc-page { padding:24px 12px; }
-    .gc-card { border-radius:24px; padding:34px 22px; }
-    .gc-actions { flex-direction:column; }
-    .gc-button { width:100%; }
-  }
-`;
+async function googleRequest(path, token, options = {}) {
+  const controller=new AbortController();
+  const abort=()=>controller.abort();
+  options.signal?.addEventListener("abort",abort,{once:true});
+  if(options.signal?.aborted)controller.abort();
+  const timer=setTimeout(abort,15000);
+  try {
+  const response = await fetch(API_BASE_URL+path,{
+    ...options,
+    signal:controller.signal,
+    headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},
+    cache:"no-store"
+  });
+  const data = await response.json().catch(()=>({}));
+  if (!response.ok) throw new Error(data.error || "No se pudo completar el acceso con Google.");
+  return data;
+  } catch(error) {
+    if(error.name==="AbortError")throw new Error("El servidor tardó demasiado. Intenta iniciar sesión nuevamente.");
+    if(error instanceof TypeError)throw new Error("No pudimos conectar con el servidor. Revisa tu conexión e intenta nuevamente.");
+    throw error;
+  } finally {clearTimeout(timer);options.signal?.removeEventListener("abort",abort);}
+}
 
 export default function GoogleCallback({ onLogin }) {
-  const [params] = useSearchParams();
   const navigate = useNavigate();
-  const [error, setError] = useState(false);
+  const [credentials] = useState(readCredentials);
+  const [phase,setPhase] = useState("loading");
+  const [error,setError] = useState("");
+  const [account,setAccount] = useState(null);
+  const [usuario,setUsuario] = useState("");
+  const [saving,setSaving] = useState(false);
+  const alive = useRef(true);
+  const submitting = useRef(false);
 
-  useEffect(() => {
-    const token = params.get("token");
-
-    if (token) {
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify({ usuario: "google_user" }));
-      onLogin?.(JSON.parse(localStorage.getItem("user")));
-      const t = setTimeout(() => navigate("/"), 900);
-      return () => clearTimeout(t);
+  useEffect(()=>{
+    alive.current=true;
+    const controller=new AbortController();
+    const cleanPending=()=>{try{sessionStorage.removeItem(PENDING_KEY);}catch{}};
+    // No conservar credenciales de OAuth en el historial ni en peticiones posteriores.
+    window.history.replaceState(window.history.state,"",window.location.pathname);
+    if (credentials.token || credentials.registration) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      onLogin?.(null);
     }
+    async function load() {
+      try {
+        if (credentials.error) throw new Error("No se pudo autorizar el acceso. Vuelve a continuar con Google.");
+        if (credentials.token) {
+          cleanPending();
+          const user=await googleRequest("/api/me",credentials.token,{signal:controller.signal});
+          if (!user.id || !user.usuario || !user.correo) throw new Error("No se pudieron recuperar los datos de tu cuenta.");
+          if (!alive.current || controller.signal.aborted) return;
+          localStorage.setItem("token",credentials.token);
+          localStorage.setItem("user",JSON.stringify(user));
+          onLogin?.(user);
+          navigate(user.rol==="admin"?"/admin":"/profile",{replace:true});
+        } else if(credentials.registration) {
+          try{sessionStorage.setItem(PENDING_KEY,credentials.registration);}catch{}
+          const data=await googleRequest("/api/google/registration",credentials.registration,{signal:controller.signal});
+          if (!alive.current || controller.signal.aborted) return;
+          setAccount(data);setPhase("choose");
+        } else throw new Error("No recibimos los datos del acceso. Vuelve a continuar con Google.");
+      } catch(error) {
+        if (!alive.current || controller.signal.aborted) return;
+        cleanPending();setError(error.message);setPhase("error");
+      }
+    }
+    load();
+    return ()=>{alive.current=false;controller.abort();};
+  },[credentials,navigate,onLogin]);
 
-    setError(true);
-  }, [navigate, onLogin, params]);
+  async function complete(event) {
+    event.preventDefault();
+    if (submitting.current) return;
+    if (!/^[a-zA-Z0-9_-]{4,20}$/.test(usuario.trim())) {setError("Usa de 4 a 20 caracteres: letras, números, guion o guion bajo.");return;}
+    submitting.current=true;setSaving(true);setError("");
+    try {
+      const result=await googleRequest("/api/google/complete",credentials.registration,{method:"POST",body:JSON.stringify({usuario:usuario.trim()})});
+      // Se consulta el perfil real también después de crear la cuenta.
+      const user=await googleRequest("/api/me",result.token);
+      if (!user.id || !user.usuario || !user.correo) throw new Error("No se pudieron recuperar los datos de tu cuenta. Intenta continuar otra vez.");
+      if (!alive.current) return;
+      try{sessionStorage.removeItem(PENDING_KEY);}catch{}
+      localStorage.setItem("token",result.token);
+      localStorage.setItem("user",JSON.stringify(user));
+      onLogin?.(user);
+      navigate("/profile",{replace:true});
+    } catch(error) {if(alive.current)setError(error.message || "No se pudo crear tu cuenta.");}
+    finally {submitting.current=false;if(alive.current)setSaving(false);}
+  }
 
-  return (
-    <main className="gc-page">
-      <style>{CSS}</style>
-
-      <section className="gc-card" aria-live="polite">
-        <div className="gc-brand">
-          <span className="gc-brand-mark">SL</span>
-          SportLike
-        </div>
-
-        <div className={`gc-icon ${error ? "error" : ""}`} aria-hidden="true">
-          {error ? "!" : <span className="gc-spinner" />}
-        </div>
-
-        <span className="gc-kicker">Cuenta SportLike</span>
-        <h1 className="gc-title">
-          {error ? "No pudimos iniciar sesión" : "Conectando tu cuenta"}
-        </h1>
-        <p className="gc-message">
-          {error
-            ? "El acceso con Google no devolvió la información necesaria. Inténtalo nuevamente desde el inicio de sesión."
-            : "Estamos preparando tu sesión de forma segura. En un momento volverás a SportLike."}
-        </p>
-
-        {error && (
-          <div className="gc-actions">
-            <Link className="gc-button" to="/login">Volver al login</Link>
-            <Link className="gc-button secondary" to="/">Ir al inicio</Link>
-          </div>
-        )}
-      </section>
-    </main>
-  );
+  return <main className="gc-page"><style>{CSS}</style>
+    <section className="gc-card" aria-live="polite">
+      <div className="gc-brand"><span className="gc-brand-mark">SL</span>SportLike</div>
+      <div className={`gc-icon ${phase==="error"?"error":""}`} aria-hidden="true">{phase==="loading"?<span className="gc-spinner"/>:phase==="error"?"!":"@"}</div>
+      <span className="gc-kicker">Cuenta SportLike</span>
+      <h1 className="gc-title">{phase==="choose"?"Elige tu nombre de usuario":phase==="error"?"No pudimos iniciar sesión":"Conectando tu cuenta"}</h1>
+      {phase==="loading" && <p className="gc-message">Estamos recuperando los datos de tu cuenta.</p>}
+      {phase==="choose" && <>
+        <p className="gc-message">Continúa con <strong>{account?.correo}</strong>. Solo falta elegir cómo te identificarás en SportLike.</p>
+        <form className="gc-form" onSubmit={complete}>
+          <label htmlFor="google-username">Nombre de usuario</label>
+          <input id="google-username" name="usuario" value={usuario} onChange={event=>setUsuario(event.target.value)} minLength={4} maxLength={20} pattern="[a-zA-Z0-9_-]{4,20}" required autoComplete="username" autoCapitalize="none" spellCheck={false} aria-describedby="google-username-help" disabled={saving}/>
+          <small id="google-username-help">De 4 a 20 caracteres. Puedes usar letras, números, guion y guion bajo.</small>
+          {error && <p className="gc-error" role="alert">{error}</p>}
+          <button className="gc-button" type="submit" disabled={saving}>{saving?"Creando cuenta…":"Crear mi cuenta"}</button>
+        </form>
+        <div className="gc-actions"><Link className="gc-button secondary" to="/login" onClick={()=>{try{sessionStorage.removeItem(PENDING_KEY);}catch{}}}>Cancelar</Link></div>
+      </>}
+      {phase==="error" && <><p className="gc-message" role="alert">{error}</p><div className="gc-actions"><Link className="gc-button" to="/login">Volver a iniciar sesión</Link><Link className="gc-button secondary" to="/">Ir al inicio</Link></div></>}
+    </section>
+  </main>;
 }

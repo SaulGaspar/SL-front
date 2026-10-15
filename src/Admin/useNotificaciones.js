@@ -1,6 +1,7 @@
+import { API_BASE_URL } from "../config/api";
 import { useState, useEffect, useRef, useCallback } from "react";
 
-const API_URL = "https://sl-back.vercel.app";
+const API_URL = API_BASE_URL;
 const POLL_MS = 30_000;
 const LS_SEEN_KEY = "admin_seen_ids";
 
