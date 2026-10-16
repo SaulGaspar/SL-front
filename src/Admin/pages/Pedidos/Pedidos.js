@@ -241,6 +241,7 @@ export default function Pedidos() {
                         <div className="ped-item-row" key={item.id||i}>
                           <div>
                             <div className="ped-item-name">{item.nombre}</div>
+                            {(item.talla || item.color) && <div className="ped-item-qty">{[item.talla && `Talla: ${item.talla}`,item.color && `Color: ${item.color}`].filter(Boolean).join(" · ")}</div>}
                             <div className="ped-item-cat">{item.categoria}</div>
                             <div className="ped-item-qty">Cantidad: {item.cantidad}</div>
                           </div>

@@ -2,6 +2,7 @@ import { API_BASE_URL } from "../../config/api";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
+import { checkoutItems } from "../../utils/checkoutItems";
 
 const API_URL = API_BASE_URL;
 const PENDING_KEY = "sportlike_pending_checkout";
@@ -16,17 +17,7 @@ function readSession(key) {
 }
 
 function normalizeOrderItems(cart) {
-  const merged = new Map();
-  for (const item of cart) {
-    const productId = Number(item.id || item.product_id);
-    const quantity = getQty(item);
-    if (!productId || !Number.isInteger(quantity) || quantity <= 0) continue;
-    merged.set(productId, (merged.get(productId) || 0) + quantity);
-  }
-  return [...merged.entries()].map(([product_id, cantidad]) => ({
-    product_id,
-    cantidad,
-  }));
+  try{return checkoutItems(cart);}catch{return [];}
 }
 
 import CSS from "./Pago.styles";

@@ -12,6 +12,7 @@ const LAST_ORDER_KEY = "sportlike_last_paid_order";
 const fmtMXN = n => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n || 0);
 
 import CSS from "./Carrito.styles";
+import { checkoutItems } from "../../utils/checkoutItems";
 
 export default function Carrito() {
   const { online } = usePwa();
@@ -46,17 +47,8 @@ export default function Carrito() {
       return;
     }
 
-    const itemsByProduct = new Map();
-    cart.forEach((item) => {
-      const productId = Number(item.id || item.product_id);
-      const quantity = getQty(item);
-      if (!productId || !Number.isInteger(quantity) || quantity <= 0) return;
-      itemsByProduct.set(productId, (itemsByProduct.get(productId) || 0) + quantity);
-    });
-    const items = [...itemsByProduct.entries()].map(([product_id, cantidad]) => ({
-      product_id,
-      cantidad,
-    }));
+    let items;
+    try {items = checkoutItems(cart);} catch(error){setPaymentError(error.message);return;}
 
     if (!items.length) {
       setPaymentError("No pudimos preparar los productos para el pago.");

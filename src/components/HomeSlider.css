@@ -1,0 +1,23 @@
+.sl-home-slider{padding:24px 0 56px;background:var(--sl-paper,#f7f5f0);font-family:'Outfit',sans-serif;}
+.sl-home-slide{position:relative;background:#000;border:1px solid #ffffff14;border-radius:26px;overflow:hidden;color:#fff;touch-action:pan-y;}
+.sl-home-slide-art{position:relative;display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);width:100%;background:#000;text-decoration:none;}
+.sl-home-slide-art img{display:block;width:100%;height:420px;object-fit:contain;}
+.sl-home-slide-visual{display:block;min-width:0;}
+.sl-home-slide--sports .sl-home-slide-art{background:radial-gradient(ellipse at 34% 50%,#101d51 0%,#040916 55%,#000 100%);}
+.sl-home-slide--sports .sl-home-slide-visual{background:radial-gradient(ellipse at center,#29204c65,transparent 75%);}
+.sl-home-slide--sports .sl-home-slide-visual img{mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);}
+.sl-home-slide--sports .sl-home-slide-copy{background:transparent;}
+.sl-home-slide-copy{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:20px;padding:36px;background:radial-gradient(ellipse at top right,#223a7650,transparent 75%);}
+.sl-home-slide-category{color:#c8f03c;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;}
+.sl-home-slide-tagline{color:#fff;font-size:clamp(1.8rem,3vw,2.65rem);font-weight:600;line-height:1.1;letter-spacing:-.03em;}
+.sl-home-slide-cta{display:inline-flex;align-items:center;gap:18px;border-radius:12px;padding:12px 20px;min-height:44px;background:#c8f03c;color:#0a1a2f;font-size:.8rem;font-weight:700;}
+.sl-home-slider a:focus-visible{outline:3px solid #7398ff;outline-offset:-4px;}
+@media(max-width:700px){
+ .sl-home-slider{padding:12px 0 36px;}
+ .sl-home-slide{border-radius:20px;}
+ .sl-home-slide-art{grid-template-columns:minmax(0,1fr);}
+ .sl-home-slide-art img{height:290px;}
+ .sl-home-slide-copy{padding:24px;min-height:200px;gap:15px;}
+ .sl-home-slide-tagline{font-size:1.8rem;}
+ .sl-home-slide--sports .sl-home-slide-visual img{mask-image:linear-gradient(180deg,#000 90%,transparent);}
+}

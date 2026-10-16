@@ -8,7 +8,6 @@ import { useCart } from "../../context/CartContext";
 import { ThemeContext } from "../../context/ThemeContext";
 import defaultProductImage from "../../assets/PLAYERA.jpg";
 import { usePwa } from "../../context/PwaContext";
-import CachedCatalogNotice from "../../components/CachedCatalogNotice";
 import FavoriteButton from "../../components/FavoriteButton";
 import Feedback from "../../components/Feedback";
 
@@ -163,21 +162,28 @@ export default function Catalogo() {
   const { addToCart, toggleMiniCart } = useCart();
   const { darkMode } = useContext(ThemeContext);
   const { online } = usePwa();
-  const [savedAt, setSavedAt] = useState(null);
 
   const [products,     setProducts]     = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [error,        setError]        = useState(null);
-  const [search,       setSearch]       = useState("");
-  const [categoria,    setCategoria]    = useState("");
-  const [marca,        setMarca]        = useState("");
-  const [maxPrice,     setMaxPrice]     = useState(9999);
+  const [mobile, setMobile] = useState(() => window.matchMedia("(max-width:700px)").matches);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const resultsRef = useRef(null);
+  const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const search = params.get("q") || "";
+  const categoria = params.get("categoria") || "";
+  const selectedBrands = params.getAll("marca");
+  const order = params.get("orden") || "nombre";
+  const pageParam = Number(params.get("pagina"));
+  const requestedPage = Number.isSafeInteger(pageParam) && pageParam > 0 ? pageParam : 1;
+  const pageSize = mobile ? 16 : 40;
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    setSearch(params.get("q") || "");
-    setCategoria(params.get("categoria") || "");
-  }, [location.search]);
+    const media = window.matchMedia("(max-width:700px)");
+    const change = () => setMobile(media.matches);
+    media.addEventListener("change", change);
+    return () => media.removeEventListener("change", change);
+  }, []);
 
   // Carga productos
   useEffect(() => {
@@ -187,10 +193,8 @@ export default function Catalogo() {
         setError(null);
         const res = await fetch(`${API_URL}/api/products`);
         if (!res.ok) throw new Error(navigator.onLine ? "Error al cargar productos" : "Aún no tienes un catálogo guardado. Ábrelo una vez con internet para consultarlo sin conexión.");
-        setSavedAt(res.headers.get("X-SportLike-Offline") ? res.headers.get("X-SportLike-Saved-At") : null);
         const data = await res.json();
         setProducts(data);
-        setMaxPrice(Math.max(...data.map(p=>p.precio), 999));
       } catch (err) { setError(err.message); }
       finally { setLoading(false); }
     })();
@@ -199,6 +203,8 @@ export default function Catalogo() {
   const categorias = useMemo(() => [...new Set(products.map(p=>p.categoria).filter(Boolean))].sort(), [products]);
   const marcas     = useMemo(() => [...new Set(products.map(p=>p.marca).filter(Boolean))].sort(), [products]);
   const maxReal    = useMemo(() => Math.max(...products.map(p=>p.precio), 999), [products]);
+  const priceParam = params.get("precio");
+  const maxPrice = priceParam !== null && Number.isFinite(Number(priceParam)) && Number(priceParam) >= 0 ? Math.min(Number(priceParam), maxReal) : maxReal;
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -206,48 +212,83 @@ export default function Catalogo() {
       .filter(p =>
         (!search    || p.nombre.toLowerCase().includes(q) || (p.marca||"").toLowerCase().includes(q)) &&
         (!categoria || p.categoria === categoria) &&
-        (!marca     || p.marca === marca) &&
+        (!selectedBrands.length || selectedBrands.includes(p.marca)) &&
         p.precio <= maxPrice
       )
-      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-  }, [products, search, categoria, marca, maxPrice]);
+      .sort((a, b) => order === "precio-asc" ? Number(a.precio)-Number(b.precio) : order === "precio-desc" ? Number(b.precio)-Number(a.precio) : a.nombre.localeCompare(b.nombre, "es"));
+  }, [products, search, categoria, location.search, order, maxPrice]);
 
-  const limpiar = () => { setSearch(""); setCategoria(""); setMarca(""); setMaxPrice(maxReal); };
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(requestedPage, totalPages);
+  const pageProducts = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pageNumbers = [...new Set([1, currentPage-1, currentPage, currentPage+1, totalPages].filter(page => page > 0 && page <= totalPages))].sort((a,b) => a-b);
+
+  function changeFilters(values) {
+    const next = new URLSearchParams(location.search);
+    Object.entries(values).forEach(([key,value]) => {
+      next.delete(key);
+      if (Array.isArray(value)) value.forEach(item=>next.append(key,item));
+      else if (value !== "" && value != null) next.set(key,String(value));
+    });
+    next.delete("pagina");
+    navigate({pathname:location.pathname, search:next.toString()}, {replace:true, preventScrollReset:true});
+  }
+  const limpiar = () => changeFilters({q:"", categoria:"", marca:"", precio:"", disponible:"", orden:""});
+  const activeFilters = [
+    ...(search ? [{label:search, clear:()=>changeFilters({q:""})}] : []),
+    ...(categoria ? [{label:categoria, clear:()=>changeFilters({categoria:""})}] : []),
+    ...selectedBrands.map(brand=>({label:brand, clear:()=>changeFilters({marca:selectedBrands.filter(item=>item!==brand)})})),
+    ...(maxPrice < maxReal ? [{label:`Hasta $${maxPrice.toLocaleString("es-MX")}`,clear:()=>changeFilters({precio:""})}] : [])
+  ];
+  function goToPage(page) {
+    const next = new URLSearchParams(location.search);
+    page === 1 ? next.delete("pagina") : next.set("pagina", String(page));
+    navigate({pathname:location.pathname, search:next.toString()}, {preventScrollReset:true});
+    requestAnimationFrame(() => resultsRef.current?.scrollIntoView({block:"start", behavior:"instant"}));
+  }
 
   const handleAdd = (e, p) => {
     e.stopPropagation();
+    if(parseLista(p.talla).length || parseLista(p.colores).length){navigate(`/producto/${p.id}`);return;}
     addToCart({ id:p.id, title:p.nombre, price:p.precio, img:p.imagen, qty:1,
       size:parseLista(p.talla)[0]||"Único", color:parseLista(p.colores)[0]||"Único" });
-    toggleMiniCart();
   };
 
   return (
     <div className="sl-cat">
       <style>{getCSS(darkMode)}</style>
-      <CachedCatalogNotice savedAt={savedAt} />
-
-      <div className="sl-bar">
-        <span className="sl-bar-brand">SPORTLIKE</span>
+      <div className="sl-catalog-layout">
+      <button className="sl-mobile-filters" type="button" aria-expanded={filtersOpen} aria-controls="catalog-filters" onClick={()=>setFiltersOpen(open=>!open)}><i className="bi bi-sliders" aria-hidden="true"/> {filtersOpen ? "Cerrar filtros" : "Filtros"}</button>
+      <aside id="catalog-filters" className={`sl-bar sl-sidebar ${filtersOpen ? "is-open" : ""}`} aria-label="Filtros del catálogo">
+        <div className="sl-filter-heading"><span className="sl-filter-symbol"><i className="bi bi-sliders2" aria-hidden="true"/></span><div><span className="sl-bar-brand">A TU MEDIDA</span><h2>Filtra tu equipo</h2></div></div>
+        <label className="sl-filter-label" htmlFor="catalog-search">Buscar</label>
         <div className="sl-search-wrap">
           <span className="sl-search-ico">⌕</span>
-          <input className="sl-input" placeholder="Buscar producto, marca..." value={search} onChange={e=>setSearch(e.target.value)} />
+          <input id="catalog-search" className="sl-input" type="search" placeholder="Producto o marca" value={search} onChange={e=>changeFilters({q:e.target.value})} />
         </div>
-        <select className="sl-sel" value={categoria} onChange={e=>setCategoria(e.target.value)}>
-          <option value="">Categoría</option>
-          {categorias.map(c=><option key={c} value={c}>{c}</option>)}
-        </select>
-        <select className="sl-sel" value={marca} onChange={e=>setMarca(e.target.value)}>
-          <option value="">Marca</option>
-          {marcas.map(m=><option key={m} value={m}>{m}</option>)}
-        </select>
+        <details className="sl-filter-section" open><summary>Categoría <i className="bi bi-chevron-down" aria-hidden="true"/></summary>
+          <div className="sl-filter-options" role="radiogroup" aria-label="Categoría">
+            {["",...categorias].map(c=><label className="sl-filter-option" key={c}><input type="radio" name="categoria" checked={categoria===c} onChange={()=>changeFilters({categoria:c})}/><span>{c||"Todas las categorías"}</span></label>)}
+          </div>
+        </details>
+        <details className="sl-filter-section" open><summary>Marca <i className="bi bi-chevron-down" aria-hidden="true"/></summary>
+          <p className="sl-filter-hint">Puedes elegir más de una.</p>
+          <div className="sl-filter-options">
+            {marcas.map(m=><label className="sl-filter-option" key={m}><input type="checkbox" checked={selectedBrands.includes(m)} onChange={()=>changeFilters({marca:selectedBrands.includes(m)?selectedBrands.filter(item=>item!==m):[...selectedBrands,m]})}/><span>{m}</span></label>)}
+          </div>
+        </details>
+        <details className="sl-filter-section" open><summary>Presupuesto <i className="bi bi-chevron-down" aria-hidden="true"/></summary>
         <div className="sl-range-pill">
-          <span>Hasta ${maxPrice.toLocaleString()}</span>
-          <input type="range" min="0" max={maxReal} step="50" value={maxPrice} onChange={e=>setMaxPrice(Number(e.target.value))} />
+          <label htmlFor="catalog-price">Precio máximo <strong>${maxPrice.toLocaleString("es-MX")}</strong></label>
+          <input id="catalog-price" type="range" min="0" max={maxReal} step="1" value={maxPrice} onChange={e=>changeFilters({precio:e.target.value})} />
         </div>
-        <button className="sl-clear" onClick={limpiar}>Limpiar</button>
-      </div>
+        <div className="sl-price-limits"><span>$0</span><span>${maxReal.toLocaleString("es-MX")}</span></div>
+        </details>
+        <button className="sl-clear" type="button" onClick={limpiar}><i className="bi bi-arrow-counterclockwise" aria-hidden="true"/> Limpiar filtros</button>
+        <button className="sl-filter-done" type="button" onClick={()=>{setFiltersOpen(false);requestAnimationFrame(()=>resultsRef.current?.scrollIntoView({block:"start"}));}}>Ver productos</button>
+      </aside>
 
-      <div className="sl-wrap">
+      <main className="sl-wrap" ref={resultsRef}>
         {error && <Feedback kind="error" title={error}/>}
         {!loading && !error && (
           <div className="sl-catalog-intro">
@@ -259,6 +300,10 @@ export default function Catalogo() {
           </div>
         )}
 
+        {!loading && !error && <div className="sl-results-tools">
+          <div className="sl-active-filters" aria-label="Filtros activos">{activeFilters.map((filter,index)=><button key={`${filter.label}-${index}`} type="button" onClick={filter.clear} aria-label={`Quitar filtro ${filter.label}`}>{filter.label}<i className="bi bi-x" aria-hidden="true"/></button>)}</div>
+          <label className="sl-sort">Ordenar por<select aria-label="Ordenar por" value={order} onChange={e=>changeFilters({orden:e.target.value})}><option value="nombre">Nombre: A–Z</option><option value="precio-asc">Menor precio</option><option value="precio-desc">Mayor precio</option></select></label>
+        </div>}
         {loading && (
           <div className="sl-skeleton-grid">
             {Array.from({length:8}).map((_,i) => (
@@ -280,7 +325,7 @@ export default function Catalogo() {
             {filtered.length===0 && (
               <Feedback title="No encontramos productos">Ajusta los filtros para encontrar lo que buscas.</Feedback>
             )}
-            {filtered.map(p => {
+            {pageProducts.map(p => {
               const tallas   = parseLista(p.talla);
               const colores  = parseLista(p.colores);
               const sinStock = p.stock_total === 0;
@@ -296,7 +341,7 @@ export default function Catalogo() {
                     </div>
                     <div className="sl-card-overlay">
                       <button className="sl-card-overlay-btn" disabled={sinStock} onClick={e=>handleAdd(e,p)}>
-                        {sinStock ? "Sin disponibilidad" : "+ Agregar al carrito"}
+                        {sinStock ? "Sin disponibilidad" : parseLista(p.talla).length || parseLista(p.colores).length ? "Elegir opciones" : "+ Agregar al carrito"}
                       </button>
                     </div>
                   </div>
@@ -336,11 +381,21 @@ export default function Catalogo() {
                       </div>
                     )}
                   </div>
+                  <button className="sl-mobile-card-action" type="button" disabled={sinStock} onClick={e=>handleAdd(e,p)}>{sinStock ? "Agotado" : tallas.length || colores.length ? "Elegir opciones" : "Agregar al carrito"}</button>
                 </div>
               );
             })}
           </div>
         )}
+        {!loading && !error && totalPages > 1 && <nav className="sl-pagination" aria-label="Páginas del catálogo">
+          <button type="button" disabled={currentPage === 1} onClick={()=>goToPage(currentPage-1)}>Anterior</button>
+          {pageNumbers.map((page,index)=><React.Fragment key={page}>
+            {index > 0 && page-pageNumbers[index-1] > 1 && <span aria-hidden="true">…</span>}
+            <button type="button" aria-label={`Página ${page}`} aria-current={currentPage === page ? "page" : undefined} onClick={()=>goToPage(page)}>{page}</button>
+          </React.Fragment>)}
+          <button type="button" disabled={currentPage === totalPages} onClick={()=>goToPage(currentPage+1)}>Siguiente</button>
+        </nav>}
+      </main>
       </div>
     </div>
   );

@@ -36,7 +36,7 @@ const CSS = `
 .ped-btn-ghost { background:#f7fafc; color:#4a5568; border:1.5px solid #e2e8f0; }
 .ped-btn-ghost:hover { background:#edf2f7; }
 
-.ped-card { background:white; border-radius:12px; box-shadow:0 1px 6px rgba(0,0,0,.06); overflow:hidden; }
+.ped-card { background:white; border-radius:12px; box-shadow:0 1px 6px rgba(0,0,0,.06); max-width:100%; overflow-x:auto; }
 .ped-table { width:100%; border-collapse:collapse; }
 .ped-table thead { background:#f8fafc; }
 .ped-table th { padding:12px 16px; text-align:left; font-size:.75rem; font-weight:700; color:#4a5568; text-transform:uppercase; letter-spacing:.5px; border-bottom:2px solid #e2e8f0; white-space:nowrap; }

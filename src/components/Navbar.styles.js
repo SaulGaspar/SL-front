@@ -12,6 +12,13 @@ const CSS = `
 
 .nb { font-family:'Outfit',sans-serif; background:var(--navy); position:sticky; top:0; z-index:1000; border-bottom:1px solid var(--border); box-shadow:0 2px 24px rgba(0,0,0,.35); }
 
+.nb-mobile-primary{display:none;}
+@media(max-width:900px){
+ .nb .nb-mobile-primary{display:flex;justify-content:center;gap:8px;padding:0 12px 8px;border-top:1px solid rgba(255,255,255,.08);}
+ .nb-mobile-primary a{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;flex:1;max-width:220px;padding:9px 16px;color:#c6d2e2;text-decoration:none;font-size:.85rem;font-weight:600;border-bottom:2px solid transparent;}
+ .nb-mobile-primary a[aria-current=page]{color:#c8f03c;border-bottom-color:#c8f03c;background:rgba(200,240,60,.05);border-radius:8px 8px 0 0;}
+ .nb-mobile-primary a:focus-visible{outline:2px solid #c8f03c;outline-offset:-2px;}
+}
 /* Strip */
 .nb-strip { background:rgba(255,255,255,.04); border-bottom:1px solid var(--border); padding:5px 40px; display:flex; justify-content:flex-end; align-items:center; gap:20px; }
 .nb-strip-link { font-size:.72rem; color:var(--muted); text-decoration:none; letter-spacing:.5px; text-transform:uppercase; transition:color .15s; display:flex; align-items:center; gap:5px; }

@@ -21,6 +21,8 @@ async function main(){
    else if(url.pathname.includes('/promotions')){promoRequests++;status=503;data={error:'Promociones pausadas'};}
    else if(url.pathname==='/api/admin/dashboard'){lastDashboardQuery=url.searchParams.toString();status=failDashboard?503:200;data=failDashboard?{error:'Servicio no disponible'}:{salesTimeline:[],branchRanking:[],topProducts:[],recentOrders:[],resumen:{total_ordenes:5,ingresos_totales:650,preparando:1,en_camino:2},branches:[{id:1,nombre:'Centro'},{id:2,nombre:'Norte'}]};}
    else if(url.pathname==='/api/admin/products'&&route.request().method()==='POST'){importedProduct=route.request().postDataJSON();data={productId:10};}
+   else if(url.pathname==='/api/admin/orders')data=[{id:91,nombre:'Ana',apellidoP:'Prueba',correo:'ana@example.test',sucursal:1,total:500,status:'pendiente',fecha:'2026-10-16T12:00:00'}];
+   else if(url.pathname==='/api/admin/orders/91')data={order:{id:91,nombre:'Ana',apellidoP:'Prueba',status:'pendiente',total:500},items:[{id:1,nombre:'Tenis prueba',categoria:'Calzado',cantidad:1,subtotal:500,talla:'27',color:'Negro'}]};
    else if(url.pathname.endsWith('/stats/summary'))data={resumen:{}};
    else if(url.pathname==='/api/admin/inventory/stats')data={general:{},porSucursal:[]};
    else if(url.pathname.includes('notificaciones')||url.pathname.endsWith('/nuevos'))data={pedidos:[],total:0};
@@ -38,6 +40,7 @@ async function main(){
    await page.goto(origin+'/admin/'+section);await page.locator('.admin-content').waitFor();await page.waitForLoadState('networkidle');assert.ok((await page.locator('.admin-content').innerText()).trim().length>5,'Contenido admin '+section);
   }
   assert.equal(promoRequests,0,'Las pantallas pausadas no consultan promociones');
+  await page.goto(origin+'/admin/pedidos');await page.getByRole('button',{name:'Ver',exact:true}).click();await page.getByText('Talla: 27 · Color: Negro',{exact:true}).waitFor();await page.locator('.ped-mclose').click();
   await page.goto(origin+'/admin/promociones');await page.getByText('Promociones pausadas',{exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:/Nueva promoción/}).count(),0);
   failDashboard=true;await page.goto(origin+'/admin');await page.getByText('No se pudo cargar el resumen completo. Intenta de nuevo para consultar cifras actualizadas.',{exact:true}).waitFor();
   failDashboard=false;await page.getByRole('button',{name:'Volver a intentar',exact:true}).click();await page.locator('.db-kpi-grid').waitFor();
@@ -49,6 +52,10 @@ async function main(){
   await page.waitForFunction(()=>document.querySelector('#admin-navigation').getBoundingClientRect().x>=-1);
   const nav=await page.locator('#admin-navigation').boundingBox();assert.ok(nav.x>=-1,'Menú móvil visible');await page.locator('#admin-navigation').getByRole('link',{name:'Productos',exact:true}).click();await page.getByRole('button',{name:'Abrir menú de administración',exact:true}).waitFor();
   await page.getByRole('button',{name:'Opciones de mi cuenta',exact:true}).click();await page.getByRole('button',{name:'Cerrar sesión',exact:true}).waitFor();
+  await page.goto(origin+'/admin/pedidos');await page.locator('.ped-table tbody tr').waitFor();
+  assert.ok(await page.locator('.ped-card').evaluate(el=>el.scrollWidth<=el.clientWidth||getComputedStyle(el).overflowX==='auto'),'Tabla de pedidos accesible en móvil');
+  await page.getByRole('button',{name:'Ver',exact:true}).click();await page.getByText('Talla: 27 · Color: Negro',{exact:true}).waitFor();
+  if(process.env.PWA_SCREENSHOT_DIR){fs.mkdirSync(process.env.PWA_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.PWA_SCREENSHOT_DIR,'admin-pedido-movil.png')});}
   assert.deepEqual(errors,[]);
   console.log('REVISIÓN WEB OK: 12 rutas públicas y 12 apartados admin, login por correo para cliente/admin, promociones pausadas, errores recuperables y menú móvil. Datos ficticios; sin BD real.');
  }finally{await context?.close();await new Promise(resolve=>server.close(resolve));if(path.dirname(testProfile)===path.resolve(os.tmpdir())&&path.basename(testProfile).startsWith('sportlike-release-check-'))fs.rmSync(testProfile,{recursive:true,force:true});}

@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 
 import css from "./Home.styles";
+import HomeSlider from "../../components/HomeSlider";
 
 const Icon = ({ name, size = 22, strokeWidth = 1.8 }) => {
   const paths = {
@@ -121,6 +122,7 @@ export default function Home() {
         </div>
       </section>
 
+      <HomeSlider />
       <section className="sl-values" aria-labelledby="sl-values-title">
         <div className="sl-container">
           <div className="sl-values-head">

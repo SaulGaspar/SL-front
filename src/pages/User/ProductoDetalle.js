@@ -6,7 +6,6 @@ import { ThemeContext } from "../../context/ThemeContext";
 import ProductReviews from "../../components/ProductReviews";
 import defaultProductImage from "../../assets/PLAYERA.jpg";
 import { usePwa } from "../../context/PwaContext";
-import CachedCatalogNotice from "../../components/CachedCatalogNotice";
 import FavoriteButton from "../../components/FavoriteButton";
 
 const API_URL = API_BASE_URL;
@@ -37,7 +36,6 @@ export default function ProductoDetalle() {
   const { addToCart, toggleMiniCart } = useCart();
   const { darkMode } = useContext(ThemeContext);
   const { online } = usePwa();
-  const [savedAt, setSavedAt] = useState(null);
 
   const [product, setProduct] = useState(null);
   const [images,  setImages]  = useState([]); // galería real
@@ -51,6 +49,7 @@ export default function ProductoDetalle() {
   const [qty,     setQty]     = useState(1);
   const [added,   setAdded]   = useState(false);
   const [toast,   setToast]   = useState(null);
+  const [selectionError, setSelectionError] = useState("");
   const specifications = parseSpecifications(product?.especificaciones);
 
   useEffect(() => {
@@ -59,7 +58,6 @@ export default function ProductoDetalle() {
       try {
         const res = await fetch(`${API_URL}/api/products/${id}`);
         if (!res.ok) throw new Error(navigator.onLine ? "Error cargando producto" : "Este producto aún no está guardado. Consúltalo con internet para verlo después sin conexión.");
-        setSavedAt(res.headers.get("X-SportLike-Offline") ? res.headers.get("X-SportLike-Saved-At") : null);
         const prod = await res.json();
         setProduct(prod);
 
@@ -68,8 +66,9 @@ export default function ProductoDetalle() {
 
         const tallas  = parseLista(prod.talla);
         const colores = parseLista(prod.colores);
-        if (tallas.length)  setSize(tallas[0]);
-        if (colores.length) setColor(colores[0]);
+        setSize(tallas.length === 1 ? tallas[0] : "");
+        setColor(colores.length === 1 ? colores[0] : "");
+        setQty(1);setSelectionError("");
         const relatedFallback = async () => {
           const relatedRes = await fetch(`${API_URL}/api/products?categoria=${encodeURIComponent(prod.categoria || "")}`);
           if (!relatedRes.ok) return [];
@@ -104,16 +103,18 @@ export default function ProductoDetalle() {
 
   const handleAdd = () => {
     if (!product) return;
+    if ((parseLista(product.talla).length && !size) || (parseLista(product.colores).length && !color)) {setSelectionError("Elige la talla y el color disponibles antes de agregar al carrito.");return;}
+    setSelectionError("");
     addToCart({ id:product.id, title:product.nombre, price:product.precio, img:images[0]||product.imagen, qty, size:size||"Único", color:color||"Único" });
     setAdded(true);
     setToast(`✓  ${product.nombre} agregado al carrito`);
-    toggleMiniCart();
     setTimeout(() => setAdded(false), 2500);
     setTimeout(() => setToast(null), 3000);
   };
 
   const handleAddRelated = (event, item) => {
     event.stopPropagation();
+    if(parseLista(item.talla).length || parseLista(item.colores).length){navigate(`/producto/${item.id}`);return;}
     const itemSizes = parseLista(item.talla);
     const itemColors = parseLista(item.colores);
     addToCart({
@@ -126,7 +127,6 @@ export default function ProductoDetalle() {
       color:itemColors[0]||"Único",
     });
     setToast(`✓  ${item.nombre} agregado al carrito`);
-    toggleMiniCart();
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -161,7 +161,6 @@ export default function ProductoDetalle() {
   return (
     <div className="pd-root">
       <style>{getCSS(darkMode)}</style>
-      <CachedCatalogNotice savedAt={savedAt} />
 
       <div className="pd-bread">
         <Link to="/">Inicio</Link><span className="pd-bread-sep">›</span>
@@ -217,7 +216,7 @@ export default function ProductoDetalle() {
             <div className="pd-opt-section">
               <div className="pd-opt-label">Talla — <strong style={{color:"var(--text)"}}>{size}</strong></div>
               <div className="pd-sizes">
-                {tallas.map(t=><button key={t} className={`pd-size-btn ${size===t?"active":""}`} onClick={()=>setSize(t)}>{t}</button>)}
+                {tallas.map(t=><button key={t} aria-pressed={size===t} className={`pd-size-btn ${size===t?"active":""}`} onClick={()=>setSize(t)}>{t}</button>)}
               </div>
             </div>
           )}
@@ -229,7 +228,7 @@ export default function ProductoDetalle() {
                 {colores.map(c=>{
                   const hex=COLOR_MAP[c.toLowerCase()];
                   return hex
-                    ?<button key={c} className={`pd-color-btn ${color===c?"active":""}`} style={{background:hex}} title={c} onClick={()=>setColor(c)}/>
+                    ?<button key={c} aria-label={`Color ${c}`} aria-pressed={color===c} className={`pd-color-btn ${color===c?"active":""}`} style={{background:hex}} title={c} onClick={()=>setColor(c)}/>
                     :<button key={c} className={`pd-color-text-btn ${color===c?"active":""}`} onClick={()=>setColor(c)}>{c}</button>;
                 })}
               </div>
@@ -243,6 +242,7 @@ export default function ProductoDetalle() {
             <button className="pd-qty-btn" onClick={()=>setQty(q=>q+1)}>+</button>
           </div>
 
+          {selectionError && <p role="alert">{selectionError}</p>}
           <div className="pd-ctas">
             <FavoriteButton product={product}/>
             <button className={`pd-btn-add ${added?"added":""}`} disabled={sinStock} onClick={handleAdd}>

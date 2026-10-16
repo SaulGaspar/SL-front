@@ -179,6 +179,10 @@ export default function Navbar({ user, onLogout }) {
             </button>
           </div>
         </div>
+        {!isAdmin && <div className="nb-mobile-primary" aria-label="Navegación principal">
+          <Link to="/" aria-current={location.pathname === "/" ? "page" : undefined}><i className="bi bi-house" aria-hidden="true"/> Inicio</Link>
+          <Link to="/catalogo" aria-current={location.pathname === "/catalogo" ? "page" : undefined}><i className="bi bi-grid" aria-hidden="true"/> Catálogo</Link>
+        </div>}
       </nav>
 
       {/* DRAWER mobile */}
@@ -193,8 +197,6 @@ export default function Navbar({ user, onLogout }) {
               <div className="nb-dsection">Navegación</div>
               {!isAdmin ? (
                 <>
-                  <Link className="nb-dlink" to="/"><i className="bi bi-house" /> Inicio</Link>
-                  <Link className="nb-dlink" to="/catalogo"><i className="bi bi-grid" /> Catálogo</Link>
                   {PROMOTIONS_ENABLED && <Link className="nb-dlink" to="/promociones"><i className="bi bi-tag" /> Promociones</Link>}
                   <Link className="nb-dlink" to="/tiendas"><i className="bi bi-shop" /> Tiendas</Link>
                 </>

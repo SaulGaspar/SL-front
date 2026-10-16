@@ -104,10 +104,11 @@ async function main() {
     await reopened.goto(origin + "/catalogo");
     await reopened.locator(".sl-pwa-offline").waitFor();
     await reopened.getByText(product.nombre, {exact:true}).waitFor();
-    await reopened.getByText("Estás viendo una copia guardada", {exact:false}).waitFor();
+    assert.equal(await reopened.getByText("Estás viendo una copia guardada", {exact:false}).count(), 0);
     assert.equal(await reopened.locator(".sl-card-img img").evaluate(image => image.complete && image.naturalWidth > 0), true);
     await reopened.getByText(product.nombre, {exact:true}).click();
     await reopened.getByRole("heading", {name:product.nombre}).waitFor();
+    await reopened.getByRole("button", {name:"26",exact:true}).click();
     await reopened.getByRole("button", {name:"Agregar al carrito",exact:true}).first().click();
     await reopened.goto(origin + "/carrito");
     await reopened.getByText(product.nombre, {exact:true}).waitFor();

@@ -73,7 +73,7 @@ export default function GoogleCallback({ onLogin }) {
           localStorage.setItem("token",credentials.token);
           localStorage.setItem("user",JSON.stringify(user));
           onLogin?.(user);
-          navigate(user.rol==="admin"?"/admin":"/profile",{replace:true});
+          navigate(user.rol==="admin"?"/admin":"/",{replace:true});
         } else if(credentials.registration) {
           try{sessionStorage.setItem(PENDING_KEY,credentials.registration);}catch{}
           const data=await googleRequest("/api/google/registration",credentials.registration,{signal:controller.signal});
@@ -104,7 +104,7 @@ export default function GoogleCallback({ onLogin }) {
       localStorage.setItem("token",result.token);
       localStorage.setItem("user",JSON.stringify(user));
       onLogin?.(user);
-      navigate("/profile",{replace:true});
+      navigate(user.rol==="admin"?"/admin":"/",{replace:true});
     } catch(error) {if(alive.current)setError(error.message || "No se pudo crear tu cuenta.");}
     finally {submitting.current=false;if(alive.current)setSaving(false);}
   }

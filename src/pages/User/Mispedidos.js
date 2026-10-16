@@ -226,6 +226,7 @@ export default function MisPedidos() {
                         </div>
                         <div className="mp-item-main">
                           <div className="mp-item-name">{item.nombre}</div>
+                          {(item.talla || item.color) && <div className="mp-item-meta">{[item.talla && `Talla: ${item.talla}`,item.color && `Color: ${item.color}`].filter(Boolean).join(" · ")}</div>}
                           <div className="mp-item-meta">
                             {[item.marca, item.categoria].filter(Boolean).join(" · ")}
                           </div>
